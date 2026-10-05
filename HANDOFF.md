@@ -22,7 +22,7 @@ System design phase. No application code exists yet.
 | 4 | C4 level 2: containers | Done |
 | 5 | ERD, with space for future features | Done |
 | 6 | Sequence diagrams | Moved to implementation: one `README.md` in each Action directory |
-| 7 | Future features, in three PRs: (a) payments and refunds, (b) PDF tickets and cover image, (c) event change emails and announcements | (a) done. (b) in review (PR #9). (c) next |
+| 7 | Future features, in three PRs: (a) payments and refunds, (b) PDF tickets and cover image, (c) event change emails and announcements | (a) and (b) done. (c) in review (PR #10) |
 
 ## Decisions from the design sessions
 
@@ -71,6 +71,8 @@ System design phase. No application code exists yet.
   plain-text body. Emailed to attendees with a confirmed booking, and shown on the event
   page to the organizer, the attendees and admins. Only for published events, until
   24 hours after the start. Max 3 for each event each day. No approval step.
+- Announcements cannot be edited or deleted. An admin can hide one (`hidden_at`,
+  `hidden_by_id`). Hidden announcements are not shown to attendees.
 - The organizer can delete a draft event. No other deletes. No soft deletes (BR-E17).
 - Account deletion: blocked while the user has upcoming published events or confirmed
   bookings. Otherwise the system deletes the drafts and anonymizes the user row
@@ -78,13 +80,11 @@ System design phase. No application code exists yet.
 
 ## Next steps
 
-1. Wait for the owner to review and merge PR #9 (PDF tickets and cover image), then sync.
-2. Next PR: future features (c), event change emails and announcements. The decisions
-   are above. Add an `announcements` table to the ERD in this PR.
-3. Then the design is complete.
-4. When the owner approves the design, write the implementation plan in
-   `docs/superpowers/plans/`. Split the plan into small PRs.
-5. The owner reviews the plan and selects how to execute it.
+1. Wait for the owner to review and merge PR #10 (event change emails and
+   announcements), then sync. After this PR, the design is complete.
+2. Write the implementation plan in `docs/superpowers/plans/`. Ask the open questions
+   in chat first. Split the plan into small PRs. Each Action PR includes its README.
+3. The owner reviews the plan and selects how to execute it.
 
 Do not scaffold the project, install dependencies or write app code before the owner
 approves the design and the plan.
