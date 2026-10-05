@@ -17,7 +17,7 @@ scope. This folder gives the details.
 | 4 | C4 level 2: containers | — | Not started |
 | 5 | ERD | — | Not started |
 | 6 | Sequence diagrams, one per action | — | Not started |
-| 7 | Future features: payments, PDF tickets, file uploads | — | Not started |
+| 7 | Future features: payments, PDF tickets, file uploads, notifications for event changes | — | Not started |
 
 ## Writing rules for this folder
 

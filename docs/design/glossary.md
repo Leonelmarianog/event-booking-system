@@ -50,4 +50,4 @@ the event. The same user can organize one event and book seats for a different e
 | Action | One class that does one write operation. It controls the transaction, the locks and the notifications. | `app/Actions` |
 | Domain exception | An error that a business rule causes. The user sees a clear message. | `app/Exceptions/Domain` |
 | Notification | An email that the system sends to a user. A queue worker sends it. | `app/Notifications` |
-| Reminder | A notification that the system sends to attendees before the event starts. | `EventReminder` |
+| Reminder | A notification that the system sends to attendees before the event starts. The system sends it one time for each event. | `EventReminder`, `Event.reminder_sent_at` |
