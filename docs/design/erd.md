@@ -13,6 +13,8 @@ erDiagram
     events ||--o{ bookings : "has"
     bookings ||--o{ payments : "is paid by"
     bookings ||--o{ tickets : "contains"
+    events ||--o{ announcements : "has"
+    users |o--o{ announcements : "hides"
 
     users {
         bigint id PK
@@ -74,6 +76,17 @@ erDiagram
         timestamptz updated_at
     }
 
+    announcements["announcements (future)"] {
+        bigint id PK
+        bigint event_id FK "events.id"
+        string subject "150 characters or less"
+        text body "plain text, 5000 characters or less"
+        timestamptz hidden_at "nullable, set when an admin hides it"
+        bigint hidden_by_id FK "users.id, nullable"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
     tickets["tickets (future)"] {
         bigint id PK
         bigint booking_id FK "bookings.id"
@@ -111,6 +124,7 @@ erDiagram
 | `failed_jobs` | v1 | Laravel table. The Worker writes a job here when the job fails three times. |
 | `payments` | Future | One row for each payment attempt. A booking can have more than one attempt, for example after a failed card payment. |
 | `tickets` | Future | One row for each seat in a booking. Each ticket has a unique code for check-in. |
+| `announcements` | Future | One row for each message that an organizer sends to the attendees of an event. |
 
 ## Relationships
 
@@ -121,6 +135,8 @@ erDiagram
 | `bookings.event_id` | `events.id` | Many bookings to one event | Restrict. Only a draft event can be deleted, and a draft event has no bookings (BR-E17, BR-B2). |
 | `payments.booking_id` | `bookings.id` | Many payments to one booking | Restrict. |
 | `tickets.booking_id` | `bookings.id` | Many tickets to one booking | Restrict. |
+| `announcements.event_id` | `events.id` | Many announcements to one event | Restrict. Only a draft event can be deleted, and a draft event has no announcements (BR-AN3). |
+| `announcements.hidden_by_id` | `users.id` | Many hidden announcements to one admin | Restrict. |
 
 ## Constraints
 
@@ -150,6 +166,7 @@ for payment (BR-P10).
 | `events` | `(organizer_id)` | The "My events" page. |
 | `bookings` | `(user_id)` | The "My bookings" page. |
 | `bookings` | `(event_id, status)` | The attendee list. The cancellation of all bookings of an event. |
+| `announcements` | `(event_id, created_at)` | The announcements on the event page. The limit of 3 in 24 hours (BR-AN4). |
 
 ## Laravel tables that we do not create
 

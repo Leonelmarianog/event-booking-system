@@ -154,3 +154,47 @@ and on the event page.
 
 The ERD shows the columns of these two features: the `tickets` table,
 `bookings.tickets_pdf_path` and `events.cover_image_path`.
+
+## Event change emails
+
+### Description
+
+When the organizer changes an important detail of a published event, the attendees get
+an email. This feature replaces BR-N7 of v1.
+
+### Business rules
+
+| ID | Rule | Enforced by |
+|---|---|---|
+| BR-EC1 | When the organizer changes the start time or the venue of a published event, each attendee with a confirmed booking gets an "event changed" email. | Action |
+| BR-EC2 | The email shows the old value and the new value of each changed detail. | Action |
+| BR-EC3 | When one edit changes the start time and the venue, the attendee gets one email, not two. | Action |
+| BR-EC4 | A change to the title, the description or the capacity sends no email. | Action |
+| BR-EC5 | The system sends the email only after the database commits the transaction (as BR-N6). | Action |
+
+## Announcements
+
+### Description
+
+The organizer can write a message to all the attendees of an event, for example to tell
+them about a change in the program. The system sends the message by email and shows it
+on the event page.
+
+### Business rules
+
+| ID | Rule | Enforced by |
+|---|---|---|
+| BR-AN1 | Only the organizer can send an announcement for an event. | Policy |
+| BR-AN2 | An announcement has a subject of 150 characters or less and a plain-text body of 5000 characters or less. | Request |
+| BR-AN3 | The organizer can send an announcement only for a published event, until 24 hours after the start time. | Model |
+| BR-AN4 | The organizer can send 3 announcements or less for each event in each period of 24 hours. | Model |
+| BR-AN5 | Each attendee with a confirmed booking gets the announcement by email, after the commit. | Action |
+| BR-AN6 | The event page shows the announcements to the organizer, to the attendees with a confirmed booking and to admins. Users who book later can also read them. | Policy, Read Action |
+| BR-AN7 | Nobody can edit or delete an announcement after it is sent. To correct a mistake, the organizer sends a new announcement. | Model |
+| BR-AN8 | An admin can hide an announcement. A hidden announcement is not shown to attendees. The organizer and admins see it with the label "Hidden". | Policy, Model |
+| BR-AN9 | Hiding an announcement does not change the emails that the system already sent. | — |
+| BR-AN10 | The system shows the body as plain text. It does not show HTML from the body. | Read Action |
+
+### Schema
+
+The ERD shows the `announcements` table.
