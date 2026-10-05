@@ -12,8 +12,6 @@ Milestone M1 (Foundation) has started. The design is complete.
 - Boost files are local to each machine (`AGENTS.md`, `boost.json`, `.mcp.json`,
   `.claude/`, `.agents/`, `.codex/`). Run `php artisan boost:install --no-interaction`
   after a fresh clone. Use the Boost guidelines and skills to write Laravel code.
-- `.codex/` is excluded only in `.git/info/exclude` on this machine. The next PR adds
-  `/.codex` to `.gitignore`.
 - The starter kit includes `.github/workflows/tests.yml`. It runs the tests on each PR.
 - The design spec is approved as a first version:
   `docs/superpowers/specs/2026-09-28-event-booking-design.md`
@@ -89,13 +87,16 @@ Milestone M1 (Foundation) has started. The design is complete.
 
 ## Next steps
 
-1. Next M1 PR: our changes to the starter kit. PostgreSQL and Redis, removal of the
-   unused migrations (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`), and
-   the columns `is_admin` and `anonymized_at` on `users`. Also add `/.codex` to
-   `.gitignore`, and remove `pnpm-workspace.yaml` (the project uses npm). Write its
-   plan first and get the owner's approval.
-2. Then the rest of M1: Docker image (`dev` target), `compose.yaml`, quality tools,
-   `Makefile`.
+1. Next M1 PR: the local stack. The Docker image (`dev` target) and `compose.yaml` with
+   `app`, `vite`, `postgres`, `redis` and `mailpit`. The app uses PostgreSQL. The tests
+   run against PostgreSQL, locally and in CI.
+2. Then: sessions, cache and queue on Redis, and the removal of the unused migrations
+   (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`). The `worker` and
+   `scheduler` services join Compose.
+3. Then: the `Makefile` (`up`, `down`, `test`, `lint`, `fresh`). Then M1 is complete.
+4. The `users` columns come later: `is_admin` in M3, `anonymized_at` in M6.
+
+Write the plan of each PR first and get the owner's approval.
 
 Execution: Claude writes each PR. The owner reviews. Tests come first, and each test
 name gives its rule ID.
