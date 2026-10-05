@@ -4,25 +4,34 @@ Last updated: 2026-10-05
 
 ## Where we are
 
-System design phase. No application code exists yet.
+Milestone M1 (Foundation) has started. The design is complete.
 
+- The Laravel React starter kit is installed without changes: Laravel 13, Inertia 3,
+  React 19, Fortify, Wayfinder, Pest, Pint, Larastan, Laravel Boost. The database is
+  still SQLite. The `README.md` is the one of the starter kit.
+- Boost files are local to each machine (`AGENTS.md`, `boost.json`, `.mcp.json`,
+  `.claude/`, `.agents/`, `.codex/`). Run `php artisan boost:install --no-interaction`
+  after a fresh clone. Use the Boost guidelines and skills to write Laravel code.
+- `.codex/` is excluded only in `.git/info/exclude` on this machine. The next PR adds
+  `/.codex` to `.gitignore`.
+- The starter kit includes `.github/workflows/tests.yml`. It runs the tests on each PR.
 - The design spec is approved as a first version:
   `docs/superpowers/specs/2026-09-28-event-booking-design.md`
 - Repository: `git@github.com:Leonelmarianog/event-booking-system.git` (public).
-- We write the detailed system design in `docs/design/` together with the owner,
-  one section per PR.
+- The system design is in `docs/design/`. The milestones are in
+  `docs/superpowers/plans/milestones.md`.
 
 ### Design progress
 
-| # | Section | Status |
-|---|---|---|
-| 1 | Glossary | Done |
-| 2 | Business rules | Done |
-| 3 | C4 level 1: system context | Done |
-| 4 | C4 level 2: containers | Done |
-| 5 | ERD, with space for future features | Done |
-| 6 | Sequence diagrams | Moved to implementation: one `README.md` in each Action directory |
-| 7 | Future features, in three PRs: (a) payments and refunds, (b) PDF tickets and cover image, (c) event change emails and announcements | (a) and (b) done. (c) in review (PR #10) |
+| #   | Section                                                                                                                             | Status                                                            |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 1   | Glossary                                                                                                                            | Done                                                              |
+| 2   | Business rules                                                                                                                      | Done                                                              |
+| 3   | C4 level 1: system context                                                                                                          | Done                                                              |
+| 4   | C4 level 2: containers                                                                                                              | Done                                                              |
+| 5   | ERD, with space for future features                                                                                                 | Done                                                              |
+| 6   | Sequence diagrams                                                                                                                   | Moved to implementation: one `README.md` in each Action directory |
+| 7   | Future features, in three PRs: (a) payments and refunds, (b) PDF tickets and cover image, (c) event change emails and announcements | (a) and (b) done. (c) in review (PR #10)                          |
 
 ## Decisions from the design sessions
 
@@ -80,13 +89,13 @@ System design phase. No application code exists yet.
 
 ## Next steps
 
-The system design is complete.
-
-1. The owner reviews the milestones in `docs/superpowers/plans/milestones.md`.
-2. Start M1. Before each PR, write a detailed plan for that PR only, and get the
-   owner's approval. Do not list or estimate all the PRs.
-3. The first PR of M1 contains only the Laravel React starter kit, without changes.
-   Our changes to the starter kit come in later PRs.
+1. Next M1 PR: our changes to the starter kit. PostgreSQL and Redis, removal of the
+   unused migrations (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`), and
+   the columns `is_admin` and `anonymized_at` on `users`. Also add `/.codex` to
+   `.gitignore`, and remove `pnpm-workspace.yaml` (the project uses npm). Write its
+   plan first and get the owner's approval.
+2. Then the rest of M1: Docker image (`dev` target), `compose.yaml`, quality tools,
+   `Makefile`.
 
 Execution: Claude writes each PR. The owner reviews. Tests come first, and each test
 name gives its rule ID.
@@ -109,6 +118,8 @@ approves the design and the plan.
 - The owner must own and understand the code. Design each part with the owner before
   you write code.
 - Write all design documents in Simple English (ASD-STE100 rules).
+- Format Markdown with `npm run check:fix` before you commit. CI runs `vp check`, and it
+  checks the Markdown files too.
 - Write diagrams in Mermaid, inside Markdown files. GitHub shows them in the PR.
   Render each diagram locally (`npx -y @mermaid-js/mermaid-cli`) before you push it.
 - Ask open questions in chat. Do not put open questions in a PR or a document.
@@ -120,18 +131,18 @@ approves the design and the plan.
 
 ## Decisions already made (do not reopen)
 
-| Topic | Decision |
-|---|---|
-| Goal | Portfolio demo. Shows development and DevOps practices. The app itself is secondary. |
-| App | Event booking with limited seats (free tickets). |
-| Stack | Laravel + Inertia + React (TypeScript), official React starter kit, session auth. |
-| Structure | Plain Laravel layout, everything under `app/`. No repositories. |
+| Topic          | Decision                                                                                                                                                                                                                                |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Goal           | Portfolio demo. Shows development and DevOps practices. The app itself is secondary.                                                                                                                                                    |
+| App            | Event booking with limited seats (free tickets).                                                                                                                                                                                        |
+| Stack          | Laravel + Inertia + React (TypeScript), official React starter kit, session auth.                                                                                                                                                       |
+| Structure      | Plain Laravel layout, everything under `app/`. No repositories.                                                                                                                                                                         |
 | Business logic | Rich domain model: rules live in Eloquent models and enums. Each use case, read or write, is one Action in its own directory `app/Actions/<Name>/`. Actions control the flow (transactions, locks, dispatch). Controllers do HTTP only. |
-| Runtime | Nginx + PHP-FPM in one container (supervisord). |
-| Database | PostgreSQL. Redis for queue, cache, sessions and rate limits. |
-| Deployment | One Docker image with roles `web`, `worker`, `scheduler`, `migrate`. The owner supplies all external services. Docker Compose for local development. |
-| CI | GitHub Actions: lint, test, build and push to GHCR, Trivy scan, concurrency check. |
-| Scope of v1 | Free tickets, no payments. Any user can organize and book. One `is_admin` flag for moderation. Max 4 seats per booking. One active booking per user per event. Email verification is off. |
+| Runtime        | Nginx + PHP-FPM in one container (supervisord).                                                                                                                                                                                         |
+| Database       | PostgreSQL. Redis for queue, cache, sessions and rate limits.                                                                                                                                                                           |
+| Deployment     | One Docker image with roles `web`, `worker`, `scheduler`, `migrate`. The owner supplies all external services. Docker Compose for local development.                                                                                    |
+| CI             | GitHub Actions: lint, test, build and push to GHCR, Trivy scan, concurrency check.                                                                                                                                                      |
+| Scope of v1    | Free tickets, no payments. Any user can organize and book. One `is_admin` flag for moderation. Max 4 seats per booking. One active booking per user per event. Email verification is off.                                               |
 
 ## Local environment
 

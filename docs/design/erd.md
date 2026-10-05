@@ -115,44 +115,44 @@ erDiagram
 
 ## Tables
 
-| Table | Status | Description |
-|---|---|---|
-| `users` | v1 | The people with an account. The starter kit creates this table. We add `is_admin` and `anonymized_at`. |
-| `events` | v1 | The events. Each event has one organizer. |
-| `bookings` | v1 | The bookings. Each booking is for one event and one user. |
-| `password_reset_tokens` | v1 | Laravel table. Keeps the tokens for the "forgot password" email. It has no foreign key to `users`. It uses the email. |
-| `failed_jobs` | v1 | Laravel table. The Worker writes a job here when the job fails three times. |
-| `payments` | Future | One row for each payment attempt. A booking can have more than one attempt, for example after a failed card payment. |
-| `tickets` | Future | One row for each seat in a booking. Each ticket has a unique code for check-in. |
-| `announcements` | Future | One row for each message that an organizer sends to the attendees of an event. |
+| Table                   | Status | Description                                                                                                           |
+| ----------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| `users`                 | v1     | The people with an account. The starter kit creates this table. We add `is_admin` and `anonymized_at`.                |
+| `events`                | v1     | The events. Each event has one organizer.                                                                             |
+| `bookings`              | v1     | The bookings. Each booking is for one event and one user.                                                             |
+| `password_reset_tokens` | v1     | Laravel table. Keeps the tokens for the "forgot password" email. It has no foreign key to `users`. It uses the email. |
+| `failed_jobs`           | v1     | Laravel table. The Worker writes a job here when the job fails three times.                                           |
+| `payments`              | Future | One row for each payment attempt. A booking can have more than one attempt, for example after a failed card payment.  |
+| `tickets`               | Future | One row for each seat in a booking. Each ticket has a unique code for check-in.                                       |
+| `announcements`         | Future | One row for each message that an organizer sends to the attendees of an event.                                        |
 
 ## Relationships
 
-| From | To | Type | On delete |
-|---|---|---|---|
-| `events.organizer_id` | `users.id` | Many events to one user | Restrict. The system never deletes a user row (BR-U4). |
-| `bookings.user_id` | `users.id` | Many bookings to one user | Restrict. |
-| `bookings.event_id` | `events.id` | Many bookings to one event | Restrict. Only a draft event can be deleted, and a draft event has no bookings (BR-E17, BR-B2). |
-| `payments.booking_id` | `bookings.id` | Many payments to one booking | Restrict. |
-| `tickets.booking_id` | `bookings.id` | Many tickets to one booking | Restrict. |
-| `announcements.event_id` | `events.id` | Many announcements to one event | Restrict. Only a draft event can be deleted, and a draft event has no announcements (BR-AN3). |
-| `announcements.hidden_by_id` | `users.id` | Many hidden announcements to one admin | Restrict. |
+| From                         | To            | Type                                   | On delete                                                                                       |
+| ---------------------------- | ------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `events.organizer_id`        | `users.id`    | Many events to one user                | Restrict. The system never deletes a user row (BR-U4).                                          |
+| `bookings.user_id`           | `users.id`    | Many bookings to one user              | Restrict.                                                                                       |
+| `bookings.event_id`          | `events.id`   | Many bookings to one event             | Restrict. Only a draft event can be deleted, and a draft event has no bookings (BR-E17, BR-B2). |
+| `payments.booking_id`        | `bookings.id` | Many payments to one booking           | Restrict.                                                                                       |
+| `tickets.booking_id`         | `bookings.id` | Many tickets to one booking            | Restrict.                                                                                       |
+| `announcements.event_id`     | `events.id`   | Many announcements to one event        | Restrict. Only a draft event can be deleted, and a draft event has no announcements (BR-AN3).   |
+| `announcements.hidden_by_id` | `users.id`    | Many hidden announcements to one admin | Restrict.                                                                                       |
 
 ## Constraints
 
 These constraints make the database enforce some business rules. The models enforce the
 same rules first, so that the user sees a clear message.
 
-| Table | Constraint | Rule |
-|---|---|---|
-| `events` | `CHECK (capacity > 0)` | BR-E2 |
-| `events` | `CHECK (seats_available >= 0 AND seats_available <= capacity)` | BR-E8 |
-| `events` | `CHECK (status IN ('draft', 'published', 'cancelled'))` | Event status |
-| `bookings` | `CHECK (quantity BETWEEN 1 AND 4)` | BR-B5 |
-| `bookings` | `CHECK (status IN ('confirmed', 'cancelled'))` | Booking status |
-| `bookings` | `UNIQUE (reference)` | BR-B8 |
-| `bookings` | `UNIQUE (event_id, user_id) WHERE status = 'confirmed'` (partial index) | BR-B4, BR-B12 |
-| `users` | `UNIQUE (email)` | One account for each email |
+| Table      | Constraint                                                              | Rule                       |
+| ---------- | ----------------------------------------------------------------------- | -------------------------- |
+| `events`   | `CHECK (capacity > 0)`                                                  | BR-E2                      |
+| `events`   | `CHECK (seats_available >= 0 AND seats_available <= capacity)`          | BR-E8                      |
+| `events`   | `CHECK (status IN ('draft', 'published', 'cancelled'))`                 | Event status               |
+| `bookings` | `CHECK (quantity BETWEEN 1 AND 4)`                                      | BR-B5                      |
+| `bookings` | `CHECK (status IN ('confirmed', 'cancelled'))`                          | Booking status             |
+| `bookings` | `UNIQUE (reference)`                                                    | BR-B8                      |
+| `bookings` | `UNIQUE (event_id, user_id) WHERE status = 'confirmed'` (partial index) | BR-B4, BR-B12              |
+| `users`    | `UNIQUE (email)`                                                        | One account for each email |
 
 When payments come, the partial unique index on `bookings` must also include the status
 `pending_payment`. Then a user cannot start a second booking while the first one waits
@@ -160,12 +160,12 @@ for payment (BR-P10).
 
 ## Indexes
 
-| Table | Index | Used by |
-|---|---|---|
-| `events` | `(status, starts_at)` | The list of upcoming published events. The daily reminders. |
-| `events` | `(organizer_id)` | The "My events" page. |
-| `bookings` | `(user_id)` | The "My bookings" page. |
-| `bookings` | `(event_id, status)` | The attendee list. The cancellation of all bookings of an event. |
+| Table           | Index                    | Used by                                                                   |
+| --------------- | ------------------------ | ------------------------------------------------------------------------- |
+| `events`        | `(status, starts_at)`    | The list of upcoming published events. The daily reminders.               |
+| `events`        | `(organizer_id)`         | The "My events" page.                                                     |
+| `bookings`      | `(user_id)`              | The "My bookings" page.                                                   |
+| `bookings`      | `(event_id, status)`     | The attendee list. The cancellation of all bookings of an event.          |
 | `announcements` | `(event_id, created_at)` | The announcements on the event page. The limit of 3 in 24 hours (BR-AN4). |
 
 ## Laravel tables that we do not create
@@ -179,9 +179,9 @@ result, we remove these default Laravel migrations: `sessions`, `cache`, `cache_
 The future files are in the Object Storage. The database keeps only the path of each
 file, in a column of the table that owns the file:
 
-| Column | File |
-|---|---|
-| `events.cover_image_path` | The cover image of the event. One image for each event. |
+| Column                      | File                                                                   |
+| --------------------------- | ---------------------------------------------------------------------- |
+| `events.cover_image_path`   | The cover image of the event. One image for each event.                |
 | `bookings.tickets_pdf_path` | The PDF with all the tickets of the booking. One PDF for each booking. |
 
 There is no separate table for files. Each owner has at most one file of each kind, so a
