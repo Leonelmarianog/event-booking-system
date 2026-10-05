@@ -46,8 +46,8 @@ flowchart TB
 
     migrate -->|"Changes the schema<br/>[SQL]"| db
 
-    web -.->|"Creates payments<br/>[HTTPS]"| payment
-    payment -.->|"Sends payment results<br/>[HTTPS webhook]"| web
+    web -.->|"Creates payments and refunds<br/>[HTTPS]"| payment
+    payment -.->|"Sends payment and refund results<br/>[HTTPS webhook]"| web
     web -.->|"Writes and reads uploads<br/>[HTTPS, S3 API]"| storage
     worker -.->|"Writes PDF tickets<br/>[HTTPS, S3 API]"| storage
 
@@ -94,8 +94,9 @@ the Web App serves these files.
 
 | Connection | Feature | Description |
 |---|---|---|
-| Web App → Payment Provider | Payments | The Web App creates a payment when a user books a paid ticket. |
-| Payment Provider → Web App | Payments | The provider sends the payment result to a webhook endpoint on the Web App. |
+| Web App → Payment Provider | Payments | The Web App creates a payment when a user books a paid ticket. It also requests refunds. |
+| Payment Provider → Web App | Payments | The provider sends the payment and refund results to a webhook endpoint on the Web App. |
+| Scheduler → Database | Payments | Each minute, the Scheduler cancels the pending bookings that passed their 30 minutes (BR-P8). |
 | Web App → Object Storage | File uploads | The Web App writes the files that users upload, and reads them back. |
 | Worker → Object Storage | PDF tickets | The Worker makes the PDF tickets in a queued job and writes them to the storage. |
 

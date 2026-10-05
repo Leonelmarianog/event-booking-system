@@ -17,7 +17,7 @@ scope. This folder gives the details.
 | 4 | C4 level 2: containers | [c4-containers.md](c4-containers.md) | Done |
 | 5 | ERD | [erd.md](erd.md) | In review |
 | 6 | Sequence diagrams | In each Action directory | See below |
-| 7 | Future features: payments, PDF tickets, file uploads, notifications for event changes | — | Not started |
+| 7 | Future features: payments, PDF tickets, file uploads, notifications for event changes, announcements | [future-features.md](future-features.md) | In review: payments and refunds |
 
 ## Sequence diagrams
 

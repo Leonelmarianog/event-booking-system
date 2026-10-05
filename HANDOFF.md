@@ -22,7 +22,7 @@ System design phase. No application code exists yet.
 | 4 | C4 level 2: containers | Done |
 | 5 | ERD, with space for future features | Done |
 | 6 | Sequence diagrams | Moved to implementation: one `README.md` in each Action directory |
-| 7 | Future features: payments, PDF tickets, file uploads, notifications for event changes | Next |
+| 7 | Future features, in three PRs: (a) payments and refunds, (b) PDF tickets and cover image, (c) event change emails and announcements | (a) in review (PR #8). (b) and (c) next |
 
 ## Decisions from the design sessions
 
@@ -52,6 +52,24 @@ System design phase. No application code exists yet.
   The directory holds the class and a `README.md` with the sequence diagrams.
 - The Action README is written in the same PR as the Action code, never before.
   One diagram for each outcome. No `alt` blocks. No diagrams for future features.
+- Payments (future): Stripe Checkout in test mode. Seats held 30 minutes (the minimum
+  time of a Stripe Checkout page). The price changes only while the event is a draft.
+  A late payment gets an automatic refund.
+- Refunds (future): full refund when the event is cancelled, or when the attendee
+  cancels 7 days or more before the start. Later cancellations free the seats with no
+  refund. Refunds are tracked as `refund_pending`, then `refunded` or `refund_failed`.
+  Admins see failed refunds.
+- PDF tickets (future, agreed, PR (b)): the Worker makes the PDF when the booking is
+  confirmed. Attached to the confirmation email and downloadable from "My bookings".
+  On cancel, the tickets are cancelled and the PDF is deleted.
+- Cover image (future, agreed, PR (b)): JPEG, PNG or WebP, max 2 MB. The organizer can
+  replace or remove it until the event starts or is cancelled. No resize.
+- Event change emails (future, agreed, PR (c)): a change of start time or venue emails
+  all attendees with a confirmed booking, after the commit.
+- Announcements (future, agreed, PR (c)): the organizer writes a subject and a
+  plain-text body. Emailed to attendees with a confirmed booking, and shown on the event
+  page to the organizer, the attendees and admins. Only for published events, until
+  24 hours after the start. Max 3 for each event each day. No approval step.
 - The organizer can delete a draft event. No other deletes. No soft deletes (BR-E17).
 - Account deletion: blocked while the user has upcoming published events or confirmed
   bookings. Otherwise the system deletes the drafts and anonymizes the user row
@@ -59,10 +77,10 @@ System design phase. No application code exists yet.
 
 ## Next steps
 
-1. Wait for the owner to review and merge PR #7 (Actions for reads and writes), then sync.
-2. Next design section: future features (payments, PDF tickets, file uploads,
-   notifications for event changes). Ask the open questions in chat first.
-3. Then the design is complete.
+1. Wait for the owner to review and merge PR #8 (payments and refunds), then sync.
+2. Next PR: future features (b), PDF tickets and cover image. The decisions are above.
+   Add an `announcements` table to the ERD in PR (c).
+3. Then PR (c), event change emails and announcements. Then the design is complete.
 4. When the owner approves the design, write the implementation plan in
    `docs/superpowers/plans/`. Split the plan into small PRs.
 5. The owner reviews the plan and selects how to execute it.
