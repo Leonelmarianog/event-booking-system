@@ -23,12 +23,12 @@ of v1.
 **Scope:**
 
 - The official Laravel React starter kit, installed without changes in its own PR.
-- Our changes to the starter kit, in later PRs: PostgreSQL and Redis, removal of the
-  unused migrations (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`), and the
-  columns `is_admin` and `anonymized_at` on `users`.
+- Our changes to the starter kit, in later PRs: PostgreSQL and Redis, and the removal
+  of the unused migrations (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`).
 - The Docker image (`dev` target) and `compose.yaml` with `app`, `worker`, `scheduler`,
   `vite`, `postgres`, `redis` and `mailpit`.
-- The quality tools: Pest, Pint, Larastan, ESLint and `tsc --noEmit`.
+- The quality tools of the starter kit (Pest, Pint, Larastan, `vp check`,
+  `tsc --noEmit`) run in CI.
 - A `Makefile` with `up`, `down`, `test`, `lint` and `fresh`.
 
 **Complete when:**
@@ -60,6 +60,7 @@ of v1.
 **Scope:**
 
 - The `Event` model, the `EventStatus` enum, the migration and the `EventPolicy`.
+- The column `is_admin` on `users`.
 - Write Actions: `CreateEvent`, `UpdateEvent`, `PublishEvent`, `DeleteEvent`.
 - Read Actions: `GetUpcomingEvents`, `GetEvent`, `GetOrganizerEvents`.
 - The pages for these Actions.
@@ -114,6 +115,7 @@ of v1.
 **Scope:**
 
 - The Action `DeleteAccount`, connected to the "Delete account" page of the starter kit.
+- The column `anonymized_at` on `users`.
 
 **Rules:** BR-U1 to BR-U5.
 
