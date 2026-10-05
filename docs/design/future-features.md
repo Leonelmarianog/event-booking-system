@@ -95,7 +95,62 @@ Before an attendee cancels a paid booking, the page shows whether the attendee g
 refund. Less than 7 days before the start, the page tells the attendee that the
 cancellation gives no refund.
 
-## Schema
+### Schema
 
 The ERD shows the tables and the columns of payments and refunds: the `payments` table,
 `events.price_amount`, `events.price_currency` and `bookings.payment_expires_at`.
+
+## PDF tickets
+
+### Description
+
+Each confirmed booking gets one ticket for each seat. The system puts all the tickets of
+a booking in one PDF file. The attendee gets the PDF with the "booking confirmed" email
+and can download it from the "My bookings" page.
+
+This feature applies to free and paid events.
+
+### Business rules
+
+| ID | Rule | Enforced by |
+|---|---|---|
+| BR-T1 | When a booking becomes confirmed, the system creates one ticket for each seat, in the same transaction. | Model |
+| BR-T2 | Each ticket has a unique code. The code is random, so that nobody can guess the code of a different ticket. | Model, Database |
+| BR-T3 | After the commit, the Worker makes the PDF and writes it to the Object Storage. The booking keeps the path in `tickets_pdf_path`. | Action (queued job) |
+| BR-T4 | The PDF has one page for each ticket. Each page shows the event title, the venue, the start time, the name of the attendee, the booking reference and the ticket code. The code is shown as text and as a QR code. | Action (queued job) |
+| BR-T5 | The "booking confirmed" email (BR-N1) goes out after the PDF is ready. The PDF is attached to the email. | Action (queued job) |
+| BR-T6 | If the Worker cannot make the PDF after three attempts, the email goes out without the PDF. The job goes to the `failed_jobs` table. | Action (queued job) |
+| BR-T7 | Only the attendee can download the PDF of a booking. | Policy |
+| BR-T8 | The download link is temporary. It expires after 5 minutes. | Action |
+| BR-T9 | When a booking is cancelled, its tickets become cancelled. The system deletes the PDF from the Object Storage and clears `tickets_pdf_path`. | Action |
+
+### Out of scope
+
+Ticket check-in at the event is not part of this feature. The ticket code is stored and
+printed, so that a later check-in feature does not need a change to the `tickets` table.
+
+## Cover image
+
+### Description
+
+The organizer can add one cover image to an event. The image appears on the event list
+and on the event page.
+
+### Business rules
+
+| ID | Rule | Enforced by |
+|---|---|---|
+| BR-C1 | The cover image must be a JPEG, PNG or WebP file of 2 MB or less. The system checks the content of the file, not only the file name. | Request |
+| BR-C2 | Only the organizer can add, replace or remove the cover image. | Policy |
+| BR-C3 | The organizer can change the cover image only while the event has not started and is not cancelled (as BR-E5). | Policy |
+| BR-C4 | When the organizer replaces the image, the system deletes the old file from the Object Storage. | Action |
+| BR-C5 | When the organizer removes the image, the system deletes the file and clears `cover_image_path`. | Action |
+| BR-C6 | When the organizer deletes a draft event, the system also deletes its cover image (BR-E17). | Action |
+| BR-C7 | The system gives each file a random name. It does not use the name of the uploaded file. | Action |
+| BR-C8 | The image is visible to each person who can see the event (BR-E14 to BR-E16). | Policy |
+| BR-C9 | The system keeps the image as it is uploaded. It does not resize the image. | — |
+
+### Schema
+
+The ERD shows the columns of these two features: the `tickets` table,
+`bookings.tickets_pdf_path` and `events.cover_image_path`.
