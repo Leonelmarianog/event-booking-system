@@ -8,15 +8,15 @@ scope. This folder gives the details.
 
 ## Sections
 
-| # | Section | File | Status |
-|---|---|---|---|
-| 1 | Glossary | [glossary.md](glossary.md) | Done |
-| 2 | Business rules | [business-rules.md](business-rules.md) | Done |
-| 3 | C4 level 1: system context | [c4-context.md](c4-context.md) | Done |
-| 4 | C4 level 2: containers | [c4-containers.md](c4-containers.md) | Done |
-| 5 | ERD | [erd.md](erd.md) | In review |
-| 6 | Sequence diagrams | In each Action directory | See below |
-| 7 | Future features: payments, PDF tickets, file uploads, notifications for event changes, announcements | [future-features.md](future-features.md) | Payments, refunds, PDF tickets, cover image done. Event change emails and announcements in review |
+| #   | Section                                                                                              | File                                     | Status                                                                                            |
+| --- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1   | Glossary                                                                                             | [glossary.md](glossary.md)               | Done                                                                                              |
+| 2   | Business rules                                                                                       | [business-rules.md](business-rules.md)   | Done                                                                                              |
+| 3   | C4 level 1: system context                                                                           | [c4-context.md](c4-context.md)           | Done                                                                                              |
+| 4   | C4 level 2: containers                                                                               | [c4-containers.md](c4-containers.md)     | Done                                                                                              |
+| 5   | ERD                                                                                                  | [erd.md](erd.md)                         | In review                                                                                         |
+| 6   | Sequence diagrams                                                                                    | In each Action directory                 | See below                                                                                         |
+| 7   | Future features: payments, PDF tickets, file uploads, notifications for event changes, announcements | [future-features.md](future-features.md) | Payments, refunds, PDF tickets, cover image done. Event change emails and announcements in review |
 
 ## Sequence diagrams
 

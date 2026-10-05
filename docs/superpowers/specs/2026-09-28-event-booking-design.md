@@ -30,17 +30,17 @@ services through environment variables.
 
 ## 2. Stack
 
-| Concern | Choice |
-|---|---|
-| Backend | Latest stable Laravel, PHP 8.5 |
-| Frontend | Inertia + React + TypeScript (official Laravel React starter kit) |
-| Auth | Starter kit session auth (register, login, logout, password reset) |
-| Database | PostgreSQL |
-| Queue / cache / sessions / rate limiter | Redis |
-| Local mail | Mailpit |
-| Runtime | Nginx + PHP-FPM in one container |
-| Tests | Pest |
-| Quality | Pint, Larastan, ESLint, `tsc --noEmit` |
+| Concern                                 | Choice                                                             |
+| --------------------------------------- | ------------------------------------------------------------------ |
+| Backend                                 | Latest stable Laravel, PHP 8.5                                     |
+| Frontend                                | Inertia + React + TypeScript (official Laravel React starter kit)  |
+| Auth                                    | Starter kit session auth (register, login, logout, password reset) |
+| Database                                | PostgreSQL                                                         |
+| Queue / cache / sessions / rate limiter | Redis                                                              |
+| Local mail                              | Mailpit                                                            |
+| Runtime                                 | Nginx + PHP-FPM in one container                                   |
+| Tests                                   | Pest                                                               |
+| Quality                                 | Pint, Larastan, ESLint, `tsc --noEmit`                             |
 
 ## 3. Code structure
 
@@ -75,13 +75,13 @@ app/
 
 ### Layer responsibilities
 
-| Layer | Owns | Must not |
-|---|---|---|
-| Model (`Event`, `Booking`) and enums | Business rules and state changes. Throws domain exceptions. Query scopes for reusable reads. | Know about HTTP, auth or transactions |
-| Action | One use case. Writes: transaction, row locks, calling model methods, dispatching notifications after commit. Reads: the query, through model scopes, and the data for the page | Contain business `if`s |
-| Controller | HTTP: calls one Action, returns an Inertia response or redirect | Contain business logic or queries |
-| FormRequest | Input validation, and authorization through the Policy | Contain business rules |
-| Policy | Who may do what | Check domain state that belongs in the model |
+| Layer                                | Owns                                                                                                                                                                           | Must not                                     |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| Model (`Event`, `Booking`) and enums | Business rules and state changes. Throws domain exceptions. Query scopes for reusable reads.                                                                                   | Know about HTTP, auth or transactions        |
+| Action                               | One use case. Writes: transaction, row locks, calling model methods, dispatching notifications after commit. Reads: the query, through model scopes, and the data for the page | Contain business `if`s                       |
+| Controller                           | HTTP: calls one Action, returns an Inertia response or redirect                                                                                                                | Contain business logic or queries            |
+| FormRequest                          | Input validation, and authorization through the Policy                                                                                                                         | Contain business rules                       |
+| Policy                               | Who may do what                                                                                                                                                                | Check domain state that belongs in the model |
 
 Reads and writes always go through an Action. A read Action uses model scopes such as
 `Event::published()->upcoming()`.
@@ -89,22 +89,25 @@ Reads and writes always go through an Action. A read Action uses model scopes su
 ## 4. Domain model
 
 ### User
+
 The starter kit fields plus `is_admin` (boolean, default false). Any user can organize
 events and book other users' events.
 
 ### Event
-| Field | Notes |
-|---|---|
-| `id` | bigint |
-| `organizer_id` | FK users |
-| `title`, `description`, `venue` | strings/text |
-| `starts_at` | timestamptz |
-| `capacity` | int, > 0 |
-| `seats_available` | int, DB `CHECK (seats_available >= 0 AND seats_available <= capacity)` |
-| `status` | `EventStatus`: `draft`, `published`, `cancelled` |
-| `published_at`, `cancelled_at` | nullable timestamps |
+
+| Field                           | Notes                                                                  |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `id`                            | bigint                                                                 |
+| `organizer_id`                  | FK users                                                               |
+| `title`, `description`, `venue` | strings/text                                                           |
+| `starts_at`                     | timestamptz                                                            |
+| `capacity`                      | int, > 0                                                               |
+| `seats_available`               | int, DB `CHECK (seats_available >= 0 AND seats_available <= capacity)` |
+| `status`                        | `EventStatus`: `draft`, `published`, `cancelled`                       |
+| `published_at`, `cancelled_at`  | nullable timestamps                                                    |
 
 Domain methods:
+
 - `publish()`: only from `draft`, and only if `starts_at` is in the future.
 - `cancel()`: from `draft` or `published` → `cancelled`.
 - `reserve(User $attendee, int $quantity): Booking`: the event must be `published`
@@ -117,19 +120,21 @@ Domain methods:
 - `isBookable(): bool`, used by the UI.
 
 ### Booking
-| Field | Notes |
-|---|---|
-| `id` | bigint |
-| `reference` | ULID, unique, shown to the user |
-| `event_id`, `user_id` | FKs |
-| `quantity` | int, 1–4 |
-| `status` | `BookingStatus`: `confirmed`, `cancelled` |
-| `cancelled_at` | nullable |
+
+| Field                 | Notes                                     |
+| --------------------- | ----------------------------------------- |
+| `id`                  | bigint                                    |
+| `reference`           | ULID, unique, shown to the user           |
+| `event_id`, `user_id` | FKs                                       |
+| `quantity`            | int, 1–4                                  |
+| `status`              | `BookingStatus`: `confirmed`, `cancelled` |
+| `cancelled_at`        | nullable                                  |
 
 A partial unique index on `(event_id, user_id) WHERE status = 'confirmed'` backs up the
 "one active booking per user per event" rule at the database level.
 
 Domain method:
+
 - `cancel()`: only from `confirmed`, and only before the event starts. Releases seats
   on the event.
 
@@ -138,27 +143,27 @@ model methods call it before changing state and throw `InvalidStateTransition` o
 
 ## 5. Use cases
 
-| Use case | Action | Transaction and locking | Side effects (queued, after commit) |
-|---|---|---|---|
-| Create event (as draft) | `CreateEvent` | Single insert | None |
-| Update event | `UpdateEvent` | Transaction; `lockForUpdate` on the event row, needed for capacity changes | None |
-| Publish event | `PublishEvent` | Single update | None |
-| Cancel event | `CancelEvent` | Transaction; lock the event row, cancel every confirmed booking | `EventCancelled` to each attendee |
-| Reserve seats | `ReserveSeats` | Transaction; lock the event row, `Event::reserve()` | `BookingConfirmed` to the attendee |
-| Cancel booking | `CancelBooking` | Transaction; lock the event row, then the booking row, `Booking::cancel()` | `BookingCancelled` to the attendee |
-| Delete draft event | `DeleteEvent` | Single delete | None |
-| Delete account | `DeleteAccount` | Transaction; delete drafts, anonymize the user row | None |
-| Send reminders (daily, scheduler) | `SendEventReminders`, called by the `SendEventReminders` command | Transaction per event; set `reminder_sent_at` | `EventReminder` to attendees of events starting in the next 24 hours |
+| Use case                          | Action                                                           | Transaction and locking                                                    | Side effects (queued, after commit)                                  |
+| --------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Create event (as draft)           | `CreateEvent`                                                    | Single insert                                                              | None                                                                 |
+| Update event                      | `UpdateEvent`                                                    | Transaction; `lockForUpdate` on the event row, needed for capacity changes | None                                                                 |
+| Publish event                     | `PublishEvent`                                                   | Single update                                                              | None                                                                 |
+| Cancel event                      | `CancelEvent`                                                    | Transaction; lock the event row, cancel every confirmed booking            | `EventCancelled` to each attendee                                    |
+| Reserve seats                     | `ReserveSeats`                                                   | Transaction; lock the event row, `Event::reserve()`                        | `BookingConfirmed` to the attendee                                   |
+| Cancel booking                    | `CancelBooking`                                                  | Transaction; lock the event row, then the booking row, `Booking::cancel()` | `BookingCancelled` to the attendee                                   |
+| Delete draft event                | `DeleteEvent`                                                    | Single delete                                                              | None                                                                 |
+| Delete account                    | `DeleteAccount`                                                  | Transaction; delete drafts, anonymize the user row                         | None                                                                 |
+| Send reminders (daily, scheduler) | `SendEventReminders`, called by the `SendEventReminders` command | Transaction per event; set `reminder_sent_at`                              | `EventReminder` to attendees of events starting in the next 24 hours |
 
 Read use cases. Each one is an Action that the controller calls:
 
-| Use case | Action |
-|---|---|
-| Browse upcoming published events | `GetUpcomingEvents` |
-| Event detail | `GetEvent` |
-| My bookings | `GetBookings` |
-| My events (organizer view) | `GetOrganizerEvents` |
-| Attendee list of one event | `GetEventAttendees` |
+| Use case                         | Action               |
+| -------------------------------- | -------------------- |
+| Browse upcoming published events | `GetUpcomingEvents`  |
+| Event detail                     | `GetEvent`           |
+| My bookings                      | `GetBookings`        |
+| My events (organizer view)       | `GetOrganizerEvents` |
+| Attendee list of one event       | `GetEventAttendees`  |
 
 ## 6. Security features
 
@@ -167,17 +172,17 @@ Read use cases. Each one is an Action that the controller calls:
 - **CSRF:** Laravel's `VerifyCsrfToken` middleware plus the `XSRF-TOKEN` cookie that
   Inertia's HTTP client sends back. A test asserts that a POST without the token is rejected.
 - **Authorization:**
-  - `EventPolicy`: `view` (published, or the viewer is the organizer), `update`/`publish`
-    (organizer, and the event is not cancelled), `cancel` (organizer or admin),
-    `viewAttendees` (organizer or admin).
-  - `BookingPolicy`: `view` (booking owner or event organizer), `cancel` (booking owner).
-  - Admins pass `cancel` and `viewAttendees` on any event, which covers moderation.
+    - `EventPolicy`: `view` (published, or the viewer is the organizer), `update`/`publish`
+      (organizer, and the event is not cancelled), `cancel` (organizer or admin),
+      `viewAttendees` (organizer or admin).
+    - `BookingPolicy`: `view` (booking owner or event organizer), `cancel` (booking owner).
+    - Admins pass `cancel` and `viewAttendees` on any event, which covers moderation.
 - **Rate limiting:** named limiters in `AppServiceProvider`, stored in Redis:
-  - `login`: the starter kit default (5 per minute per email + IP).
-  - `bookings`: 10 per minute per user, on reserve and cancel.
-  - `event-writes`: 20 per minute per user, on create, update, publish and cancel.
-  When the limit is exceeded, Inertia requests are redirected back with a flash error,
-  so the user sees a toast instead of an error page. All other requests get a plain 429.
+    - `login`: the starter kit default (5 per minute per email + IP).
+    - `bookings`: 10 per minute per user, on reserve and cancel.
+    - `event-writes`: 20 per minute per user, on create, update, publish and cancel.
+      When the limit is exceeded, Inertia requests are redirected back with a flash error,
+      so the user sees a toast instead of an error page. All other requests get a plain 429.
 - **Production hardening:** `TrustProxies` configured through the environment,
   secure and HTTP-only session cookies, `APP_DEBUG=false`.
 
@@ -185,9 +190,9 @@ Read use cases. Each one is an Action that the controller calls:
 
 - All domain exceptions extend `App\Exceptions\Domain\DomainException`.
 - `bootstrap/app.php` renders them in one place:
-  - Inertia or web request: redirect back with a flash error. The form field error is
-    set where one applies, for example `quantity` for `NotEnoughSeats`.
-  - JSON request: 422 with `{ message }`.
+    - Inertia or web request: redirect back with a flash error. The form field error is
+      set where one applies, for example `quantity` for `NotEnoughSeats`.
+    - JSON request: 422 with `{ message }`.
 - Authorization failures → 403 page. Missing models → 404 page. Rate limit → see
   section 6.
 - Queued notifications retry 3 times with backoff. Failed jobs go to the
@@ -224,6 +229,7 @@ Inertia pages, using the starter kit layout and shadcn/ui components:
 ## 10. Docker
 
 ### Image (`Dockerfile`, multi-stage)
+
 1. `vendor`: `composer install --no-dev --optimize-autoloader`.
 2. `assets`: Node + PHP, `npm ci && npm run build`. PHP is present because the
    starter kit's Vite plugin generates route types through `php artisan`.
@@ -235,23 +241,26 @@ Inertia pages, using the starter kit layout and shadcn/ui components:
    with a bind mount.
 
 ### Roles (entrypoint argument)
-| Command | Runs |
-|---|---|
-| `web` (default) | `php artisan optimize`, then supervisord (Nginx + PHP-FPM) |
-| `worker` | `php artisan queue:work redis --tries=3 --max-time=3600` |
-| `scheduler` | `php artisan schedule:work` |
-| `migrate` | `php artisan migrate --force` (one-off task before rollout) |
+
+| Command         | Runs                                                        |
+| --------------- | ----------------------------------------------------------- |
+| `web` (default) | `php artisan optimize`, then supervisord (Nginx + PHP-FPM)  |
+| `worker`        | `php artisan queue:work redis --tries=3 --max-time=3600`    |
+| `scheduler`     | `php artisan schedule:work`                                 |
+| `migrate`       | `php artisan migrate --force` (one-off task before rollout) |
 
 Config is cached at container start, not at build time, because environment variables
 are only known at runtime. Logs go to stderr (`LOG_CHANNEL=stderr`).
 
 ### Local development (`compose.yaml`)
+
 Services: `app` (dev target, bind mount, port 8080), `worker`, `scheduler`, `vite`
 (HMR on 5173), `postgres`, `redis`, `mailpit` (UI on 8025). Health checks gate
 startup with `depends_on: condition: service_healthy`. A `Makefile` wraps the common
 commands: `up`, `down`, `test`, `lint`, `fresh` (migrate + seed), `concurrency-test`.
 
 ### Seed data
+
 Demo users (`organizer@example.com`, `attendee@example.com`, `admin@example.com`, all
 with password `password`) and about 10 events in mixed states. The seeder refuses to run
 when `APP_ENV=production`.

@@ -47,10 +47,12 @@ Fortify, Wayfinder, Pest, Pint, Larastan, Laravel Boost.
 ### Task 1: Generate the starter kit and add it to the repository
 
 **Files:**
+
 - Create: all the files of the starter kit, at the root of the repository.
 - Modify: `.gitignore` and `README.md` (replaced by the starter kit versions).
 
 **Interfaces:**
+
 - Consumes: nothing.
 - Produces: a Laravel app at the repository root. Later PRs use `composer.json`,
   `package.json`, `.env.example`, `database/migrations/`, `app/Models/User.php` and
@@ -151,6 +153,7 @@ their own machine.
 ### Task 2: Update the handoff
 
 **Files:**
+
 - Modify: `HANDOFF.md`
 
 - [ ] **Step 1: Update "Where we are" and "Next steps"**
