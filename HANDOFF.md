@@ -20,8 +20,8 @@ System design phase. No application code exists yet.
 | 2 | Business rules | Done |
 | 3 | C4 level 1: system context | Done |
 | 4 | C4 level 2: containers | Done |
-| 5 | ERD, with space for future features | Next |
-| 6 | Sequence diagrams, one per action, a few actions per PR | Not started |
+| 5 | ERD, with space for future features | In review (PR #6) |
+| 6 | Sequence diagrams, one per action, a few actions per PR | Next |
 | 7 | Future features: payments, PDF tickets, file uploads, notifications for event changes | Not started |
 
 ## Decisions from the design sessions
@@ -37,15 +37,29 @@ System design phase. No application code exists yet.
 - C4 diagrams use Mermaid flowcharts in C4 style, not the Mermaid C4 syntax.
 - C4 level 2: the Web Frontend is a separate container. Migrate is shown as a one-off
   task. Redis is one container with four uses. Vite and Mailpit are not shown.
+- ERD: one diagram with v1 and future tables. Future tables end with "(future)".
+  Laravel tables `password_reset_tokens` and `failed_jobs` are in the diagram.
+  No `sessions`, `cache`, `cache_locks`, `jobs` or `job_batches` tables (Redis).
+- PDF tickets (future): one `tickets` row per seat, each with a check-in code.
+  One PDF per booking.
+- Payments (future): one price per event, in cents, with a currency code. New booking
+  status `pending_payment`. A `payments` table with one row per payment attempt.
+- File uploads (future): only the event cover image. No `files` table. The path is in
+  `events.cover_image_path`. The PDF path is in `bookings.tickets_pdf_path`.
+- The organizer can delete a draft event. No other deletes. No soft deletes (BR-E17).
+- Account deletion: blocked while the user has upcoming published events or confirmed
+  bookings. Otherwise the system deletes the drafts and anonymizes the user row
+  (BR-U1 to BR-U5, `users.anonymized_at`).
 
 ## Next steps
 
-1. Next design section: ERD, with space for future features.
+1. Wait for the owner to review and merge PR #6 (ERD), then sync.
+2. Next design section: sequence diagrams, one per action, a few actions per PR.
    Ask the open questions in chat first. Write the PR only after the owner answers.
-2. Then: sequence diagrams, then future features.
-3. When the owner approves the design, write the implementation plan in
+3. Then: future features.
+4. When the owner approves the design, write the implementation plan in
    `docs/superpowers/plans/`. Split the plan into small PRs.
-4. The owner reviews the plan and selects how to execute it.
+5. The owner reviews the plan and selects how to execute it.
 
 Do not scaffold the project, install dependencies or write app code before the owner
 approves the design and the plan.
