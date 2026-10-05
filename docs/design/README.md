@@ -14,7 +14,7 @@ scope. This folder gives the details.
 | 1 | Glossary | [glossary.md](glossary.md) | In review |
 | 2 | Business rules | [business-rules.md](business-rules.md) | In review |
 | 3 | C4 level 1: system context | [c4-context.md](c4-context.md) | In review |
-| 4 | C4 level 2: containers | — | Not started |
+| 4 | C4 level 2: containers | [c4-containers.md](c4-containers.md) | In review |
 | 5 | ERD | — | Not started |
 | 6 | Sequence diagrams, one per action | — | Not started |
 | 7 | Future features: payments, PDF tickets, file uploads, notifications for event changes | — | Not started |
