@@ -13,6 +13,16 @@ Milestone M1 (Foundation) has started. The design is complete.
   `.claude/`, `.agents/`, `.codex/`). Run `php artisan boost:install --no-interaction`
   after a fresh clone. Use the Boost guidelines and skills to write Laravel code.
 - The starter kit includes `.github/workflows/tests.yml`. It runs the tests on each PR.
+- The local stack runs with Docker Compose: `app` (port 8080), `vite` (5173),
+  `postgres` 18 (5432) and `mailpit` (web page on 8025). The app and the tests use
+  PostgreSQL. CI uses a PostgreSQL service container.
+- Run commands inside the `app` container, for example
+  `docker compose exec app php artisan test` and `docker compose exec app composer ci:check`.
+  On the host, the tests cannot reach the host name `postgres`.
+- First start after a clone: `cp .env.example .env`, `docker compose build`,
+  `docker compose run --rm app composer install`,
+  `docker compose run --rm app php artisan key:generate`, `docker compose up -d`,
+  `docker compose exec app php artisan migrate`.
 - The design spec is approved as a first version:
   `docs/superpowers/specs/2026-09-28-event-booking-design.md`
 - Repository: `git@github.com:Leonelmarianog/event-booking-system.git` (public).
@@ -87,13 +97,11 @@ Milestone M1 (Foundation) has started. The design is complete.
 
 ## Next steps
 
-1. Next M1 PR: the local stack. The Docker image (`dev` target) and `compose.yaml` with
-   `app`, `vite`, `postgres`, `redis` and `mailpit`. The app uses PostgreSQL. The tests
-   run against PostgreSQL, locally and in CI.
-2. Then: sessions, cache and queue on Redis, and the removal of the unused migrations
-   (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`). The `worker` and
-   `scheduler` services join Compose.
-3. Then: the `Makefile` (`up`, `down`, `test`, `lint`, `fresh`). Then M1 is complete.
+1. Next M1 PR: sessions, cache and queue on Redis, and the removal of the unused
+   migrations (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`). Add the
+   `redis` service, and the `worker` and `scheduler` services, to `compose.yaml`.
+2. Then: the `Makefile` (`up`, `down`, `test`, `lint`, `fresh`). Then M1 is complete.
+3. Then M2: the production image and the CI pipeline.
 4. The `users` columns come later: `is_admin` in M3, `anonymized_at` in M6.
 
 Write the plan of each PR first and get the owner's approval.
