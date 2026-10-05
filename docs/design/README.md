@@ -1,8 +1,7 @@
 # System Design
 
-This folder contains the design of the Event Booking system. The owner and Claude write
-it together, one section per PR. All text uses Simple English (ASD-STE100 rules).
-All diagrams use Mermaid.
+This folder contains the design of the Event Booking system. All text uses Simple
+English (ASD-STE100 rules). All diagrams use Mermaid.
 
 The design spec in `docs/superpowers/specs/` gives the first approved version of the
 scope. This folder gives the details.
