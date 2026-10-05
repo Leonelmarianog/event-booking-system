@@ -31,6 +31,7 @@ The column "Enforced by" tells which part of the code makes the rule true:
 | BR-E14 | A published event is visible to everyone, also to visitors. | Policy |
 | BR-E15 | A draft event is visible only to its organizer and to admins. | Policy |
 | BR-E16 | A cancelled event is visible to its organizer, to admins and to users who had a booking for the event. | Policy |
+| BR-E17 | The organizer can delete a draft event. Nobody can delete a published or cancelled event. | Policy, Model |
 
 ## Bookings
 
@@ -50,6 +51,16 @@ The column "Enforced by" tells which part of the code makes the rule true:
 | BR-B12 | After a user cancels a booking, the user can book the same event again. | Model, Database |
 | BR-B13 | A booking is visible to the attendee and to the organizer of the event. | Policy |
 | BR-B14 | Two users cannot book the same last seat. Only one booking succeeds. | Action (row lock), Database |
+
+## User accounts
+
+| ID | Rule | Enforced by |
+|---|---|---|
+| BR-U1 | A user cannot delete their account while they organize a published event that has not started. | Model |
+| BR-U2 | A user cannot delete their account while they hold a confirmed booking for an event that has not started. | Model |
+| BR-U3 | When a user deletes their account, the system deletes the draft events of the user. | Action |
+| BR-U4 | When a user deletes their account, the system keeps the user row, so that events and bookings keep their history. The system replaces the name with "Deleted user", replaces the email with a unique placeholder and removes the password. | Action |
+| BR-U5 | A deleted user cannot log in. | Model |
 
 ## Admins
 
@@ -81,6 +92,7 @@ stateDiagram-v2
     [*] --> Draft: create (BR-E1)
     Draft --> Published: publish (BR-E10)
     Draft --> Cancelled: cancel (BR-E12)
+    Draft --> [*]: delete (BR-E17)
     Published --> Cancelled: cancel (BR-E12, BR-E13)
     Cancelled --> [*]
 ```

@@ -11,6 +11,7 @@ Each term has one meaning in this design. The code uses the same names.
 | Organizer | The user who created an event. Each event has one organizer. | `Event.organizer_id` |
 | Attendee | A user who holds a booking for an event. | `Booking.user_id` |
 | Admin | A user with the admin flag. An admin can moderate events of other users. | `User.is_admin` |
+| Deleted user | A user who deleted their account. The system keeps the row without personal data (BR-U4). | `User.anonymized_at` |
 
 A user is not "an organizer" or "an attendee" for the whole system. The role depends on
 the event. The same user can organize one event and book seats for a different event.
