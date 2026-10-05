@@ -77,7 +77,7 @@ erDiagram
     tickets["tickets (future)"] {
         bigint id PK
         bigint booking_id FK "bookings.id"
-        string code UK "shown on the PDF, used at check-in"
+        string code UK "random, printed on the PDF as text and QR code"
         string status "valid, cancelled"
         timestamptz created_at
         timestamptz updated_at

@@ -22,7 +22,7 @@ System design phase. No application code exists yet.
 | 4 | C4 level 2: containers | Done |
 | 5 | ERD, with space for future features | Done |
 | 6 | Sequence diagrams | Moved to implementation: one `README.md` in each Action directory |
-| 7 | Future features, in three PRs: (a) payments and refunds, (b) PDF tickets and cover image, (c) event change emails and announcements | (a) in review (PR #8). (b) and (c) next |
+| 7 | Future features, in three PRs: (a) payments and refunds, (b) PDF tickets and cover image, (c) event change emails and announcements | (a) done. (b) in review (PR #9). (c) next |
 
 ## Decisions from the design sessions
 
@@ -59,10 +59,11 @@ System design phase. No application code exists yet.
   cancels 7 days or more before the start. Later cancellations free the seats with no
   refund. Refunds are tracked as `refund_pending`, then `refunded` or `refund_failed`.
   Admins see failed refunds.
-- PDF tickets (future, agreed, PR (b)): the Worker makes the PDF when the booking is
-  confirmed. Attached to the confirmation email and downloadable from "My bookings".
-  On cancel, the tickets are cancelled and the PDF is deleted.
-- Cover image (future, agreed, PR (b)): JPEG, PNG or WebP, max 2 MB. The organizer can
+- PDF tickets (future): the Worker makes the PDF when the booking is confirmed.
+  Attached to the confirmation email and downloadable from "My bookings" (attendee
+  only). One page per seat with a QR code. On cancel, the tickets are cancelled and
+  the PDF is deleted. Ticket check-in is out of scope.
+- Cover image (future): JPEG, PNG or WebP, max 2 MB. The organizer can
   replace or remove it until the event starts or is cancelled. No resize.
 - Event change emails (future, agreed, PR (c)): a change of start time or venue emails
   all attendees with a confirmed booking, after the commit.
@@ -77,10 +78,10 @@ System design phase. No application code exists yet.
 
 ## Next steps
 
-1. Wait for the owner to review and merge PR #8 (payments and refunds), then sync.
-2. Next PR: future features (b), PDF tickets and cover image. The decisions are above.
-   Add an `announcements` table to the ERD in PR (c).
-3. Then PR (c), event change emails and announcements. Then the design is complete.
+1. Wait for the owner to review and merge PR #9 (PDF tickets and cover image), then sync.
+2. Next PR: future features (c), event change emails and announcements. The decisions
+   are above. Add an `announcements` table to the ERD in this PR.
+3. Then the design is complete.
 4. When the owner approves the design, write the implementation plan in
    `docs/superpowers/plans/`. Split the plan into small PRs.
 5. The owner reviews the plan and selects how to execute it.
