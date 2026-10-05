@@ -15,7 +15,7 @@ DevOps practices in a realistic Laravel codebase:
 - One production Docker image, Docker Compose for local development, and CI that lints,
   tests, scans and publishes the image.
 
-The owner provides all external services (PostgreSQL, Redis, SMTP, container
+The operator of the deployment provides all external services (PostgreSQL, Redis, SMTP, container
 registry, hosting). The deliverable is a Docker image that runs against those
 services through environment variables.
 
@@ -268,7 +268,7 @@ The workflow runs on push and pull request:
 5. `concurrency`: boots the stack with Compose using the built image, runs the
    concurrency check.
 
-Deployment itself is out of scope. The owner pulls the image and runs the four roles on
+Deployment itself is out of scope. The operator pulls the image and runs the four roles on
 their infrastructure. The README documents the required environment variables.
 
 ## 12. Out of scope

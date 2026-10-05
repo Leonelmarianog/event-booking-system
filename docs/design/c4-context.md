@@ -53,7 +53,7 @@ flowchart TB
 
 | System | Status | Description | Protocol |
 |---|---|---|---|
-| Email Service | v1 | An SMTP server that the owner supplies. In local development, Mailpit is the SMTP server. | SMTP |
+| Email Service | v1 | An SMTP server that the operator of the deployment supplies. In local development, Mailpit is the SMTP server. | SMTP |
 | Payment Provider | Future | A payment service for paid tickets. The system creates a payment, and the provider sends the result back with a webhook. | HTTPS |
 | Object Storage | Future | An S3-compatible file store. It keeps files that users upload and the PDF tickets that the system makes. | HTTPS (S3 API) |
 
