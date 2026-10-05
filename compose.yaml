@@ -1,0 +1,73 @@
+name: event-booking
+
+x-app: &app
+    build:
+        context: .
+        target: dev
+        args:
+            UID: ${UID:-1000}
+            GID: ${GID:-1000}
+    image: event-booking:dev
+    volumes:
+        - .:/var/www/html
+        - node_modules:/var/www/html/node_modules
+    extra_hosts:
+        - host.docker.internal:host-gateway
+
+services:
+    app:
+        <<: *app
+        ports:
+            - 8080:8080
+        environment:
+            XDEBUG_MODE: ${XDEBUG_MODE:-off}
+        depends_on:
+            postgres:
+                condition: service_healthy
+            mailpit:
+                condition: service_healthy
+        healthcheck:
+            test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8080/up]
+            interval: 5s
+            timeout: 3s
+            retries: 20
+
+    vite:
+        <<: *app
+        command: sh -c "[ -x node_modules/.bin/vp ] || npm ci; npm run dev"
+        ports:
+            - 5173:5173
+        depends_on:
+            app:
+                condition: service_healthy
+
+    postgres:
+        image: postgres:18-alpine
+        environment:
+            POSTGRES_DB: event_booking
+            POSTGRES_USER: event_booking
+            POSTGRES_PASSWORD: secret
+        ports:
+            - 5432:5432
+        volumes:
+            - postgres:/var/lib/postgresql
+            - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+        healthcheck:
+            test: [CMD, pg_isready, -U, event_booking, -d, event_booking]
+            interval: 5s
+            timeout: 3s
+            retries: 20
+
+    mailpit:
+        image: axllent/mailpit:v1.31.4
+        ports:
+            - 8025:8025
+        healthcheck:
+            test: [CMD, /mailpit, readyz]
+            interval: 5s
+            timeout: 3s
+            retries: 20
+
+volumes:
+    node_modules:
+    postgres:
