@@ -9,23 +9,46 @@ System design phase. No application code exists yet.
 - The design spec is approved as a first version:
   `docs/superpowers/specs/2026-09-28-event-booking-design.md`
 - Repository: `git@github.com:Leonelmarianog/event-booking-system.git` (public).
-- We now write the detailed system design together with the owner, one section per PR.
+- We write the detailed system design in `docs/design/` together with the owner,
+  one section per PR.
+
+### Design progress
+
+| # | Section | Status |
+|---|---|---|
+| 1 | Glossary | Done |
+| 2 | Business rules | Done |
+| 3 | C4 level 1: system context | Done |
+| 4 | C4 level 2: containers | Done |
+| 5 | ERD, with space for future features | Next |
+| 6 | Sequence diagrams, one per action, a few actions per PR | Not started |
+| 7 | Future features: payments, PDF tickets, file uploads, notifications for event changes | Not started |
+
+## Decisions from the design sessions
+
+- Visitors can see published events. Booking requires a login.
+- Nobody can edit or cancel a started event.
+- Attendees can see a cancelled event.
+- The organizer can change the start time to a time in the future. No notification in v1.
+- No "past" event status.
+- The reminder for an event goes out one time only (`reminder_sent_at`).
+- Admins can see draft and cancelled events of all users.
+- C4 diagrams show future external systems and connections with dashed lines.
+- C4 diagrams use Mermaid flowcharts in C4 style, not the Mermaid C4 syntax.
+- C4 level 2: the Web Frontend is a separate container. Migrate is shown as a one-off
+  task. Redis is one container with four uses. Vite and Mailpit are not shown.
 
 ## Next steps
 
-1. Write the system design in `docs/design/`, one small PR per section:
-   1. Glossary and business rules.
-   2. C4 level 1 (system context).
-   3. C4 level 2 (containers).
-   4. ERD, with space for future features.
-   5. Sequence diagrams, one per action, a few actions per PR.
-   6. Future features: payments, PDF tickets, file uploads.
-2. When the owner approves the design, write the implementation plan in
+1. Next design section: ERD, with space for future features.
+   Ask the open questions in chat first. Write the PR only after the owner answers.
+2. Then: sequence diagrams, then future features.
+3. When the owner approves the design, write the implementation plan in
    `docs/superpowers/plans/`. Split the plan into small PRs.
-3. The owner reviews the plan and selects how to execute it.
+4. The owner reviews the plan and selects how to execute it.
 
-Do not scaffold the project, install dependencies or write app code before steps 1–3
-are complete.
+Do not scaffold the project, install dependencies or write app code before the owner
+approves the design and the plan.
 
 ## Working rules (from the owner)
 
@@ -40,6 +63,13 @@ are complete.
   you write code.
 - Write all design documents in Simple English (ASD-STE100 rules).
 - Write diagrams in Mermaid, inside Markdown files. GitHub shows them in the PR.
+  Render each diagram locally (`npx -y @mermaid-js/mermaid-cli`) before you push it.
+- Ask open questions in chat. Do not put open questions in a PR or a document.
+- Work on one PR at a time. Always branch from an up-to-date `main`. Do not stack PRs.
+- Update this handoff in the same PR as the work. Then stop.
+- Wait for the owner. The owner reviews, merges, and then asks you to sync.
+- When you sync, pull `main` and make sure that the merged content is on `main`.
+  Then start a new branch.
 
 ## Decisions already made (do not reopen)
 

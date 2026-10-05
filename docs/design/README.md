@@ -11,10 +11,10 @@ scope. This folder gives the details.
 
 | # | Section | File | Status |
 |---|---|---|---|
-| 1 | Glossary | [glossary.md](glossary.md) | In review |
-| 2 | Business rules | [business-rules.md](business-rules.md) | In review |
-| 3 | C4 level 1: system context | [c4-context.md](c4-context.md) | In review |
-| 4 | C4 level 2: containers | [c4-containers.md](c4-containers.md) | In review |
+| 1 | Glossary | [glossary.md](glossary.md) | Done |
+| 2 | Business rules | [business-rules.md](business-rules.md) | Done |
+| 3 | C4 level 1: system context | [c4-context.md](c4-context.md) | Done |
+| 4 | C4 level 2: containers | [c4-containers.md](c4-containers.md) | Done |
 | 5 | ERD | — | Not started |
 | 6 | Sequence diagrams, one per action | — | Not started |
 | 7 | Future features: payments, PDF tickets, file uploads, notifications for event changes | — | Not started |
