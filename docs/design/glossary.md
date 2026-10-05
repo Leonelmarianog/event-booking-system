@@ -48,7 +48,7 @@ the event. The same user can organize one event and book seats for a different e
 
 | Term | Meaning | In code |
 |---|---|---|
-| Action | One class that does one write operation. It controls the transaction, the locks and the notifications. | `app/Actions` |
+| Action | One class that does one use case, a read or a write. A write Action controls the transaction, the locks and the notifications. Each Action has its own directory with a `README.md`. | `app/Actions/<Name>/` |
 | Domain exception | An error that a business rule causes. The user sees a clear message. | `app/Exceptions/Domain` |
 | Notification | An email that the system sends to a user. A queue worker sends it. | `app/Notifications` |
 | Reminder | A notification that the system sends to attendees before the event starts. The system sends it one time for each event. | `EventReminder`, `Event.reminder_sent_at` |

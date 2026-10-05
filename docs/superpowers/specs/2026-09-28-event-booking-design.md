@@ -2,6 +2,7 @@
 
 Date: 2026-09-28
 Status: Approved as first version (2026-10-05)
+Revised: 2026-10-05. Actions for reads and writes, one directory per Action (sections 3 and 5).
 
 ## 1. Purpose
 
@@ -46,11 +47,18 @@ services through environment variables.
 Plain Laravel layout. Everything lives under `app/`. There are no repositories and no
 feature folders.
 
+Each use case is one Action, for reads and for writes. Each Action has its own
+directory directly under `app/Actions/`. The directory holds the Action class and a
+`README.md` with the sequence diagrams of the Action (one diagram for each outcome).
+The README is written in the same PR as the Action.
+
 ```
 app/
   Actions/
-    Events/{CreateEvent,UpdateEvent,PublishEvent,CancelEvent}.php
-    Bookings/{ReserveSeats,CancelBooking}.php
+    CreateEvent/{CreateEvent.php,README.md}
+    ReserveSeats/{ReserveSeats.php,README.md}
+    GetBookings/{GetBookings.php,README.md}
+    ...                    (one directory for each Action, see section 5)
   Enums/{EventStatus,BookingStatus}.php
   Exceptions/Domain/{DomainException,EventNotBookable,NotEnoughSeats,
                      AlreadyBooked,InvalidStateTransition,...}.php
@@ -70,13 +78,13 @@ app/
 | Layer | Owns | Must not |
 |---|---|---|
 | Model (`Event`, `Booking`) and enums | Business rules and state changes. Throws domain exceptions. Query scopes for reusable reads. | Know about HTTP, auth or transactions |
-| Action | Orchestration: transaction, row locks, calling model methods, dispatching notifications after commit | Contain business `if`s |
-| Controller | HTTP: calls an Action or runs a read query, returns an Inertia response or redirect | Contain business logic |
+| Action | One use case. Writes: transaction, row locks, calling model methods, dispatching notifications after commit. Reads: the query, through model scopes, and the data for the page | Contain business `if`s |
+| Controller | HTTP: calls one Action, returns an Inertia response or redirect | Contain business logic or queries |
 | FormRequest | Input validation, and authorization through the Policy | Contain business rules |
 | Policy | Who may do what | Check domain state that belongs in the model |
 
-Reads (lists, detail pages) go directly from controllers through model scopes such as
-`Event::published()->upcoming()`. Writes always go through an Action.
+Reads and writes always go through an Action. A read Action uses model scopes such as
+`Event::published()->upcoming()`.
 
 ## 4. Domain model
 
@@ -138,10 +146,19 @@ model methods call it before changing state and throw `InvalidStateTransition` o
 | Cancel event | `CancelEvent` | Transaction; lock the event row, cancel every confirmed booking | `EventCancelled` to each attendee |
 | Reserve seats | `ReserveSeats` | Transaction; lock the event row, `Event::reserve()` | `BookingConfirmed` to the attendee |
 | Cancel booking | `CancelBooking` | Transaction; lock the event row, then the booking row, `Booking::cancel()` | `BookingCancelled` to the attendee |
-| Send reminders (daily, scheduler) | `SendEventReminders` command | Read only | `EventReminder` to attendees of events starting in the next 24 hours |
+| Delete draft event | `DeleteEvent` | Single delete | None |
+| Delete account | `DeleteAccount` | Transaction; delete drafts, anonymize the user row | None |
+| Send reminders (daily, scheduler) | `SendEventReminders`, called by the `SendEventReminders` command | Transaction per event; set `reminder_sent_at` | `EventReminder` to attendees of events starting in the next 24 hours |
 
-Read-only pages: browse upcoming published events, event detail, "My bookings",
-"My events" (organizer view with attendee list).
+Read use cases. Each one is an Action that the controller calls:
+
+| Use case | Action |
+|---|---|
+| Browse upcoming published events | `GetUpcomingEvents` |
+| Event detail | `GetEvent` |
+| My bookings | `GetBookings` |
+| My events (organizer view) | `GetOrganizerEvents` |
+| Attendee list of one event | `GetEventAttendees` |
 
 ## 6. Security features
 

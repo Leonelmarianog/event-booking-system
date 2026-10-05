@@ -20,9 +20,9 @@ System design phase. No application code exists yet.
 | 2 | Business rules | Done |
 | 3 | C4 level 1: system context | Done |
 | 4 | C4 level 2: containers | Done |
-| 5 | ERD, with space for future features | In review (PR #6) |
-| 6 | Sequence diagrams, one per action, a few actions per PR | Next |
-| 7 | Future features: payments, PDF tickets, file uploads, notifications for event changes | Not started |
+| 5 | ERD, with space for future features | Done |
+| 6 | Sequence diagrams | Moved to implementation: one `README.md` in each Action directory |
+| 7 | Future features: payments, PDF tickets, file uploads, notifications for event changes | Next |
 
 ## Decisions from the design sessions
 
@@ -46,6 +46,12 @@ System design phase. No application code exists yet.
   status `pending_payment`. A `payments` table with one row per payment attempt.
 - File uploads (future): only the event cover image. No `files` table. The path is in
   `events.cover_image_path`. The PDF path is in `bookings.tickets_pdf_path`.
+- Every use case is an Action, for reads and for writes. Controllers call one Action
+  and contain no queries.
+- Each Action has its own directory directly under `app/Actions/` (no group folders).
+  The directory holds the class and a `README.md` with the sequence diagrams.
+- The Action README is written in the same PR as the Action code, never before.
+  One diagram for each outcome. No `alt` blocks. No diagrams for future features.
 - The organizer can delete a draft event. No other deletes. No soft deletes (BR-E17).
 - Account deletion: blocked while the user has upcoming published events or confirmed
   bookings. Otherwise the system deletes the drafts and anonymizes the user row
@@ -53,10 +59,10 @@ System design phase. No application code exists yet.
 
 ## Next steps
 
-1. Wait for the owner to review and merge PR #6 (ERD), then sync.
-2. Next design section: sequence diagrams, one per action, a few actions per PR.
-   Ask the open questions in chat first. Write the PR only after the owner answers.
-3. Then: future features.
+1. Wait for the owner to review and merge PR #7 (Actions for reads and writes), then sync.
+2. Next design section: future features (payments, PDF tickets, file uploads,
+   notifications for event changes). Ask the open questions in chat first.
+3. Then the design is complete.
 4. When the owner approves the design, write the implementation plan in
    `docs/superpowers/plans/`. Split the plan into small PRs.
 5. The owner reviews the plan and selects how to execute it.
@@ -93,7 +99,7 @@ approves the design and the plan.
 | App | Event booking with limited seats (free tickets). |
 | Stack | Laravel + Inertia + React (TypeScript), official React starter kit, session auth. |
 | Structure | Plain Laravel layout, everything under `app/`. No repositories. |
-| Business logic | Rich domain model: rules live in Eloquent models and enums. Actions in `app/Actions` control the flow (transactions, locks, dispatch). Controllers do HTTP only. |
+| Business logic | Rich domain model: rules live in Eloquent models and enums. Each use case, read or write, is one Action in its own directory `app/Actions/<Name>/`. Actions control the flow (transactions, locks, dispatch). Controllers do HTTP only. |
 | Runtime | Nginx + PHP-FPM in one container (supervisord). |
 | Database | PostgreSQL. Redis for queue, cache, sessions and rate limits. |
 | Deployment | One Docker image with roles `web`, `worker`, `scheduler`, `migrate`. The owner supplies all external services. Docker Compose for local development. |
