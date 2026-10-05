@@ -4,13 +4,22 @@ Last updated: 2026-10-05
 
 ## Where we are
 
-System design phase. No application code exists yet.
+Milestone M1 (Foundation) has started. The design is complete.
 
+- The Laravel React starter kit is installed without changes: Laravel 13, Inertia 3,
+  React 19, Fortify, Wayfinder, Pest, Pint, Larastan, Laravel Boost. The database is
+  still SQLite. The `README.md` is the one of the starter kit.
+- Boost files are local to each machine (`AGENTS.md`, `boost.json`, `.mcp.json`,
+  `.claude/`, `.agents/`, `.codex/`). Run `php artisan boost:install --no-interaction`
+  after a fresh clone. Use the Boost guidelines and skills to write Laravel code.
+- `.codex/` is excluded only in `.git/info/exclude` on this machine. The next PR adds
+  `/.codex` to `.gitignore`.
+- The starter kit includes `.github/workflows/tests.yml`. It runs the tests on each PR.
 - The design spec is approved as a first version:
   `docs/superpowers/specs/2026-09-28-event-booking-design.md`
 - Repository: `git@github.com:Leonelmarianog/event-booking-system.git` (public).
-- We write the detailed system design in `docs/design/` together with the owner,
-  one section per PR.
+- The system design is in `docs/design/`. The milestones are in
+  `docs/superpowers/plans/milestones.md`.
 
 ### Design progress
 
@@ -80,13 +89,13 @@ System design phase. No application code exists yet.
 
 ## Next steps
 
-The system design is complete.
-
-1. The owner reviews the milestones in `docs/superpowers/plans/milestones.md`.
-2. Start M1. Before each PR, write a detailed plan for that PR only, and get the
-   owner's approval. Do not list or estimate all the PRs.
-3. The first PR of M1 contains only the Laravel React starter kit, without changes.
-   Our changes to the starter kit come in later PRs.
+1. Next M1 PR: our changes to the starter kit. PostgreSQL and Redis, removal of the
+   unused migrations (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`), and
+   the columns `is_admin` and `anonymized_at` on `users`. Also add `/.codex` to
+   `.gitignore`, and remove `pnpm-workspace.yaml` (the project uses npm). Write its
+   plan first and get the owner's approval.
+2. Then the rest of M1: Docker image (`dev` target), `compose.yaml`, quality tools,
+   `Makefile`.
 
 Execution: Claude writes each PR. The owner reviews. Tests come first, and each test
 name gives its rule ID.
