@@ -55,6 +55,7 @@ erDiagram
         smallint quantity "1 to 4"
         string status "confirmed, cancelled, FUTURE: pending_payment"
         timestamptz cancelled_at "nullable"
+        timestamptz payment_expires_at "FUTURE: set only for pending_payment"
         string tickets_pdf_path "FUTURE: path in Object Storage, nullable"
         timestamptz created_at
         timestamptz updated_at
@@ -67,7 +68,8 @@ erDiagram
         string provider_payment_id UK "ID from the provider"
         integer amount "cents"
         string currency "ISO 4217 code"
-        string status "pending, succeeded, failed, refunded"
+        string status "pending, succeeded, failed, expired, refund_pending, refunded, refund_failed"
+        timestamptz refunded_at "nullable"
         timestamptz created_at
         timestamptz updated_at
     }
@@ -138,7 +140,7 @@ same rules first, so that the user sees a clear message.
 
 When payments come, the partial unique index on `bookings` must also include the status
 `pending_payment`. Then a user cannot start a second booking while the first one waits
-for payment.
+for payment (BR-P10).
 
 ## Indexes
 

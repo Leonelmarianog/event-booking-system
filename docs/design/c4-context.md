@@ -26,8 +26,8 @@ flowchart TB
 
     system -->|"Sends emails<br/>[SMTP]"| email
 
-    system -.->|"Creates payments<br/>[HTTPS]"| payment
-    payment -.->|"Sends payment results<br/>[HTTPS webhook]"| system
+    system -.->|"Creates payments and refunds<br/>[HTTPS]"| payment
+    payment -.->|"Sends payment and refund results<br/>[HTTPS webhook]"| system
     system -.->|"Writes and reads files<br/>[HTTPS, S3 API]"| storage
 
     classDef person fill:#08427b,stroke:#052e56,color:#ffffff
