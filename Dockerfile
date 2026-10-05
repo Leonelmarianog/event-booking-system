@@ -42,4 +42,7 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 
 COPY docker/php/xdebug.ini /usr/local/etc/php/conf.d/zz-xdebug.ini
 
+# The node_modules volume copies the owner of this directory when Docker creates it.
+RUN mkdir -p /var/www/html/node_modules && chown app:app /var/www/html/node_modules
+
 USER app
