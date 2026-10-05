@@ -80,11 +80,16 @@ System design phase. No application code exists yet.
 
 ## Next steps
 
-1. Wait for the owner to review and merge PR #10 (event change emails and
-   announcements), then sync. After this PR, the design is complete.
-2. Write the implementation plan in `docs/superpowers/plans/`. Ask the open questions
-   in chat first. Split the plan into small PRs. Each Action PR includes its README.
-3. The owner reviews the plan and selects how to execute it.
+The system design is complete.
+
+1. The owner reviews the milestones in `docs/superpowers/plans/milestones.md`.
+2. Start M1. Before each PR, write a detailed plan for that PR only, and get the
+   owner's approval. Do not list or estimate all the PRs.
+3. The first PR of M1 contains only the Laravel React starter kit, without changes.
+   Our changes to the starter kit come in later PRs.
+
+Execution: Claude writes each PR. The owner reviews. Tests come first, and each test
+name gives its rule ID.
 
 Do not scaffold the project, install dependencies or write app code before the owner
 approves the design and the plan.
@@ -98,6 +103,9 @@ approves the design and the plan.
 - Write PR descriptions in plain text, with the same structure every time.
   Each description tells clearly what the PR changes.
 - Do not add "Generated with Claude Code" or "Co-Authored-By" lines to commits or PRs.
+- Do not push or open a PR before the owner approves the local changes. Commit on a
+  local branch, show the changes, and wait.
+- Each `git push` asks the owner for a code. Tell the owner before each push.
 - The owner must own and understand the code. Design each part with the owner before
   you write code.
 - Write all design documents in Simple English (ASD-STE100 rules).
