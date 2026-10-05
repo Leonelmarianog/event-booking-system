@@ -13,8 +13,6 @@ erDiagram
     events ||--o{ bookings : "has"
     bookings ||--o{ payments : "is paid by"
     bookings ||--o{ tickets : "contains"
-    events ||--o| files : "has cover image"
-    bookings ||--o| files : "has PDF tickets"
 
     users {
         bigint id PK
@@ -44,6 +42,7 @@ erDiagram
         timestamptz reminder_sent_at "nullable"
         integer price_amount "FUTURE: cents, default 0"
         string price_currency "FUTURE: ISO 4217 code, nullable"
+        string cover_image_path "FUTURE: path in Object Storage, nullable"
         timestamptz created_at
         timestamptz updated_at
     }
@@ -56,6 +55,7 @@ erDiagram
         smallint quantity "1 to 4"
         string status "confirmed, cancelled, FUTURE: pending_payment"
         timestamptz cancelled_at "nullable"
+        string tickets_pdf_path "FUTURE: path in Object Storage, nullable"
         timestamptz created_at
         timestamptz updated_at
     }
@@ -77,19 +77,6 @@ erDiagram
         bigint booking_id FK "bookings.id"
         string code UK "shown on the PDF, used at check-in"
         string status "valid, cancelled"
-        timestamptz created_at
-        timestamptz updated_at
-    }
-
-    files["files (future)"] {
-        bigint id PK
-        string owner_type "events or bookings"
-        bigint owner_id "id in the owner table"
-        string purpose "event_cover, ticket_pdf"
-        string disk "storage name in Laravel"
-        string path
-        string mime_type
-        integer size_bytes
         timestamptz created_at
         timestamptz updated_at
     }
@@ -122,7 +109,6 @@ erDiagram
 | `failed_jobs` | v1 | Laravel table. The Worker writes a job here when the job fails three times. |
 | `payments` | Future | One row for each payment attempt. A booking can have more than one attempt, for example after a failed card payment. |
 | `tickets` | Future | One row for each seat in a booking. Each ticket has a unique code for check-in. |
-| `files` | Future | One row for each file in the Object Storage. A file belongs to an event (cover image) or to a booking (PDF tickets). |
 
 ## Relationships
 
@@ -133,7 +119,6 @@ erDiagram
 | `bookings.event_id` | `events.id` | Many bookings to one event | Restrict. Only a draft event can be deleted, and a draft event has no bookings (BR-E17, BR-B2). |
 | `payments.booking_id` | `bookings.id` | Many payments to one booking | Restrict. |
 | `tickets.booking_id` | `bookings.id` | Many tickets to one booking | Restrict. |
-| `files.owner_type`, `files.owner_id` | `events.id` or `bookings.id` | Polymorphic. One file to one owner | No foreign key. The Action that deletes a draft event also deletes its files. |
 
 ## Constraints
 
@@ -169,6 +154,20 @@ for payment.
 Redis keeps the sessions, the cache and the queue (see the C4 level 2 diagram). As a
 result, we remove these default Laravel migrations: `sessions`, `cache`, `cache_locks`,
 `jobs` and `job_batches`.
+
+## Files
+
+The future files are in the Object Storage. The database keeps only the path of each
+file, in a column of the table that owns the file:
+
+| Column | File |
+|---|---|
+| `events.cover_image_path` | The cover image of the event. One image for each event. |
+| `bookings.tickets_pdf_path` | The PDF with all the tickets of the booking. One PDF for each booking. |
+
+There is no separate table for files. Each owner has at most one file of each kind, so a
+column is sufficient. The Action that deletes a draft event also deletes its cover
+image in the Object Storage.
 
 ## Money
 

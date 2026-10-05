@@ -44,8 +44,8 @@ System design phase. No application code exists yet.
   One PDF per booking.
 - Payments (future): one price per event, in cents, with a currency code. New booking
   status `pending_payment`. A `payments` table with one row per payment attempt.
-- File uploads (future): only the event cover image. A polymorphic `files` table,
-  also used for the PDF tickets.
+- File uploads (future): only the event cover image. No `files` table. The path is in
+  `events.cover_image_path`. The PDF path is in `bookings.tickets_pdf_path`.
 - The organizer can delete a draft event. No other deletes. No soft deletes (BR-E17).
 - Account deletion: blocked while the user has upcoming published events or confirmed
   bookings. Otherwise the system deletes the drafts and anonymizes the user row
