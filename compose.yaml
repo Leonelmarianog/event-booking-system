@@ -13,6 +13,13 @@ x-app: &app
         - node_modules:/var/www/html/node_modules
     extra_hosts:
         - host.docker.internal:host-gateway
+    depends_on:
+        postgres:
+            condition: service_healthy
+        redis:
+            condition: service_healthy
+        mailpit:
+            condition: service_healthy
 
 services:
     app:
@@ -21,11 +28,6 @@ services:
             - 8080:8080
         environment:
             XDEBUG_MODE: ${XDEBUG_MODE:-off}
-        depends_on:
-            postgres:
-                condition: service_healthy
-            mailpit:
-                condition: service_healthy
         healthcheck:
             test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8080/up]
             interval: 5s
@@ -40,6 +42,14 @@ services:
         depends_on:
             app:
                 condition: service_healthy
+
+    worker:
+        <<: *app
+        command: php artisan queue:listen --tries=1
+
+    scheduler:
+        <<: *app
+        command: php artisan schedule:work
 
     postgres:
         image: postgres:18-alpine
@@ -58,6 +68,18 @@ services:
             timeout: 3s
             retries: 20
 
+    redis:
+        image: redis:8-alpine
+        ports:
+            - 6379:6379
+        volumes:
+            - redis:/data
+        healthcheck:
+            test: [CMD, redis-cli, ping]
+            interval: 5s
+            timeout: 3s
+            retries: 20
+
     mailpit:
         image: axllent/mailpit:v1.31.4
         ports:
@@ -71,3 +93,4 @@ services:
 volumes:
     node_modules:
     postgres:
+    redis:
