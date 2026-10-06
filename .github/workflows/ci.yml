@@ -59,6 +59,10 @@ jobs:
       - name: TypeScript
         run: npm run types:check
 
+      # Trivy cannot see the npm packages inside the SSR bundle, so this step checks them.
+      - name: npm audit (production packages)
+        run: npm audit --omit=dev --audit-level=high
+
   test:
     runs-on: ubuntu-latest
 
