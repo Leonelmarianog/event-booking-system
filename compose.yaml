@@ -36,12 +36,25 @@ services:
 
     vite:
         <<: *app
-        command: sh -c "[ -x node_modules/.bin/vp ] || npm ci; npm run dev"
+        command: sh -c "[ node_modules/.package-lock.json -nt package-lock.json ] || npm ci; npm run dev"
         ports:
             - 5173:5173
         depends_on:
             app:
                 condition: service_healthy
+        healthcheck:
+            test:
+                [
+                    CMD,
+                    wget,
+                    -q,
+                    -O,
+                    /dev/null,
+                    http://127.0.0.1:5173/@vite/client,
+                ]
+            interval: 5s
+            timeout: 3s
+            retries: 60
 
     worker:
         <<: *app
