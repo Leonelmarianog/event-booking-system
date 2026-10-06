@@ -6,9 +6,9 @@ Last updated: 2026-10-06
 
 Milestone M1 (Foundation) has started. The design is complete.
 
-The current PR (`build/redis`) keeps the sessions, the cache, the rate limits and the
-queue in Redis, and adds the `redis`, `worker` and `scheduler` services. Its plan is
-`docs/superpowers/plans/2026-10-06-m1-redis.md`. It waits for the review of the owner.
+The current PR (`build/makefile`) adds a `Makefile` for the local stack. It is the last
+PR of M1. Its plan is `docs/superpowers/plans/2026-10-06-m1-makefile.md`. It waits for
+the review of the owner.
 
 - The Laravel React starter kit is installed without changes: Laravel 13, Inertia 3,
   React 19, Fortify, Wayfinder, Pest, Pint, Larastan, Laravel Boost. The `README.md` is the one of the starter kit.
@@ -22,13 +22,13 @@ queue in Redis, and adds the `redis`, `worker` and `scheduler` services. Its pla
   PostgreSQL. CI uses a PostgreSQL service container.
 - Sessions, cache, rate limits and the queue use Redis. Failed jobs and job batches use
   PostgreSQL. The tests use the `array` and `sync` drivers, so CI needs no Redis.
-- Run commands inside the `app` container, for example
-  `docker compose exec app php artisan test` and `docker compose exec app composer ci:check`.
-  On the host, the tests cannot reach the host name `postgres`.
-- First start after a clone: `cp .env.example .env`, `docker compose build`,
-  `docker compose run --rm app composer install`,
-  `docker compose run --rm app php artisan key:generate`, `docker compose up -d`,
-  `docker compose exec app php artisan migrate`.
+- Use the `Makefile` for the usual tasks: `make setup` (first start after a clone),
+  `make up`, `make down`, `make test`, `make lint` and `make fresh`. Run `make` to see
+  the list. The `Makefile` passes the UID and GID of the host user to Compose.
+- Run other commands inside the `app` container, for example
+  `docker compose exec app composer ci:check`. On the host, the tests cannot reach the
+  host name `postgres`.
+- The `vite` service runs `npm ci` again when `package-lock.json` changes.
 - The design spec is approved as a first version:
   `docs/superpowers/specs/2026-09-28-event-booking-design.md`
 - Repository: `git@github.com:Leonelmarianog/event-booking-system.git` (public).
@@ -105,14 +105,11 @@ queue in Redis, and adds the `redis`, `worker` and `scheduler` services. Its pla
 
 ## Next steps
 
-1. The owner reviews the `build/redis` PR and merges it, then asks for a sync.
-2. Then: the `Makefile` (`up`, `down`, `test`, `lint`, `fresh`). Then M1 is complete.
-   Fix these known small problems from the review of PR #14 in the same PR:
-    - Bash does not export `UID` and `GID`, so Compose always uses `1000`. The
-      `Makefile` must pass `UID=$(id -u) GID=$(id -g)`.
-    - The `vite` service runs `npm ci` only when `node_modules/.bin/vp` is missing.
-      After a change to `package-lock.json`, the volume keeps old packages.
-    - Hot reload was checked through the asset URLs, not with a change in a browser.
+1. The owner reviews the `build/makefile` PR. The owner also checks hot reload in a
+   browser: a change in a `.tsx` file shows without a page reload. Then the owner merges
+   the PR and asks for a sync. Then M1 is complete.
+2. Then a small PR: turn off email verification, as the v1 scope says. Now the
+   dashboard of the starter kit sends a new user to `/email/verify`.
 3. Then M2: the production image and the CI pipeline. Production uses `queue:work`.
 4. The `users` columns come later: `is_admin` in M3, `anonymized_at` in M6.
 
