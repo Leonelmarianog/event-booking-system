@@ -28,6 +28,7 @@ services:
             - 8080:8080
         environment:
             XDEBUG_MODE: ${XDEBUG_MODE:-off}
+            INERTIA_SSR_HOT_URL: http://vite:5173
         healthcheck:
             test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8080/up]
             interval: 5s
