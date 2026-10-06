@@ -10,19 +10,19 @@ const options: Intl.DateTimeFormatOptions = {
     timeZoneName: 'short',
 };
 
-function format(value: string, timeZone?: string): string {
-    return new Intl.DateTimeFormat(undefined, { ...options, timeZone }).format(
+function format(value: string, locale?: string, timeZone?: string): string {
+    return new Intl.DateTimeFormat(locale, { ...options, timeZone }).format(
         new Date(value),
     );
 }
 
 /**
- * Shows a date and time in the time zone of the viewer. The server renders the
- * page in UTC, so the first render uses UTC on both sides. After the page loads in
- * the browser, the component changes to the local time zone.
+ * Shows a date and time in the locale and time zone of the viewer. The server
+ * cannot know them, so the first render uses en-US and UTC on both sides. After the
+ * page loads in the browser, the component changes to the local format.
  */
 export function LocalDateTime({ value }: { value: string }) {
-    const [text, setText] = useState(() => format(value, 'UTC'));
+    const [text, setText] = useState(() => format(value, 'en-US', 'UTC'));
 
     useEffect(() => {
         setText(format(value));

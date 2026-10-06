@@ -58,6 +58,9 @@ sequenceDiagram
 
 ## The event does not exist
 
+The route accepts only numeric IDs. For an ID that is not a number, for example
+`/events/abc`, the router gives the 404 page before it reads the database.
+
 ```mermaid
 sequenceDiagram
     participant Browser

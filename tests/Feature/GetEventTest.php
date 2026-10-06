@@ -106,3 +106,7 @@ test('BR-A4: an admin can see the draft and cancelled events of other users', fu
 test('an event that does not exist gives a 404', function () {
     $this->get('/events/999999')->assertNotFound();
 });
+
+test('an event ID that is not a number gives a 404', function () {
+    $this->get('/events/abc')->assertNotFound();
+});
