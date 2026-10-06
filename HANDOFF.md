@@ -20,10 +20,15 @@ M3 is split into eight PRs, in this order:
 7. `DeleteEvent`.
 8. `GetUpcomingEvents`: the public `events/index` page.
 
-The current PR (`feat/events-and-policy`) is PR 1. Its plan is
-`docs/superpowers/plans/2026-10-06-m3-events-and-policy.md`. It waits for the review of
-the owner.
+PR 1 is merged. The current PR (`feat/get-event`) is PR 2. Its plan is
+`docs/superpowers/plans/2026-10-06-m3-get-event.md`. It waits for the review of the
+owner.
 
+- A person who cannot see an event gets a 404 page, not a 403 page
+  (`Response::denyAsNotFound()` in `EventPolicy::view`).
+- Visitors see "Log in" and "Register" links in the sidebar footer.
+- The development database has test data: the user `organizer@example.com` (password
+  `password`), a published event (ID 1) and a draft event (ID 2).
 - The `events` table has only the columns that M3 uses. `cancelled_at` comes in M4,
   `reminder_sent_at` comes with the reminders.
 - A model method that changes state comes in the PR of the Action that uses it.
@@ -157,8 +162,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/events-and-policy` PR, merges it, and asks for a sync.
-2. Then M3 PR 2 (`GetEvent`). Write its plan first.
+1. The owner reviews the `feat/get-event` PR, merges it, and asks for a sync.
+2. Then M3 PR 3 (`CreateEvent`). Write its plan first.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.

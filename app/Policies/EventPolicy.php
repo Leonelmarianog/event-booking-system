@@ -4,23 +4,25 @@ namespace App\Policies;
 
 use App\Models\Event;
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 
 class EventPolicy
 {
     /**
      * BR-E14, BR-E15, BR-E16 and BR-A4. Attendees of a cancelled event come in M4.
+     * A person who cannot see the event gets a 404, so that hidden events stay unknown.
      */
-    public function view(?User $user, Event $event): bool
+    public function view(?User $user, Event $event): Response
     {
         if ($event->isPublished()) {
-            return true;
+            return Response::allow();
         }
 
-        if ($user === null) {
-            return false;
+        if ($user !== null && ($user->is_admin || $event->isOrganizedBy($user))) {
+            return Response::allow();
         }
 
-        return $user->is_admin || $event->isOrganizedBy($user);
+        return Response::denyAsNotFound();
     }
 
     /**
