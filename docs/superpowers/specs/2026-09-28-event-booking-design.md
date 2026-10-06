@@ -196,7 +196,8 @@ Read use cases. Each one is an Action that the controller calls:
     - Inertia or web request: redirect back with a flash error. The form field error is
       set where one applies, for example `quantity` for `NotEnoughSeats`.
     - JSON request: 422 with `{ message }`.
-- Authorization failures → 403 page. Missing models → 404 page. Rate limit → see
+- Authorization failures → 403 page. Missing models → 404 page. An event that the
+  viewer cannot see → 404 page, so that hidden events stay unknown. Rate limit → see
   section 6.
 - Queued notifications retry 3 times with backoff. Failed jobs go to the
   `failed_jobs` table.
