@@ -149,3 +149,9 @@ test('BR-E17: nobody can delete a published or cancelled event', function () {
     expect($this->organizer->can('delete', $published))->toBeFalse()
         ->and($this->organizer->can('delete', $cancelled))->toBeFalse();
 });
+
+test('BR-E5: nobody can edit a draft event that has started', function () {
+    $event = Event::factory()->started()->for($this->organizer, 'organizer')->create();
+
+    expect($this->organizer->can('update', $event))->toBeFalse();
+});

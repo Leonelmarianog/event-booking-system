@@ -36,6 +36,7 @@ class Event extends Model
     protected function casts(): array
     {
         return [
+            'organizer_id' => 'integer',
             'starts_at' => 'datetime',
             'published_at' => 'datetime',
             'status' => EventStatus::class,

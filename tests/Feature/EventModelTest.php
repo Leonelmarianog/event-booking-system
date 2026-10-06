@@ -42,3 +42,11 @@ test('BR-E4: an event knows its organizer', function () {
     expect($event->isOrganizedBy($organizer))->toBeTrue()
         ->and($event->isOrganizedBy(User::factory()->create()))->toBeFalse();
 });
+
+test('BR-E4: an event knows its organizer when the organizer ID is a string', function () {
+    $organizer = User::factory()->create();
+    $event = new Event;
+    $event->organizer_id = (string) $organizer->id;
+
+    expect($event->isOrganizedBy($organizer))->toBeTrue();
+});
