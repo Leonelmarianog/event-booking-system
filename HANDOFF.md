@@ -12,6 +12,26 @@ roles and scans the image with Trivy. It is the last PR of M2. Its plan is
 `docs/superpowers/plans/2026-10-06-m2-image-build-scan.md`. It waits for the review of
 the owner.
 
+**Paused on 2026-10-06.** PR #19 is open. The SSH client of the owner stopped working,
+so the last push did not happen. The state of the branch:
+
+- On GitHub, the branch has two temporary commits on top of `7942f5a`: `d46612e` and
+  `83e76e5` ("chore: measure the build cache", they add a comment to
+  `routes/console.php`). They must not be merged.
+- The local branch does not have these two commits. It has one more commit: this
+  handoff update.
+- First step of the next session: tell the owner about the push (it asks for a code),
+  then run `git push --force-with-lease`. This removes the temporary commits from the
+  PR. Then check that CI passes and that `routes/console.php` is the same as on `main`.
+
+Build times of the `image` job (measured on PR #19): 308 s with an empty cache, 64 s for
+a re-run with the same code, 129 s and 141 s after a change to one comment. The commit
+`7942f5a` installs the npm packages before the app is copied, so the cache upload is
+12 s instead of 125 s. But `composer install`, `npm ci` and the copy of the entrypoint
+scripts run again on each run, also when their inputs do not change. The cause is not
+known. The owner and Claude agreed to stop the investigation. A later PR can try an
+other cache method (for example `actions/cache` with a local BuildKit cache).
+
 - The Laravel React starter kit is installed without changes: Laravel 13, Inertia 3,
   React 19, Fortify, Wayfinder, Pest, Pint, Larastan, Laravel Boost. The `README.md` is the one of the starter kit.
 - Boost files are local to each machine (`AGENTS.md`, `boost.json`, `.mcp.json`,
