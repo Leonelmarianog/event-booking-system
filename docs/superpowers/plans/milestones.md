@@ -23,8 +23,7 @@ of v1.
 **Scope:**
 
 - The official Laravel React starter kit, installed without changes in its own PR.
-- Our changes to the starter kit, in later PRs: PostgreSQL and Redis, and the removal
-  of the unused migrations (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`).
+- Our changes to the starter kit, in later PRs: PostgreSQL and Redis.
 - The Docker image (`dev` target) and `compose.yaml` with `app`, `worker`, `scheduler`,
   `vite`, `postgres`, `redis` and `mailpit`.
 - The quality tools of the starter kit (Pest, Pint, Larastan, `vp check`,

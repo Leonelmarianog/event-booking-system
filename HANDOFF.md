@@ -1,21 +1,27 @@
 # Handoff — Event Booking Demo
 
-Last updated: 2026-10-05
+Last updated: 2026-10-06
 
 ## Where we are
 
 Milestone M1 (Foundation) has started. The design is complete.
 
+The current PR (`build/redis`) keeps the sessions, the cache, the rate limits and the
+queue in Redis, and adds the `redis`, `worker` and `scheduler` services. Its plan is
+`docs/superpowers/plans/2026-10-06-m1-redis.md`. It waits for the review of the owner.
+
 - The Laravel React starter kit is installed without changes: Laravel 13, Inertia 3,
-  React 19, Fortify, Wayfinder, Pest, Pint, Larastan, Laravel Boost. The database is
-  still SQLite. The `README.md` is the one of the starter kit.
+  React 19, Fortify, Wayfinder, Pest, Pint, Larastan, Laravel Boost. The `README.md` is the one of the starter kit.
 - Boost files are local to each machine (`AGENTS.md`, `boost.json`, `.mcp.json`,
   `.claude/`, `.agents/`, `.codex/`). Run `php artisan boost:install --no-interaction`
   after a fresh clone. Use the Boost guidelines and skills to write Laravel code.
 - The starter kit includes `.github/workflows/tests.yml`. It runs the tests on each PR.
 - The local stack runs with Docker Compose: `app` (port 8080), `vite` (5173),
-  `postgres` 18 (5432) and `mailpit` (web page on 8025). The app and the tests use
+  `worker` (`queue:listen`), `scheduler` (`schedule:work`), `postgres` 18 (5432),
+  `redis` 8 (6379) and `mailpit` (web page on 8025). The app and the tests use
   PostgreSQL. CI uses a PostgreSQL service container.
+- Sessions, cache, rate limits and the queue use Redis. Failed jobs and job batches use
+  PostgreSQL. The tests use the `array` and `sync` drivers, so CI needs no Redis.
 - Run commands inside the `app` container, for example
   `docker compose exec app php artisan test` and `docker compose exec app composer ci:check`.
   On the host, the tests cannot reach the host name `postgres`.
@@ -56,7 +62,9 @@ Milestone M1 (Foundation) has started. The design is complete.
   task. Redis is one container with four uses. Vite and Mailpit are not shown.
 - ERD: one diagram with v1 and future tables. Future tables end with "(future)".
   Laravel tables `password_reset_tokens` and `failed_jobs` are in the diagram.
-  No `sessions`, `cache`, `cache_locks`, `jobs` or `job_batches` tables (Redis).
+  The tables `sessions`, `cache`, `cache_locks`, `jobs` and `job_batches` are not in
+  the diagram. Their migrations stay: the first four tables stay empty with the Redis
+  drivers, and Laravel keeps job batches in the database with all queue drivers.
 - PDF tickets (future): one `tickets` row per seat, each with a check-in code.
   One PDF per booking.
 - Payments (future): one price per event, in cents, with a currency code. New booking
@@ -97,11 +105,15 @@ Milestone M1 (Foundation) has started. The design is complete.
 
 ## Next steps
 
-1. Next M1 PR: sessions, cache and queue on Redis, and the removal of the unused
-   migrations (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`). Add the
-   `redis` service, and the `worker` and `scheduler` services, to `compose.yaml`.
+1. The owner reviews the `build/redis` PR and merges it, then asks for a sync.
 2. Then: the `Makefile` (`up`, `down`, `test`, `lint`, `fresh`). Then M1 is complete.
-3. Then M2: the production image and the CI pipeline.
+   Fix these known small problems from the review of PR #14 in the same PR:
+    - Bash does not export `UID` and `GID`, so Compose always uses `1000`. The
+      `Makefile` must pass `UID=$(id -u) GID=$(id -g)`.
+    - The `vite` service runs `npm ci` only when `node_modules/.bin/vp` is missing.
+      After a change to `package-lock.json`, the volume keeps old packages.
+    - Hot reload was checked through the asset URLs, not with a change in a browser.
+3. Then M2: the production image and the CI pipeline. Production uses `queue:work`.
 4. The `users` columns come later: `is_admin` in M3, `anonymized_at` in M6.
 
 Write the plan of each PR first and get the owner's approval.
