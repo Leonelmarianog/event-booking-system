@@ -36,7 +36,7 @@ services:
 
     vite:
         <<: *app
-        command: sh -c "[ -x node_modules/.bin/vp ] || npm ci; npm run dev"
+        command: sh -c "[ node_modules/.package-lock.json -nt package-lock.json ] || npm ci; npm run dev"
         ports:
             - 5173:5173
         depends_on:
