@@ -130,3 +130,102 @@ jobs:
             cat coverage.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+  image:
+    runs-on: ubuntu-latest
+
+    # The role check runs the image on the host network, so the containers reach
+    # these services on 127.0.0.1.
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: event_booking
+          POSTGRES_USER: event_booking
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U event_booking -d event_booking"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build the runtime image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: runtime
+          tags: event-booking:runtime
+          load: true
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Check the four roles
+        run: |
+          cat > role-check.env <<ENV
+          APP_KEY=base64:$(openssl rand -base64 32)
+          APP_URL=http://localhost:8080
+          DB_CONNECTION=pgsql
+          DB_HOST=127.0.0.1
+          DB_DATABASE=event_booking
+          DB_USERNAME=event_booking
+          DB_PASSWORD=secret
+          REDIS_HOST=127.0.0.1
+          SESSION_DRIVER=redis
+          CACHE_STORE=redis
+          QUEUE_CONNECTION=redis
+          MAIL_MAILER=log
+          ENV
+          scripts/check-image-roles.sh event-booking:runtime role-check.env
+
+      # The full report (all severities) goes to the job summary.
+      - name: Trivy report
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: event-booking:runtime
+          scanners: vuln,secret
+          format: table
+          output: trivy.txt
+          exit-code: '0'
+
+      - name: Trivy summary
+        if: ${{ !cancelled() && hashFiles('trivy.txt') != '' }}
+        run: |
+          {
+            echo '## Trivy scan'
+            echo '```'
+            cat trivy.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The job fails on HIGH and CRITICAL vulnerabilities that have a fix.
+      - name: Trivy gate
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: event-booking:runtime
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: '1'
+          skip-setup-trivy: true

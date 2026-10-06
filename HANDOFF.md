@@ -7,9 +7,30 @@ Last updated: 2026-10-06
 Milestone M1 (Foundation) is complete. Milestone M2 (CI and production image) has
 started.
 
-The current PR (`ci/lint-and-test-jobs`) runs lint and test as separate CI jobs, with a
-coverage report. Its plan is `docs/superpowers/plans/2026-10-06-m2-ci-jobs.md`. It waits
-for the review of the owner.
+The current PR (`ci/image-build-scan`) builds the `runtime` image in CI, checks the four
+roles and scans the image with Trivy. It is the last PR of M2. Its plan is
+`docs/superpowers/plans/2026-10-06-m2-image-build-scan.md`. It waits for the review of
+the owner.
+
+**Paused on 2026-10-06.** PR #19 is open. The SSH client of the owner stopped working,
+so the last push did not happen. The state of the branch:
+
+- On GitHub, the branch has two temporary commits on top of `7942f5a`: `d46612e` and
+  `83e76e5` ("chore: measure the build cache", they add a comment to
+  `routes/console.php`). They must not be merged.
+- The local branch does not have these two commits. It has one more commit: this
+  handoff update.
+- First step of the next session: tell the owner about the push (it asks for a code),
+  then run `git push --force-with-lease`. This removes the temporary commits from the
+  PR. Then check that CI passes and that `routes/console.php` is the same as on `main`.
+
+Build times of the `image` job (measured on PR #19): 308 s with an empty cache, 64 s for
+a re-run with the same code, 129 s and 141 s after a change to one comment. The commit
+`7942f5a` installs the npm packages before the app is copied, so the cache upload is
+12 s instead of 125 s. But `composer install`, `npm ci` and the copy of the entrypoint
+scripts run again on each run, also when their inputs do not change. The cause is not
+known. The owner and Claude agreed to stop the investigation. A later PR can try an
+other cache method (for example `actions/cache` with a local BuildKit cache).
 
 - The Laravel React starter kit is installed without changes: Laravel 13, Inertia 3,
   React 19, Fortify, Wayfinder, Pest, Pint, Larastan, Laravel Boost. The `README.md` is the one of the starter kit.
@@ -17,8 +38,13 @@ for the review of the owner.
   `.claude/`, `.agents/`, `.codex/`). Run `php artisan boost:install --no-interaction`
   after a fresh clone. Use the Boost guidelines and skills to write Laravel code.
 - CI: `.github/workflows/ci.yml` runs on each PR and on each push to `main`. The jobs
-  `lint` (Pint, PHPStan, `vp check`, `tsc`) and `test` (Pest on PostgreSQL, coverage in
-  the job summary) run in parallel. `main` has no branch protection rule.
+  `lint` (Pint, PHPStan, `vp check`, `tsc`), `test` (Pest on PostgreSQL, coverage in
+  the job summary) and `image` (build, role check, Trivy) run in parallel. `main` has
+  no branch protection rule.
+- `scripts/check-image-roles.sh <image> <env-file>` checks the four roles of the
+  runtime image. Locally, set `DOCKER_NETWORK=event-booking_default`.
+- Trivy cannot see the npm packages inside the SSR bundle. `npm audit --omit=dev`
+  reports 2 critical vulnerabilities in `shell-quote` (2026-10-06).
 - The local stack runs with Docker Compose: `app` (port 8080), `vite` (5173),
   `worker` (`queue:listen`), `scheduler` (`schedule:work`), `postgres` 18 (5432),
   `redis` 8 (6379) and `mailpit` (web page on 8025). The app and the tests use
@@ -121,13 +147,15 @@ for the review of the owner.
 
 ## Next steps
 
-1. The owner reviews the `ci/lint-and-test-jobs` PR, merges it, and asks for a sync.
-2. Then the last M2 PR: the image build and the Trivy scan on each PR and on `main`.
-   It also checks that the image starts in each role. Then M2 is complete.
-3. Email verification: the v1 scope says that it is off, but the dashboard of the
+1. The owner reviews the `ci/image-build-scan` PR, merges it, and asks for a sync.
+   Then M2 is complete.
+2. Then a small PR: find where `shell-quote` comes from, fix it if possible, and add
+   `npm audit --omit=dev` to the `lint` job.
+3. Then M3 (events).
+4. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
-4. The `users` columns come later: `is_admin` in M3, `anonymized_at` in M6.
+5. The `users` columns come later: `is_admin` in M3, `anonymized_at` in M6.
 
 Write the plan of each PR first and get the owner's approval.
 

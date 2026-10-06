@@ -288,10 +288,13 @@ The workflow (`.github/workflows/ci.yml`) runs on each pull request and on each 
    the job summary, with no minimum percentage. The tests use the `array` and `sync`
    drivers, so there is no Redis service. A Redis service comes with the first test
    that needs Redis.
-3. `build`: Docker Buildx with GitHub Actions cache. The image is not pushed to a
-   registry.
-4. `scan`: Trivy on the built image. The job fails on CRITICAL vulnerabilities.
-5. `concurrency`: boots the stack with Compose using the built image, runs the
+3. `image`: builds the `runtime` image with Docker Buildx and the GitHub Actions cache.
+   The image is not pushed to a registry. `scripts/check-image-roles.sh` starts each
+   role against PostgreSQL and Redis service containers, with only environment
+   variables. Then Trivy scans the image. The full report goes to the job summary. The
+   job fails on HIGH and CRITICAL vulnerabilities that have a fix. Trivy cannot see the
+   npm packages inside the SSR bundle.
+4. `concurrency`: boots the stack with Compose using the built image, runs the
    concurrency check.
 
 Deployment itself is out of scope. The operator builds the image and runs the four roles
