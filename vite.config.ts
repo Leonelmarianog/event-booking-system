@@ -27,11 +27,19 @@ export default defineConfig({
         wayfinder({
             formVariants: true,
         }),
+        {
+            // The production SSR server runs without node_modules, so the SSR
+            // build must include all packages. Development keeps the default.
+            name: 'ssr-bundle-packages',
+            apply: 'build',
+            config: () => ({ ssr: { noExternal: true } }),
+        },
     ]),
     server: {
         host: '0.0.0.0',
         port: 5173,
         strictPort: true,
+        allowedHosts: ['vite'],
         hmr: {
             host: 'localhost',
         },

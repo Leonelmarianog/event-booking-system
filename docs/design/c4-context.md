@@ -60,4 +60,4 @@ flowchart TB
 ## Not in this diagram
 
 - **PostgreSQL and Redis.** These are parts of the system, so they are inside the system box. The C4 level 2 diagram shows them.
-- **GitHub, GitHub Actions and GHCR.** These build and publish the system. They are not used when the system runs.
+- **GitHub and GitHub Actions.** These build, test and scan the system. They are not used when the system runs.

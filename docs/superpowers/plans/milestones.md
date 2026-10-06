@@ -37,19 +37,19 @@ of v1.
 
 ## M2 — Continuous integration and production image
 
-**Goal:** Each PR gets automatic checks, and `main` publishes a production image.
+**Goal:** Each PR gets automatic checks, and the production image builds and passes the
+scan.
 
 **Scope:**
 
 - The `runtime` target of the Docker image, with the roles `web`, `worker`,
   `scheduler` and `migrate`.
-- GitHub Actions: lint, test (with PostgreSQL and Redis), image build, Trivy scan,
-  and the push to GHCR on `main`.
+- GitHub Actions: lint, test (with PostgreSQL and Redis), image build and Trivy scan.
+  The image is not published to a registry.
 
 **Complete when:**
 
 - A PR shows the results of lint, test, build and scan.
-- A merge to `main` publishes an image to GHCR.
 - The image runs in each of the four roles with only environment variables.
 
 ## M3 — Events
