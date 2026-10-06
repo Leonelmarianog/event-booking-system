@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $published_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read User $organizer
  */
 class Event extends Model
 {
