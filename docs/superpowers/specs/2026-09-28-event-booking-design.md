@@ -279,10 +279,15 @@ when `APP_ENV=production`.
 
 ## 11. CI (GitHub Actions)
 
-The workflow runs on push and pull request:
+The workflow (`.github/workflows/ci.yml`) runs on each pull request and on each push to
+`main`. A new push to a pull request cancels the run of the older commit.
 
-1. `lint`: Pint `--test`, Larastan, ESLint, `tsc --noEmit`.
-2. `test`: Pest with PostgreSQL and Redis service containers, with coverage report.
+1. `lint`: Pint `--test`, Larastan, `vp check` (ESLint, formatting and Markdown),
+   `tsc --noEmit`. Each check is a separate step.
+2. `test`: Pest with a PostgreSQL service container. The coverage report (PCOV) goes to
+   the job summary, with no minimum percentage. The tests use the `array` and `sync`
+   drivers, so there is no Redis service. A Redis service comes with the first test
+   that needs Redis.
 3. `build`: Docker Buildx with GitHub Actions cache. The image is not pushed to a
    registry.
 4. `scan`: Trivy on the built image. The job fails on CRITICAL vulnerabilities.
