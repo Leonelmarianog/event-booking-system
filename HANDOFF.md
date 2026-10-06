@@ -7,17 +7,18 @@ Last updated: 2026-10-06
 Milestone M1 (Foundation) is complete. Milestone M2 (CI and production image) has
 started.
 
-The current PR (`build/runtime-image`) adds the production `runtime` target of the
-Docker image, with the four roles and SSR. Its plan is
-`docs/superpowers/plans/2026-10-06-m2-runtime-image.md`. It waits for the review of the
-owner.
+The current PR (`ci/lint-and-test-jobs`) runs lint and test as separate CI jobs, with a
+coverage report. Its plan is `docs/superpowers/plans/2026-10-06-m2-ci-jobs.md`. It waits
+for the review of the owner.
 
 - The Laravel React starter kit is installed without changes: Laravel 13, Inertia 3,
   React 19, Fortify, Wayfinder, Pest, Pint, Larastan, Laravel Boost. The `README.md` is the one of the starter kit.
 - Boost files are local to each machine (`AGENTS.md`, `boost.json`, `.mcp.json`,
   `.claude/`, `.agents/`, `.codex/`). Run `php artisan boost:install --no-interaction`
   after a fresh clone. Use the Boost guidelines and skills to write Laravel code.
-- The starter kit includes `.github/workflows/tests.yml`. It runs the tests on each PR.
+- CI: `.github/workflows/ci.yml` runs on each PR and on each push to `main`. The jobs
+  `lint` (Pint, PHPStan, `vp check`, `tsc`) and `test` (Pest on PostgreSQL, coverage in
+  the job summary) run in parallel. `main` has no branch protection rule.
 - The local stack runs with Docker Compose: `app` (port 8080), `vite` (5173),
   `worker` (`queue:listen`), `scheduler` (`schedule:work`), `postgres` 18 (5432),
   `redis` 8 (6379) and `mailpit` (web page on 8025). The app and the tests use
@@ -120,10 +121,9 @@ owner.
 
 ## Next steps
 
-1. The owner reviews the `build/runtime-image` PR, merges it, and asks for a sync.
-2. Then the next M2 PRs, one at a time:
-    - CI checks as separate jobs: lint, and test with PostgreSQL and Redis services.
-    - The image build and the Trivy scan on each PR and on `main`.
+1. The owner reviews the `ci/lint-and-test-jobs` PR, merges it, and asks for a sync.
+2. Then the last M2 PR: the image build and the Trivy scan on each PR and on `main`.
+   It also checks that the image starts in each role. Then M2 is complete.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
