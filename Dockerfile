@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 
-FROM php:8.5-fpm-alpine AS base
+FROM php:8.5.11-fpm-alpine3.24 AS base
 
-COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
+COPY --from=mlocati/php-extension-installer:2.12.0 /usr/bin/install-php-extensions /usr/local/bin/
 
 RUN install-php-extensions pdo_pgsql redis opcache intl pcntl zip \
     && apk add --no-cache nginx supervisor
@@ -25,6 +25,58 @@ EXPOSE 8080
 USER app
 
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+
+# Composer packages without dev packages, and the optimized autoloader.
+FROM base AS vendor
+
+USER root
+COPY --from=composer:2.9 /usr/bin/composer /usr/bin/composer
+RUN chown app:app /var/www/html
+USER app
+
+COPY --chown=app:app composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction
+
+COPY --chown=app:app . .
+RUN composer dump-autoload --optimize --no-dev
+
+# The browser bundle (public/build) and the SSR bundle (bootstrap/ssr). The Vite
+# plugin of Wayfinder runs php artisan, so this stage starts from the vendor stage.
+FROM vendor AS assets
+
+USER root
+RUN apk add --no-cache nodejs npm
+USER app
+
+RUN npm ci && npm run build:ssr
+
+# Production image. The roles are web (default), worker, scheduler and migrate.
+FROM base AS runtime
+
+USER root
+
+RUN apk add --no-cache nodejs \
+    && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+COPY docker/php/production.ini /usr/local/etc/php/conf.d/zz-production.ini
+COPY docker/supervisor/runtime.conf /etc/supervisord.conf
+COPY docker/entrypoint.sh docker/healthcheck.sh /usr/local/bin/
+
+COPY --from=vendor --chown=app:app /var/www/html /var/www/html
+COPY --from=assets --chown=app:app /var/www/html/public/build /var/www/html/public/build
+COPY --from=assets --chown=app:app /var/www/html/bootstrap/ssr /var/www/html/bootstrap/ssr
+
+ENV APP_ENV=production \
+    APP_DEBUG=false \
+    LOG_CHANNEL=stderr
+
+USER app
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
+    CMD ["healthcheck.sh"]
+
+ENTRYPOINT ["entrypoint.sh"]
+CMD ["web"]
 
 FROM base AS dev
 
