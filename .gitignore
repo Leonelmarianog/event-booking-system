@@ -28,6 +28,7 @@ yarn-error.log
 /.vscode
 /.zed
 /.agents
+/.ai/mcp
 /.amp
 /.claude
 /.codex

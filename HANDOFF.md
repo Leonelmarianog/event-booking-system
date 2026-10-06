@@ -4,25 +4,12 @@ Last updated: 2026-10-06
 
 ## Where we are
 
-Milestone M1 (Foundation) is complete. Milestone M2 (CI and production image) has
-started.
+Milestones M1 (Foundation) and M2 (CI and production image) are complete.
 
-The current PR (`ci/image-build-scan`) builds the `runtime` image in CI, checks the four
-roles and scans the image with Trivy. It is the last PR of M2. Its plan is
-`docs/superpowers/plans/2026-10-06-m2-image-build-scan.md`. It waits for the review of
-the owner.
-
-**Paused on 2026-10-06.** PR #19 is open. The SSH client of the owner stopped working,
-so the last push did not happen. The state of the branch:
-
-- On GitHub, the branch has two temporary commits on top of `7942f5a`: `d46612e` and
-  `83e76e5` ("chore: measure the build cache", they add a comment to
-  `routes/console.php`). They must not be merged.
-- The local branch does not have these two commits. It has one more commit: this
-  handoff update.
-- First step of the next session: tell the owner about the push (it asks for a code),
-  then run `git push --force-with-lease`. This removes the temporary commits from the
-  PR. Then check that CI passes and that `routes/console.php` is the same as on `main`.
+The current PR (`ci/npm-audit`) removes the unused npm package `concurrently`. This
+package was the source of 2 critical vulnerabilities in `shell-quote`. The PR also adds
+`npm audit --omit=dev --audit-level=high` to the `lint` job and ignores `/.ai/mcp`
+(a local MCP settings file of the IDE). It waits for the review of the owner.
 
 Build times of the `image` job (measured on PR #19): 308 s with an empty cache, 64 s for
 a re-run with the same code, 129 s and 141 s after a change to one comment. The commit
@@ -38,13 +25,15 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
   `.claude/`, `.agents/`, `.codex/`). Run `php artisan boost:install --no-interaction`
   after a fresh clone. Use the Boost guidelines and skills to write Laravel code.
 - CI: `.github/workflows/ci.yml` runs on each PR and on each push to `main`. The jobs
-  `lint` (Pint, PHPStan, `vp check`, `tsc`), `test` (Pest on PostgreSQL, coverage in
-  the job summary) and `image` (build, role check, Trivy) run in parallel. `main` has
+  `lint` (Pint, PHPStan, `vp check`, `tsc`, `npm audit`), `test` (Pest on PostgreSQL,
+  coverage in the job summary) and `image` (build, role check, Trivy) run in parallel. `main` has
   no branch protection rule.
 - `scripts/check-image-roles.sh <image> <env-file>` checks the four roles of the
   runtime image. Locally, set `DOCKER_NETWORK=event-booking_default`.
-- Trivy cannot see the npm packages inside the SSR bundle. `npm audit --omit=dev`
-  reports 2 critical vulnerabilities in `shell-quote` (2026-10-06).
+- Trivy cannot see the npm packages inside the SSR bundle. The `lint` job runs
+  `npm audit --omit=dev --audit-level=high` for them. The full `npm audit` reports
+  critical vulnerabilities in `tinypool`, a development package that comes from
+  `vite-plus` 0.3.0 (2026-10-06). It is not in the image.
 - The local stack runs with Docker Compose: `app` (port 8080), `vite` (5173),
   `worker` (`queue:listen`), `scheduler` (`schedule:work`), `postgres` 18 (5432),
   `redis` 8 (6379) and `mailpit` (web page on 8025). The app and the tests use
@@ -147,10 +136,9 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `ci/image-build-scan` PR, merges it, and asks for a sync.
-   Then M2 is complete.
-2. Then a small PR: find where `shell-quote` comes from, fix it if possible, and add
-   `npm audit --omit=dev` to the `lint` job.
+1. The owner reviews the `ci/npm-audit` PR, merges it, and asks for a sync.
+2. Later, a small PR for `tinypool`: an npm `overrides` entry (`^2.1.2`) or the
+   upgrade to `vite-plus` 1.0.
 3. Then M3 (events).
 4. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
