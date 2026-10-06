@@ -6,10 +6,10 @@ Last updated: 2026-10-06
 
 Milestones M1 (Foundation) and M2 (CI and production image) are complete.
 
-The current PR (`ci/npm-audit`) removes the unused npm package `concurrently`. This
-package was the source of 2 critical vulnerabilities in `shell-quote`. The PR also adds
-`npm audit --omit=dev --audit-level=high` to the `lint` job and ignores `/.ai/mcp`
-(a local MCP settings file of the IDE). It waits for the review of the owner.
+The current PR (`build/tinypool-override`) adds an npm `overrides` entry
+(`"tinypool": "^2.1.2"`). It fixes 2 critical vulnerabilities in `tinypool` 2.1.0, a
+development package that comes from `vite-plus` 0.3.0 and `oxfmt`. The full
+`npm audit` now finds 0 vulnerabilities. It waits for the review of the owner.
 
 Build times of the `image` job (measured on PR #19): 308 s with an empty cache, 64 s for
 a re-run with the same code, 129 s and 141 s after a change to one comment. The commit
@@ -31,9 +31,10 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 - `scripts/check-image-roles.sh <image> <env-file>` checks the four roles of the
   runtime image. Locally, set `DOCKER_NETWORK=event-booking_default`.
 - Trivy cannot see the npm packages inside the SSR bundle. The `lint` job runs
-  `npm audit --omit=dev --audit-level=high` for them. The full `npm audit` reports
-  critical vulnerabilities in `tinypool`, a development package that comes from
-  `vite-plus` 0.3.0 (2026-10-06). It is not in the image.
+  `npm audit --omit=dev --audit-level=high` for them.
+- `package.json` has an npm override for `tinypool` (`^2.1.2`), because `oxfmt` in
+  `vite-plus` 0.3.0 pins the vulnerable version 2.1.0. Remove the override when you
+  upgrade `vite-plus` to 1.0 or later: that version uses a fixed `tinypool`.
 - The local stack runs with Docker Compose: `app` (port 8080), `vite` (5173),
   `worker` (`queue:listen`), `scheduler` (`schedule:work`), `postgres` 18 (5432),
   `redis` 8 (6379) and `mailpit` (web page on 8025). The app and the tests use
@@ -136,14 +137,12 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `ci/npm-audit` PR, merges it, and asks for a sync.
-2. Later, a small PR for `tinypool`: an npm `overrides` entry (`^2.1.2`) or the
-   upgrade to `vite-plus` 1.0.
-3. Then M3 (events).
-4. Email verification: the v1 scope says that it is off, but the dashboard of the
+1. The owner reviews the `build/tinypool-override` PR, merges it, and asks for a sync.
+2. Then M3 (events).
+3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
-5. The `users` columns come later: `is_admin` in M3, `anonymized_at` in M6.
+4. The `users` columns come later: `is_admin` in M3, `anonymized_at` in M6.
 
 Write the plan of each PR first and get the owner's approval.
 
