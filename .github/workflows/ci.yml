@@ -119,7 +119,7 @@ jobs:
           npm run build
 
       - name: Tests with coverage
-        run: vendor/bin/pest --coverage-text=coverage.txt
+        run: vendor/bin/pest --colors=never --coverage-text=coverage.txt
 
       - name: Coverage summary
         if: ${{ !cancelled() && hashFiles('coverage.txt') != '' }}
