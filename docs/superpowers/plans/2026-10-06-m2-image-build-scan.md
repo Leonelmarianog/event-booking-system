@@ -109,7 +109,39 @@ git add scripts/check-image-roles.sh .github/workflows/ci.yml
 git commit -m "ci: build, check and scan the runtime image"
 ```
 
-### Task 3: Documents
+### Task 3: Keep `node_modules` in the build cache
+
+The first CI run took about 5 minutes. The upload of the build cache took 125 seconds,
+because each code change made a new `assets` layer with all of `node_modules`.
+
+**Files:**
+
+- Modify: `Dockerfile`
+
+- [ ] **Step 1: Install the npm packages before the app is copied**
+
+The `assets` stage starts from `base`. It copies `package.json`, `package-lock.json`
+and `.npmrc`, runs `npm ci`, then copies the app and `vendor` from the `vendor` stage,
+and runs `npm run build:ssr`.
+
+- [ ] **Step 2: Verify locally**
+
+Change a PHP file and build again with `--progress=plain`.
+Expected: `composer install` and `npm ci` are `CACHED`. Then run the role check.
+
+- [ ] **Step 3: Measure in CI**
+
+Push the change, then push one test commit that changes a comment in a PHP file.
+Compare the time of the `image` job. Then remove the test commit.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add Dockerfile
+git commit -m "build: keep npm packages in the build cache"
+```
+
+### Task 4: Documents
 
 **Files:**
 
@@ -133,7 +165,7 @@ git add docs/ HANDOFF.md
 git commit -m "docs: add image CI plan and update handoff"
 ```
 
-### Task 4: Check the run on the PR
+### Task 5: Check the run on the PR
 
 - [ ] **Step 1: After the push, check the run**
 

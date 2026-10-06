@@ -40,15 +40,22 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-in
 COPY --chown=app:app . .
 RUN composer dump-autoload --optimize --no-dev
 
-# The browser bundle (public/build) and the SSR bundle (bootstrap/ssr). The Vite
-# plugin of Wayfinder runs php artisan, so this stage starts from the vendor stage.
-FROM vendor AS assets
+# The browser bundle (public/build) and the SSR bundle (bootstrap/ssr). The npm
+# packages are installed before the app is copied, so this layer stays in the cache
+# until package-lock.json changes. The Vite plugin of Wayfinder runs php artisan, so
+# the build needs the app and vendor from the vendor stage.
+FROM base AS assets
 
 USER root
-RUN apk add --no-cache nodejs npm
+RUN apk add --no-cache nodejs npm \
+    && chown app:app /var/www/html
 USER app
 
-RUN npm ci && npm run build:ssr
+COPY --chown=app:app package.json package-lock.json .npmrc ./
+RUN npm ci
+
+COPY --from=vendor --chown=app:app /var/www/html ./
+RUN npm run build:ssr
 
 # Production image. The roles are web (default), worker, scheduler and migrate.
 FROM base AS runtime
