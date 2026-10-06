@@ -4,12 +4,32 @@ Last updated: 2026-10-06
 
 ## Where we are
 
-Milestones M1 (Foundation) and M2 (CI and production image) are complete.
+Milestones M1 (Foundation) and M2 (CI and production image) are complete. Milestone M3
+(Events) has started.
 
-The current PR (`build/tinypool-override`) adds an npm `overrides` entry
-(`"tinypool": "^2.1.2"`). It fixes 2 critical vulnerabilities in `tinypool` 2.1.0, a
-development package that comes from `vite-plus` 0.3.0 and `oxfmt`. The full
-`npm audit` now finds 0 vulnerabilities. It waits for the review of the owner.
+M3 is split into eight PRs, in this order:
+
+1. `events` table, `Event` model, `EventStatus` enum, `EventPolicy` and `users.is_admin`.
+   No routes and no pages.
+2. `GetEvent`: the `events/show` page.
+3. `CreateEvent`: the `events/create` page.
+4. `GetOrganizerEvents`: the "My events" page.
+5. `UpdateEvent`: the `events/edit` page, `Event::changeCapacity()`, and the handler in
+   `bootstrap/app.php` that turns domain exceptions into flash messages (toasts).
+6. `PublishEvent`: `Event::publish()` and `EventStatus::canTransitionTo()`.
+7. `DeleteEvent`.
+8. `GetUpcomingEvents`: the public `events/index` page.
+
+The current PR (`feat/events-and-policy`) is PR 1. Its plan is
+`docs/superpowers/plans/2026-10-06-m3-events-and-policy.md`. It waits for the review of
+the owner.
+
+- The `events` table has only the columns that M3 uses. `cancelled_at` comes in M4,
+  `reminder_sent_at` comes with the reminders.
+- A model method that changes state comes in the PR of the Action that uses it.
+- BR-E16 is not complete: attendees of a cancelled event can see it only after M4 adds
+  bookings. The policy tests cover the organizer, admins, other users and visitors.
+- BR-E11 is tested only on the policy in M3. `CancelEvent` comes in M4.
 
 Build times of the `image` job (measured on PR #19): 308 s with an empty cache, 64 s for
 a re-run with the same code, 129 s and 141 s after a change to one comment. The commit
@@ -137,12 +157,12 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `build/tinypool-override` PR, merges it, and asks for a sync.
-2. Then M3 (events).
+1. The owner reviews the `feat/events-and-policy` PR, merges it, and asks for a sync.
+2. Then M3 PR 2 (`GetEvent`). Write its plan first.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
-4. The `users` columns come later: `is_admin` in M3, `anonymized_at` in M6.
+4. The `users` column `anonymized_at` comes in M6.
 
 Write the plan of each PR first and get the owner's approval.
 

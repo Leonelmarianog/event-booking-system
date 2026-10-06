@@ -173,9 +173,11 @@ Read use cases. Each one is an Action that the controller calls:
 - **CSRF:** Laravel's `VerifyCsrfToken` middleware plus the `XSRF-TOKEN` cookie that
   Inertia's HTTP client sends back. A test asserts that a POST without the token is rejected.
 - **Authorization:**
-    - `EventPolicy`: `view` (published, or the viewer is the organizer), `update`/`publish`
-      (organizer, and the event is not cancelled), `cancel` (organizer or admin),
-      `viewAttendees` (organizer or admin).
+    - `EventPolicy`: `view` (published, or the viewer is the organizer or an admin;
+      attendees can also see a cancelled event), `update` (organizer, and the event is
+      not cancelled and has not started), `publish` (organizer; the model checks the
+      state), `cancel` (organizer or admin), `delete` (organizer, and the event is a
+      draft), `viewAttendees` (organizer or admin).
     - `BookingPolicy`: `view` (booking owner or event organizer), `cancel` (booking owner).
     - Admins pass `cancel` and `viewAttendees` on any event, which covers moderation.
 - **Rate limiting:** named limiters in `AppServiceProvider`, stored in Redis:
