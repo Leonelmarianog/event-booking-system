@@ -31,7 +31,8 @@ later M3 PRs add the Actions, the routes and the pages.
 - An admin does not pass all checks. BR-A3 says that an admin cannot edit or publish
   the events of other users. So the policy has no `before()` method and no
   `Gate::before()`.
-- Each test name starts with the ID of the rule that it covers.
+- Each test that covers a business rule starts with the ID of the rule. Tests of the
+  factory, the admin flag and the status constraint cover no business rule and have no ID.
 - Model methods that change state (`publish()`, `changeCapacity()`, `cancel()`) come in
   the PR of the Action that uses them, not in this PR.
 - Run commands inside the `app` container: `docker compose exec app <command>`. Start
@@ -232,7 +233,7 @@ test('the database rejects an unknown status', function () {
     DB::table('events')->where('id', $event->id)->update(['status' => 'archived']);
 })->throws(QueryException::class, 'events_status_check');
 
-test('the database does not delete a user who organizes events', function () {
+test('BR-U4: the database does not delete a user who organizes events', function () {
     $event = Event::factory()->create();
 
     DB::table('users')->where('id', $event->organizer_id)->delete();
