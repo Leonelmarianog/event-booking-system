@@ -22,8 +22,8 @@ setup: ## First start after a clone: install, start and migrate
 	$(MAKE) up
 	$(APP) php artisan migrate --force
 
-up: ## Build the image if necessary and start the stack
-	$(COMPOSE) up -d --build --remove-orphans
+up: ## Build the image if necessary, start the stack and wait until it is ready
+	$(COMPOSE) up -d --build --remove-orphans --wait
 
 down: ## Stop the stack (the data stays in the volumes)
 	$(COMPOSE) down
