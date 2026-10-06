@@ -4,11 +4,13 @@ Last updated: 2026-10-06
 
 ## Where we are
 
-Milestone M1 (Foundation) has started. The design is complete.
+Milestone M1 (Foundation) is complete. Milestone M2 (CI and production image) has
+started.
 
-The current PR (`build/makefile`) adds a `Makefile` for the local stack. It is the last
-PR of M1. Its plan is `docs/superpowers/plans/2026-10-06-m1-makefile.md`. It waits for
-the review of the owner.
+The current PR (`build/runtime-image`) adds the production `runtime` target of the
+Docker image, with the four roles and SSR. Its plan is
+`docs/superpowers/plans/2026-10-06-m2-runtime-image.md`. It waits for the review of the
+owner.
 
 - The Laravel React starter kit is installed without changes: Laravel 13, Inertia 3,
   React 19, Fortify, Wayfinder, Pest, Pint, Larastan, Laravel Boost. The `README.md` is the one of the starter kit.
@@ -29,6 +31,12 @@ the review of the owner.
   `docker compose exec app composer ci:check`. On the host, the tests cannot reach the
   host name `postgres`.
 - The `vite` service runs `npm ci` again when `package-lock.json` changes.
+- SSR works in the local stack: the `app` container sends the render requests to
+  `http://vite:5173` (`INERTIA_SSR_HOT_URL`).
+- Build the production image with
+  `docker build --target runtime -t event-booking:runtime .`. The roles are `web`
+  (default), `worker`, `scheduler` and `migrate`. Task 4 of the runtime image plan shows
+  how to run each role against the local stack.
 - The design spec is approved as a first version:
   `docs/superpowers/specs/2026-09-28-event-booking-design.md`
 - Repository: `git@github.com:Leonelmarianog/event-booking-system.git` (public).
@@ -102,15 +110,23 @@ the review of the owner.
 - Account deletion: blocked while the user has upcoming published events or confirmed
   bookings. Otherwise the system deletes the drafts and anonymizes the user row
   (BR-U1 to BR-U5, `users.anonymized_at`).
+- The image is not published to a registry (no GHCR). CI builds and scans the image.
+  The operator builds the image from the `Dockerfile`.
+- SSR is on in development and in production. In production, the `web` role runs the
+  Inertia SSR server next to Nginx and PHP-FPM. The SSR bundle includes all npm
+  packages, so the image has Node but no `node_modules`.
+- The default Laravel migrations stay (`sessions`, `cache`, `cache_locks`, `jobs`,
+  `job_batches`), also when the tables stay empty.
 
 ## Next steps
 
-1. The owner reviews the `build/makefile` PR. The owner also checks hot reload in a
-   browser: a change in a `.tsx` file shows without a page reload. Then the owner merges
-   the PR and asks for a sync. Then M1 is complete.
-2. Then a small PR: turn off email verification, as the v1 scope says. Now the
-   dashboard of the starter kit sends a new user to `/email/verify`.
-3. Then M2: the production image and the CI pipeline. Production uses `queue:work`.
+1. The owner reviews the `build/runtime-image` PR, merges it, and asks for a sync.
+2. Then the next M2 PRs, one at a time:
+    - CI checks as separate jobs: lint, and test with PostgreSQL and Redis services.
+    - The image build and the Trivy scan on each PR and on `main`.
+3. Email verification: the v1 scope says that it is off, but the dashboard of the
+   starter kit sends a new user to `/email/verify`. The owner decides later when to
+   change it.
 4. The `users` columns come later: `is_admin` in M3, `anonymized_at` in M6.
 
 Write the plan of each PR first and get the owner's approval.
@@ -156,10 +172,10 @@ approves the design and the plan.
 | Stack          | Laravel + Inertia + React (TypeScript), official React starter kit, session auth.                                                                                                                                                       |
 | Structure      | Plain Laravel layout, everything under `app/`. No repositories.                                                                                                                                                                         |
 | Business logic | Rich domain model: rules live in Eloquent models and enums. Each use case, read or write, is one Action in its own directory `app/Actions/<Name>/`. Actions control the flow (transactions, locks, dispatch). Controllers do HTTP only. |
-| Runtime        | Nginx + PHP-FPM in one container (supervisord).                                                                                                                                                                                         |
+| Runtime        | Nginx + PHP-FPM + Inertia SSR server (Node) in one container (supervisord).                                                                                                                                                             |
 | Database       | PostgreSQL. Redis for queue, cache, sessions and rate limits.                                                                                                                                                                           |
 | Deployment     | One Docker image with roles `web`, `worker`, `scheduler`, `migrate`. The owner supplies all external services. Docker Compose for local development.                                                                                    |
-| CI             | GitHub Actions: lint, test, build and push to GHCR, Trivy scan, concurrency check.                                                                                                                                                      |
+| CI             | GitHub Actions: lint, test, build, Trivy scan, concurrency check. No image registry: CI builds and scans the image, but does not publish it.                                                                                            |
 | Scope of v1    | Free tickets, no payments. Any user can organize and book. One `is_admin` flag for moderation. Max 4 seats per booking. One active booking per user per event. Email verification is off.                                               |
 
 ## Local environment

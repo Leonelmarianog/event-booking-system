@@ -13,11 +13,12 @@ DevOps practices in a realistic Laravel codebase:
   each used for a real reason.
 - A rich domain model in idiomatic Laravel (no repositories).
 - One production Docker image, Docker Compose for local development, and CI that lints,
-  tests, scans and publishes the image.
+  tests, builds and scans the image.
 
-The operator of the deployment provides all external services (PostgreSQL, Redis, SMTP, container
-registry, hosting). The deliverable is a Docker image that runs against those
-services through environment variables.
+The operator of the deployment provides all external services (PostgreSQL, Redis, SMTP,
+hosting). The deliverable is the `Dockerfile` of an image that runs against those
+services through environment variables. The image is not published to a registry. The
+operator builds it.
 
 ### Success criteria
 
@@ -230,27 +231,38 @@ Inertia pages, using the starter kit layout and shadcn/ui components:
 
 ### Image (`Dockerfile`, multi-stage)
 
-1. `vendor`: `composer install --no-dev --optimize-autoloader`.
-2. `assets`: Node + PHP, `npm ci && npm run build`. PHP is present because the
-   starter kit's Vite plugin generates route types through `php artisan`.
-3. `runtime` (production): `php:8.5-fpm-alpine` + Nginx + supervisord, required PHP
-   extensions (`pdo_pgsql`, `redis`, `opcache`, `intl`, `pcntl`, `zip`). It copies the
-   app, vendor and built assets, runs as a non-root user, exposes port 8080, and
-   has a `HEALTHCHECK` on `/up`.
-4. `dev`: `runtime` plus dev dependencies and Xdebug (off by default). Used by Compose
+1. `base`: `php:8.5-fpm-alpine` (exact version) + Nginx + supervisord, required PHP
+   extensions (`pdo_pgsql`, `redis`, `opcache`, `intl`, `pcntl`, `zip`), the non-root
+   user `app`, port 8080.
+2. `vendor`: `composer install --no-dev` and an optimized autoloader.
+3. `assets`: Node + PHP, `npm ci && npm run build:ssr`. PHP is present because the
+   starter kit's Vite plugin generates route types through `php artisan`. The output is
+   the browser bundle (`public/build`) and the SSR bundle (`bootstrap/ssr`). The SSR
+   bundle includes all npm packages, so the runtime needs no `node_modules`.
+4. `runtime` (production): `base` + Node (Alpine package) + production PHP settings.
+   It copies the app, vendor and both bundles, and has a `HEALTHCHECK` script.
+5. `dev`: `base` plus Composer, Node, npm and Xdebug (off by default). Used by Compose
    with a bind mount.
+
+The build context is an allowlist (`.dockerignore`).
 
 ### Roles (entrypoint argument)
 
 | Command         | Runs                                                        |
 | --------------- | ----------------------------------------------------------- |
-| `web` (default) | `php artisan optimize`, then supervisord (Nginx + PHP-FPM)  |
+| `web` (default) | supervisord: Nginx, PHP-FPM and the Inertia SSR server      |
 | `worker`        | `php artisan queue:work redis --tries=3 --max-time=3600`    |
 | `scheduler`     | `php artisan schedule:work`                                 |
 | `migrate`       | `php artisan migrate --force` (one-off task before rollout) |
 
-Config is cached at container start, not at build time, because environment variables
-are only known at runtime. Logs go to stderr (`LOG_CHANNEL=stderr`).
+Each role runs `php artisan optimize` first. Config is cached at container start, not at
+build time, because environment variables are only known at runtime. Any other argument
+runs as a command. Logs go to stderr (`LOG_CHANNEL=stderr`).
+
+The SSR server listens on `127.0.0.1:13714` inside the `web` container. The health
+check of the `web` role checks `/up` and the SSR server (`php artisan inertia:check-ssr`).
+If the SSR server stops, the pages still load (client-side rendering), but the container
+is unhealthy. The health check of the other roles always passes.
 
 ### Local development (`compose.yaml`)
 
@@ -271,14 +283,14 @@ The workflow runs on push and pull request:
 
 1. `lint`: Pint `--test`, Larastan, ESLint, `tsc --noEmit`.
 2. `test`: Pest with PostgreSQL and Redis service containers, with coverage report.
-3. `build`: Docker Buildx with GitHub Actions cache. On `main` it pushes to GHCR,
-   tagged with the git SHA and `latest`.
+3. `build`: Docker Buildx with GitHub Actions cache. The image is not pushed to a
+   registry.
 4. `scan`: Trivy on the built image. The job fails on CRITICAL vulnerabilities.
 5. `concurrency`: boots the stack with Compose using the built image, runs the
    concurrency check.
 
-Deployment itself is out of scope. The operator pulls the image and runs the four roles on
-their infrastructure. The README documents the required environment variables.
+Deployment itself is out of scope. The operator builds the image and runs the four roles
+on their infrastructure. The README documents the required environment variables.
 
 ## 12. Out of scope
 

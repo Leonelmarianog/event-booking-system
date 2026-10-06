@@ -17,7 +17,7 @@ flowchart TB
 
     subgraph boundary["Event Booking System"]
         frontend["<b>Web Frontend</b><br/>[Container: React, TypeScript, Inertia]<br/>Shows the pages in the browser."]
-        web["<b>Web App</b><br/>[Container: Laravel, Nginx, PHP-FPM]<br/>Handles HTTP requests.<br/>Runs the Actions."]
+        web["<b>Web App</b><br/>[Container: Laravel, Nginx, PHP-FPM, Node]<br/>Handles HTTP requests.<br/>Runs the Actions.<br/>Renders the first page load."]
         worker["<b>Worker</b><br/>[Container: Laravel queue worker]<br/>Runs queued jobs.<br/>Sends notifications."]
         scheduler["<b>Scheduler</b><br/>[Container: Laravel scheduler]<br/>Starts the daily reminders."]
         migrate["<b>Migrate</b><br/>[Container: one-off task]<br/>Changes the database schema<br/>before each deploy."]
@@ -65,30 +65,33 @@ flowchart TB
 
 ## Containers
 
-| Container    | Technology                            | Responsibility                                                                                                                                            |
-| ------------ | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web Frontend | React, TypeScript, Inertia, shadcn/ui | Shows the pages in the browser. Sends the forms to the Web App. The Web App serves its files.                                                             |
-| Web App      | Laravel, Nginx, PHP-FPM               | Handles all HTTP requests. Does authentication, authorization, validation and rate limits. Runs the Actions. Puts notifications on the queue.             |
-| Worker       | Laravel queue worker                  | Takes jobs from the queue and runs them. In v1, all jobs send notifications. If a job fails three times, the Worker writes it to the `failed_jobs` table. |
-| Scheduler    | Laravel scheduler                     | Each day, finds the events that start in the next 24 hours. Puts a reminder job on the queue for each attendee (BR-N4, BR-N5).                            |
-| Migrate      | Laravel migrations                    | Runs one time before each deploy. Changes the database schema. Stops when the migrations are complete.                                                    |
-| Database     | PostgreSQL                            | Keeps all business data. It is the only source of truth. Its constraints enforce some rules (BR-E8, BR-B4, BR-B5).                                        |
-| Redis        | Redis                                 | Keeps the queue, the cache, the sessions and the rate-limit counters. The data in Redis is temporary.                                                     |
+| Container    | Technology                            | Responsibility                                                                                                                                                                                         |
+| ------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Web Frontend | React, TypeScript, Inertia, shadcn/ui | Shows the pages in the browser. Sends the forms to the Web App. The Web App serves its files.                                                                                                          |
+| Web App      | Laravel, Nginx, PHP-FPM, Node         | Handles all HTTP requests. Does authentication, authorization, validation and rate limits. Runs the Actions. Puts notifications on the queue. Renders the first page load on the server (Inertia SSR). |
+| Worker       | Laravel queue worker                  | Takes jobs from the queue and runs them. In v1, all jobs send notifications. If a job fails three times, the Worker writes it to the `failed_jobs` table.                                              |
+| Scheduler    | Laravel scheduler                     | Each day, finds the events that start in the next 24 hours. Puts a reminder job on the queue for each attendee (BR-N4, BR-N5).                                                                         |
+| Migrate      | Laravel migrations                    | Runs one time before each deploy. Changes the database schema. Stops when the migrations are complete.                                                                                                 |
+| Database     | PostgreSQL                            | Keeps all business data. It is the only source of truth. Its constraints enforce some rules (BR-E8, BR-B4, BR-B5).                                                                                     |
+| Redis        | Redis                                 | Keeps the queue, the cache, the sessions and the rate-limit counters. The data in Redis is temporary.                                                                                                  |
 
 ## One image, four roles
 
 The Web App, Worker, Scheduler and Migrate use the same Docker image. The first argument
 of the container selects the role:
 
-| Role        | Command                                                    |
-| ----------- | ---------------------------------------------------------- |
-| `web`       | `php artisan optimize`, then supervisord (Nginx + PHP-FPM) |
-| `worker`    | `php artisan queue:work redis --tries=3 --max-time=3600`   |
-| `scheduler` | `php artisan schedule:work`                                |
-| `migrate`   | `php artisan migrate --force`                              |
+| Role        | Command                                                       |
+| ----------- | ------------------------------------------------------------- |
+| `web`       | supervisord: Nginx, PHP-FPM and the Inertia SSR server (Node) |
+| `worker`    | `php artisan queue:work redis --tries=3 --max-time=3600`      |
+| `scheduler` | `php artisan schedule:work`                                   |
+| `migrate`   | `php artisan migrate --force`                                 |
 
-The Web Frontend is not a separate image. The build compiles it into static files, and
-the Web App serves these files.
+Each role runs `php artisan optimize` first.
+
+The Web Frontend is not a separate image. The build compiles it into two bundles. The
+browser bundle is static files that the Web App serves. The Web App uses the SSR bundle
+to render the first page load on the server. After that, the browser renders the pages.
 
 ## Future connections
 
