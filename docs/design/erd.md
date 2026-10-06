@@ -168,11 +168,15 @@ for payment (BR-P10).
 | `bookings`      | `(event_id, status)`     | The attendee list. The cancellation of all bookings of an event.          |
 | `announcements` | `(event_id, created_at)` | The announcements on the event page. The limit of 3 in 24 hours (BR-AN4). |
 
-## Laravel tables that we do not create
+## Laravel tables that are not in the diagram
 
-Redis keeps the sessions, the cache and the queue (see the C4 level 2 diagram). As a
-result, we remove these default Laravel migrations: `sessions`, `cache`, `cache_locks`,
-`jobs` and `job_batches`.
+Redis keeps the sessions, the cache and the queue (see the C4 level 2 diagram). We keep
+the default Laravel migrations for these tables, but the tables stay empty: `sessions`,
+`cache`, `cache_locks` and `jobs`. They let us go back to the database drivers with a
+change to the configuration only.
+
+The `job_batches` table is also not in the diagram. Laravel keeps job batches in the
+database with all queue drivers. No v1 feature uses job batches.
 
 ## Files
 
