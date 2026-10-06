@@ -43,6 +43,8 @@ class Event extends Model
     }
 
     /**
+     * The user who created the event and manages it.
+     *
      * @return BelongsTo<User, $this>
      */
     public function organizer(): BelongsTo
@@ -50,6 +52,9 @@ class Event extends Model
         return $this->belongsTo(User::class, 'organizer_id');
     }
 
+    /**
+     * Whether the given user is the organizer of the event.
+     */
     public function isOrganizedBy(User $user): bool
     {
         return $this->organizer_id === $user->id;
@@ -63,16 +68,25 @@ class Event extends Model
         return ! $this->starts_at->isFuture();
     }
 
+    /**
+     * Whether the event is a draft.
+     */
     public function isDraft(): bool
     {
         return $this->status === EventStatus::Draft;
     }
 
+    /**
+     * Whether the event is published.
+     */
     public function isPublished(): bool
     {
         return $this->status === EventStatus::Published;
     }
 
+    /**
+     * Whether the event is cancelled.
+     */
     public function isCancelled(): bool
     {
         return $this->status === EventStatus::Cancelled;
