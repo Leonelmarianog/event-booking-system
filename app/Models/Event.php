@@ -10,9 +10,11 @@ use Carbon\CarbonImmutable;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -28,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read User $organizer
+ * @property-read Collection<int, Booking> $bookings
  */
 class Event extends Model
 {
@@ -60,6 +63,16 @@ class Event extends Model
     }
 
     /**
+     * The bookings of the event, in all statuses.
+     *
+     * @return HasMany<Booking, $this>
+     */
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    /**
      * Only published events.
      *
      * @param  Builder<Event>  $query
@@ -87,6 +100,14 @@ class Event extends Model
     public function isOrganizedBy(User $user): bool
     {
         return $this->organizer_id === $user->id;
+    }
+
+    /**
+     * Whether the given user has a booking for the event, in any status (BR-E16).
+     */
+    public function hasBookingBy(User $user): bool
+    {
+        return $this->bookings()->where('user_id', $user->id)->exists();
     }
 
     /**

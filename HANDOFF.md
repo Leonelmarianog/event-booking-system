@@ -4,25 +4,45 @@ Last updated: 2026-10-07
 
 ## Where we are
 
-Milestones M1 (Foundation) and M2 (CI and production image) are complete. Milestone M3
-(Events) has started.
+Milestones M1 (Foundation), M2 (CI and production image) and M3 (Events) are complete.
+Each M3 rule has at least one test. Milestone M4 (Bookings) has started.
 
-M3 is split into eight PRs, in this order:
+M4 is split into seven PRs, in this order:
 
-1. `events` table, `Event` model, `EventStatus` enum, `EventPolicy` and `users.is_admin`.
-   No routes and no pages.
-2. `GetEvent`: the `events/show` page.
-3. `CreateEvent`: the `events/create` page.
-4. `GetOrganizerEvents`: the "My events" page.
-5. `UpdateEvent`: the `events/edit` page, `Event::changeCapacity()`, and the handler in
-   `bootstrap/app.php` that turns domain exceptions into flash messages (toasts).
-6. `PublishEvent`: `Event::publish()` and `EventStatus::canTransitionTo()`.
-7. `DeleteEvent`.
-8. `GetUpcomingEvents`: the public `events/index` page.
+1. `bookings` table, `Booking` model, `BookingStatus` enum, `BookingPolicy`, and the
+   attendee part of BR-E16. No routes and no pages.
+2. `ReserveSeats`: the booking form on `events/show`.
+3. The concurrency check: the script, `make concurrency-test` and the CI job.
+4. `GetBookings`: the "My bookings" page.
+5. `CancelBooking`: `POST /bookings/{booking}/cancellation`.
+6. `GetEventAttendees`: the attendee list page.
+7. `CancelEvent`: `events.cancelled_at`, `Event::cancel()`, and the cancel of all
+   confirmed bookings. The email of BR-E13 comes in M5.
 
-PRs 1 to 7 are merged. The current PR (`feat/upcoming-events`) is PR 8, the last PR of
-M3. Its plan is `docs/superpowers/plans/2026-10-07-m3-upcoming-events.md`. It waits for
-the review of the owner.
+The current PR (`feat/bookings-foundation`) is PR 1. Its plan is
+`docs/superpowers/plans/2026-10-07-m4-bookings-foundation.md`. It waits for the review
+of the owner.
+
+- `bookings.reference` is a ULID (lowercase, 26 characters). The model makes it on
+  create (`HasUlids` with `uniqueIds()`). The primary key stays a `bigint`.
+- A partial unique index allows one confirmed booking for each user and event (BR-B4).
+  Cancelled bookings do not count, so a user can book again after a cancel (BR-B12).
+- The database also checks the quantity (1 to 4, BR-B5), the status and the unique
+  reference (BR-B8). Events and users with bookings cannot be deleted (`RESTRICT`).
+- `Booking` has no `#[Fillable]`, like `Event`. The relation to the user is
+  `attendee` (`user_id`).
+- `BookingFactory` makes a confirmed booking of one seat for a published event. It
+  does not change `events.seats_available`. Tests that need the right number of seats
+  set it themselves.
+- BR-E16 is complete: a user with any booking (confirmed or cancelled) for a cancelled
+  event can see it (`Event::hasBookingBy()`).
+- `BookingPolicy::view` allows the attendee and the organizer of the event (BR-B13).
+  All others, also admins, get a 404. Admins see attendees through the attendee list
+  (BR-A2, PR 6).
+- `BookingPolicy::cancel` allows only the attendee (BR-B9). The organizer gets a 403,
+  all others a 404. The model checks the state in PR 5 (BR-B10).
+
+M3 notes:
 
 - The model has the query scopes `published()` and `upcoming()` (with the `#[Scope]`
   attribute). `upcoming()` uses the same rule as `Event::hasStarted()`.
@@ -118,8 +138,6 @@ the review of the owner.
 - The `events` table has only the columns that M3 uses. `cancelled_at` comes in M4,
   `reminder_sent_at` comes with the reminders.
 - A model method that changes state comes in the PR of the Action that uses it.
-- BR-E16 is not complete: attendees of a cancelled event can see it only after M4 adds
-  bookings. The policy tests cover the organizer, admins, other users and visitors.
 - BR-E11 is tested only on the policy in M3. `CancelEvent` comes in M4.
 
 Build times of the `image` job (measured on PR #19): 308 s with an empty cache, 64 s for
@@ -248,9 +266,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/upcoming-events` PR, merges it, and asks for a sync.
-2. After the merge, M3 is complete. Check that each M3 rule (BR-E1 to BR-E11, BR-E14 to
-   BR-E17, BR-A3, BR-A4) has a test, then plan M4 (bookings) with the owner.
+1. The owner reviews the `feat/bookings-foundation` PR, merges it, and asks for a sync.
+2. After the merge, plan M4 PR 2 (`ReserveSeats`) with the owner.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.

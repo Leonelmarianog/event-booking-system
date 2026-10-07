@@ -9,8 +9,8 @@ use Illuminate\Auth\Access\Response;
 class EventPolicy
 {
     /**
-     * BR-E14, BR-E15, BR-E16 and BR-A4. Attendees of a cancelled event come in M4.
-     * A person who cannot see the event gets a 404, so that hidden events stay unknown.
+     * BR-E14, BR-E15, BR-E16 and BR-A4. A person who cannot see the event gets a 404, so
+     * that hidden events stay unknown.
      */
     public function view(?User $user, Event $event): Response
     {
@@ -18,7 +18,15 @@ class EventPolicy
             return Response::allow();
         }
 
-        if ($user !== null && ($user->is_admin || $event->isOrganizedBy($user))) {
+        if ($user === null) {
+            return Response::denyAsNotFound();
+        }
+
+        if ($user->is_admin || $event->isOrganizedBy($user)) {
+            return Response::allow();
+        }
+
+        if ($event->isCancelled() && $event->hasBookingBy($user)) {
             return Response::allow();
         }
 

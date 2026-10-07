@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
@@ -36,6 +37,27 @@ test('BR-E16: the organizer and admins can see a cancelled event', function () {
         ->and($this->admin->can('view', $event))->toBeTrue()
         ->and($this->otherUser->can('view', $event))->toBeFalse()
         ->and(Gate::forUser(null)->allows('view', $event))->toBeFalse();
+});
+
+test('BR-E16: an attendee with a confirmed booking can see a cancelled event', function () {
+    $event = Event::factory()->cancelled()->create();
+    $booking = Booking::factory()->for($event)->create();
+
+    expect($booking->attendee->can('view', $event))->toBeTrue();
+});
+
+test('BR-E16: an attendee with a cancelled booking can see a cancelled event', function () {
+    $event = Event::factory()->cancelled()->create();
+    $booking = Booking::factory()->cancelled()->for($event)->create();
+
+    expect($booking->attendee->can('view', $event))->toBeTrue();
+});
+
+test('BR-E16: a booking for another event does not show a cancelled event', function () {
+    $event = Event::factory()->cancelled()->create();
+    $booking = Booking::factory()->create();
+
+    expect($booking->attendee->can('view', $event))->toBeFalse();
 });
 
 test('BR-A4: an admin can see the draft and cancelled events of all users', function () {
