@@ -16,6 +16,15 @@ Route::middleware('auth')->group(function () {
     Route::post('events', [EventController::class, 'store'])
         ->middleware('throttle:event-writes')
         ->name('events.store');
+    Route::get('events/{event}/edit', [EventController::class, 'edit'])
+        ->whereNumber('event')
+        ->name('events.edit')
+        ->can('update', 'event');
+    Route::put('events/{event}', [EventController::class, 'update'])
+        ->whereNumber('event')
+        ->middleware('throttle:event-writes')
+        ->name('events.update')
+        ->can('update', 'event');
     Route::get('organizer/events', [OrganizerEventController::class, 'index'])
         ->name('organizer.events.index');
 });

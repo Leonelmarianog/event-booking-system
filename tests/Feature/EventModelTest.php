@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\EventStatus;
+use App\Exceptions\Domain\CapacityBelowBookedSeats;
 use App\Models\Event;
 use App\Models\User;
 
@@ -55,4 +56,41 @@ test('an event knows how many seats are booked', function () {
     $event = Event::factory()->create(['capacity' => 50, 'seats_available' => 38]);
 
     expect($event->seatsBooked())->toBe(12);
+});
+
+test('BR-E7: a larger capacity adds the same number of available seats', function () {
+    $event = Event::factory()->make(['capacity' => 50, 'seats_available' => 38]);
+
+    $event->changeCapacity(60);
+
+    expect($event->capacity)->toBe(60)
+        ->and($event->seats_available)->toBe(48);
+});
+
+test('BR-E6: the capacity can decrease to the number of booked seats', function () {
+    $event = Event::factory()->make(['capacity' => 50, 'seats_available' => 38]);
+
+    $event->changeCapacity(12);
+
+    expect($event->capacity)->toBe(12)
+        ->and($event->seats_available)->toBe(0);
+});
+
+test('BR-E6: the capacity cannot be less than the booked seats', function () {
+    $event = Event::factory()->make(['capacity' => 50, 'seats_available' => 38]);
+
+    expect(fn () => $event->changeCapacity(11))
+        ->toThrow(CapacityBelowBookedSeats::class, 'The capacity cannot be less than the 12 booked seats.');
+
+    expect($event->capacity)->toBe(50)
+        ->and($event->seats_available)->toBe(38);
+});
+
+test('BR-E8: the available seats stay from 0 to the capacity', function () {
+    $event = Event::factory()->create(['capacity' => 50, 'seats_available' => 38]);
+
+    $event->changeCapacity(12);
+    $event->save();
+
+    expect($event->fresh()->seats_available)->toBe(0);
 });

@@ -44,6 +44,7 @@ test('the organizer sees the data of each event', function () {
                 'status' => 'published',
                 'capacity' => 50,
                 'seats_booked' => 12,
+                'can_update' => true,
             ]])
             ->where('past', [])
         );
@@ -87,5 +88,20 @@ test('an admin sees only their own events', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->where('upcoming', [])
             ->where('past', [])
+        );
+});
+
+test('BR-E5: the rows of cancelled and started events have no edit link', function () {
+    eventOf($this->organizer, 'Upcoming', now()->addDay(), 'published');
+    eventOf($this->organizer, 'Cancelled', now()->addDay(), 'cancelled');
+    eventOf($this->organizer, 'Started', now()->subDay(), 'published');
+
+    $this->actingAs($this->organizer)
+        ->get(route('organizer.events.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('upcoming', fn ($rows) => collect($rows)->pluck('can_update', 'title')->all()
+                === ['Upcoming' => true, 'Cancelled' => false])
+            ->where('past', fn ($rows) => collect($rows)->pluck('can_update', 'title')->all()
+                === ['Started' => false])
         );
 });

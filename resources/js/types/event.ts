@@ -19,4 +19,5 @@ export type OrganizerEventRow = {
     status: EventStatus;
     capacity: number;
     seats_booked: number;
+    can_update: boolean;
 };

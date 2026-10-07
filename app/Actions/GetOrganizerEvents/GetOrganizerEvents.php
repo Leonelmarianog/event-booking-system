@@ -11,7 +11,7 @@ class GetOrganizerEvents
      * Get the events of the organizer, split into upcoming events (earliest first) and
      * past events (most recent first).
      *
-     * @return array{upcoming: array<int, array{id: int, title: string, starts_at: string, status: string, capacity: int, seats_booked: int}>, past: array<int, array{id: int, title: string, starts_at: string, status: string, capacity: int, seats_booked: int}>}
+     * @return array{upcoming: array<int, array{id: int, title: string, starts_at: string, status: string, capacity: int, seats_booked: int, can_update: bool}>, past: array<int, array{id: int, title: string, starts_at: string, status: string, capacity: int, seats_booked: int, can_update: bool}>}
      */
     public function handle(User $organizer): array
     {
@@ -19,22 +19,22 @@ class GetOrganizerEvents
             ->whereBelongsTo($organizer, 'organizer')
             ->orderBy('starts_at')
             ->orderBy('id')
-            ->get(['id', 'title', 'starts_at', 'status', 'capacity', 'seats_available']);
+            ->get(['id', 'organizer_id', 'title', 'starts_at', 'status', 'capacity', 'seats_available']);
 
         [$past, $upcoming] = $events->partition(fn (Event $event): bool => $event->hasStarted());
 
         return [
-            'upcoming' => $upcoming->map($this->row(...))->values()->all(),
-            'past' => $past->reverse()->map($this->row(...))->values()->all(),
+            'upcoming' => $upcoming->map(fn (Event $event): array => $this->row($event, $organizer))->values()->all(),
+            'past' => $past->reverse()->map(fn (Event $event): array => $this->row($event, $organizer))->values()->all(),
         ];
     }
 
     /**
      * Get the data of one row of the table.
      *
-     * @return array{id: int, title: string, starts_at: string, status: string, capacity: int, seats_booked: int}
+     * @return array{id: int, title: string, starts_at: string, status: string, capacity: int, seats_booked: int, can_update: bool}
      */
-    private function row(Event $event): array
+    private function row(Event $event, User $organizer): array
     {
         return [
             'id' => $event->id,
@@ -43,6 +43,7 @@ class GetOrganizerEvents
             'status' => $event->status->value,
             'capacity' => $event->capacity,
             'seats_booked' => $event->seatsBooked(),
+            'can_update' => $organizer->can('update', $event),
         ];
     }
 }

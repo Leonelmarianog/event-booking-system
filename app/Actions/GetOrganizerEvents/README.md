@@ -13,7 +13,9 @@ The Action reads the events with one query, sorted by start time. Then it splits
   has started.
 
 For each event, the page shows the title, the status, the start time and the booked
-seats (capacity − available seats).
+seats (capacity − available seats). Each row also tells if the user can edit the event
+(`EventPolicy::update`), so that the page shows an "Edit" link. The policy reads the
+organizer of the event, so the query also selects `organizer_id`.
 
 ## The events are shown
 

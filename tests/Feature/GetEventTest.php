@@ -110,3 +110,32 @@ test('an event that does not exist gives a 404', function () {
 test('an event ID that is not a number gives a 404', function () {
     $this->get('/events/abc')->assertNotFound();
 });
+
+test('BR-E4: the organizer sees the edit link', function () {
+    $event = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.update', true));
+});
+
+test('BR-E4: other users and visitors do not see the edit link', function () {
+    $event = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->otherUser)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.update', false));
+
+    auth()->logout();
+
+    $this->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.update', false));
+});
+
+test('BR-E5: the organizer does not see the edit link on a started event', function () {
+    $event = Event::factory()->published()->started()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.update', false));
+});

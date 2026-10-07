@@ -6,12 +6,12 @@ use App\Concerns\EventValidationRules;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreEventRequest extends FormRequest
+class UpdateEventRequest extends FormRequest
 {
     use EventValidationRules;
 
     /**
-     * Any logged-in user can create an event (BR-E1). The route has the auth middleware.
+     * The route checks the update ability of the event policy (BR-E4, BR-E5, BR-A3).
      */
     public function authorize(): bool
     {

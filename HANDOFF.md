@@ -20,9 +20,30 @@ M3 is split into eight PRs, in this order:
 7. `DeleteEvent`.
 8. `GetUpcomingEvents`: the public `events/index` page.
 
-PRs 1 to 3 are merged. The current PR (`feat/organizer-events`) is PR 4. Its plan is
-`docs/superpowers/plans/2026-10-07-m3-organizer-events.md`. It waits for the review of
-the owner.
+PRs 1 to 4 are merged. The current PR (`feat/update-event`) is PR 5. Its plan is
+`docs/superpowers/plans/2026-10-07-m3-update-event.md`. It waits for the review of the
+owner.
+
+- `EventPolicy::update` returns a `Response`: 404 when the person cannot see the event,
+  403 for all other refusals. An admin gets 403 on the draft of another user, because
+  admins can see drafts.
+- Domain exceptions extend `App\Exceptions\Domain\DomainException` (a
+  `RuntimeException`). The model throws them and knows nothing about HTTP. One handler
+  in `bootstrap/app.php` turns them into a redirect back with an error toast, plus a
+  field error when `field()` names a field. A JSON request gets 422 with
+  `{ "message": "..." }`. The owner chose this design over
+  `ValidationException::withMessages()` in the model.
+- `Event::changeCapacity()` (BR-E6 to BR-E8) throws `CapacityBelowBookedSeats`. There
+  are no bookings in M3, so the tests set `seats_available` directly.
+- `UpdateEvent` locks the event row in a transaction. The status and `published_at` do
+  not change.
+- `App\Concerns\EventValidationRules` holds the event rules and `eventAttributes()`.
+  `StoreEventRequest` and `UpdateEventRequest` use it.
+- The create and edit pages share `EventForm`. The start time input is empty on the
+  first render and gets the local time after the page loads (no hydration error).
+- The event page gets `can.update` from the controller. Each "My events" row gets
+  `can_update` from `GetOrganizerEvents`. Both use `EventPolicy::update`. The query of
+  `GetOrganizerEvents` selects `organizer_id`, because the policy needs it.
 
 - The "My events" page (`/organizer/events`) shows only the events of the user, also
   for admins, with all statuses. It has two tables: "Upcoming" (earliest first) and
@@ -42,9 +63,9 @@ the owner.
   `AppServiceProvider`. An Inertia request over the limit goes back with an error
   toast. Other requests get a plain 429. The routes of `UpdateEvent`, `PublishEvent`
   and `CancelEvent` must use it too (`throttle:event-writes`).
-- `StoreEventRequest::eventAttributes()` gives the validated values with their types to
-  the Action, because PHPStan does not accept the `array<string, mixed>` of
-  `validated()` for an array shape.
+- `eventAttributes()` gives the validated values with their types to the Action,
+  because PHPStan does not accept the `array<string, mixed>` of `validated()` for an
+  array shape.
 - The app uses `CarbonImmutable` for dates (`Date::use()` in `AppServiceProvider`). The
   PHPDoc of `Event` uses `CarbonImmutable`. The PHPDoc of `User` still uses
   `Illuminate\Support\Carbon`.
@@ -186,15 +207,14 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/organizer-events` PR, merges it, and asks for a sync.
-2. Then M3 PR 5 (`UpdateEvent`). Write its plan first.
-3. When you plan PR 5 (`UpdateEvent`): if the update rules are the same as the rules
-   of `StoreEventRequest`, put them in a trait `app/Concerns/EventValidationRules.php`,
-   in the same way as the starter kit traits in `app/Concerns`.
-4. Email verification: the v1 scope says that it is off, but the dashboard of the
+1. The owner reviews the `feat/update-event` PR, merges it, and asks for a sync.
+2. Then M3 PR 6 (`PublishEvent`). Write its plan first.
+3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
-5. The `users` column `anonymized_at` comes in M6.
+4. The `users` column `anonymized_at` comes in M6.
+5. Optional, for the owner to decide: `Model::shouldBeStrict()` outside production, so
+   that reading a column that the query did not select throws an error.
 
 Write the plan of each PR first and get the owner's approval.
 
