@@ -48,3 +48,11 @@ test('the limit is for each user', function () {
 
     expect(Event::count())->toBe(21);
 });
+
+test('the update route uses the same limit', function () {
+    $event = Event::factory()->for($this->user, 'organizer')->create();
+
+    $this->actingAs($this->user)
+        ->put(route('events.update', $event), $this->validData)
+        ->assertTooManyRequests();
+});
