@@ -20,10 +20,18 @@ M3 is split into eight PRs, in this order:
 7. `DeleteEvent`.
 8. `GetUpcomingEvents`: the public `events/index` page.
 
-PRs 1 and 2 are merged. The current PR (`feat/create-event`) is PR 3. Its plan is
-`docs/superpowers/plans/2026-10-07-m3-create-event.md`. It waits for the review of the
-owner.
+PRs 1 to 3 are merged. The current PR (`feat/organizer-events`) is PR 4. Its plan is
+`docs/superpowers/plans/2026-10-07-m3-organizer-events.md`. It waits for the review of
+the owner.
 
+- The "My events" page (`/organizer/events`) shows only the events of the user, also
+  for admins, with all statuses. It has two tables: "Upcoming" (earliest first) and
+  "Past" (most recent first). An event that starts now is in "Past"
+  (`Event::hasStarted()`). No pagination.
+- `Event::seatsBooked()` gives capacity − available seats.
+- `EventStatusBadge` shows a badge for each status. The event page still has its own
+  badges and shows no badge for a published event.
+- The sidebar shows "My events" and "Create event" to logged-in users only.
 - The create form sends the start time in UTC. The browser converts the local time of
   the organizer before it sends the form.
 - Field limits: title and venue max 255 characters, description max 5000, capacity
@@ -40,7 +48,6 @@ owner.
 - The app uses `CarbonImmutable` for dates (`Date::use()` in `AppServiceProvider`). The
   PHPDoc of `Event` uses `CarbonImmutable`. The PHPDoc of `User` still uses
   `Illuminate\Support\Carbon`.
-- The sidebar shows "Create event" to logged-in users only.
 - A person who cannot see an event gets a 404 page, not a 403 page
   (`Response::denyAsNotFound()` in `EventPolicy::view`).
 - Visitors see "Log in" and "Register" links in the sidebar footer.
@@ -179,8 +186,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/create-event` PR, merges it, and asks for a sync.
-2. Then M3 PR 4 (`GetOrganizerEvents`). Write its plan first.
+1. The owner reviews the `feat/organizer-events` PR, merges it, and asks for a sync.
+2. Then M3 PR 5 (`UpdateEvent`). Write its plan first.
 3. When you plan PR 5 (`UpdateEvent`): if the update rules are the same as the rules
    of `StoreEventRequest`, put them in a trait `app/Concerns/EventValidationRules.php`,
    in the same way as the starter kit traits in `app/Concerns`.
