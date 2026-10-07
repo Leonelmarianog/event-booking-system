@@ -127,6 +127,21 @@ test('BR-E9: only the organizer can publish an event', function () {
         ->and(Gate::forUser(null)->allows('publish', $event))->toBeFalse();
 });
 
+test('BR-E9: another user gets a 404 for a draft event that they cannot see', function () {
+    $event = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    expect(Gate::forUser($this->otherUser)->inspect('publish', $event)->status())->toBe(404);
+});
+
+test('BR-E9: another user gets a 403 for a published event', function () {
+    $event = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+
+    $response = Gate::forUser($this->otherUser)->inspect('publish', $event);
+
+    expect($response->denied())->toBeTrue()
+        ->and($response->status())->toBeNull();
+});
+
 test('BR-A3: an admin cannot publish the events of other users', function () {
     $event = Event::factory()->for($this->organizer, 'organizer')->create();
 

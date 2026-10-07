@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventPublicationController;
 use App\Http\Controllers\OrganizerEventController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,11 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:event-writes')
         ->name('events.update')
         ->can('update', 'event');
+    Route::post('events/{event}/publication', [EventPublicationController::class, 'store'])
+        ->whereNumber('event')
+        ->middleware('throttle:event-writes')
+        ->name('events.publication.store')
+        ->can('publish', 'event');
     Route::get('organizer/events', [OrganizerEventController::class, 'index'])
         ->name('organizer.events.index');
 });

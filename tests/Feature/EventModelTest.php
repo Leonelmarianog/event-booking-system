@@ -2,6 +2,8 @@
 
 use App\Enums\EventStatus;
 use App\Exceptions\Domain\CapacityBelowBookedSeats;
+use App\Exceptions\Domain\EventHasStarted;
+use App\Exceptions\Domain\InvalidStateTransition;
 use App\Models\Event;
 use App\Models\User;
 
@@ -93,4 +95,57 @@ test('BR-E8: the available seats stay from 0 to the capacity', function () {
     $event->save();
 
     expect($event->fresh()->seats_available)->toBe(0);
+});
+
+test('BR-E10: the status follows the state diagram', function (EventStatus $from, EventStatus $to, bool $allowed) {
+    expect($from->canTransitionTo($to))->toBe($allowed);
+})->with([
+    'draft to published' => [EventStatus::Draft, EventStatus::Published, true],
+    'draft to cancelled' => [EventStatus::Draft, EventStatus::Cancelled, true],
+    'draft to draft' => [EventStatus::Draft, EventStatus::Draft, false],
+    'published to cancelled' => [EventStatus::Published, EventStatus::Cancelled, true],
+    'published to draft' => [EventStatus::Published, EventStatus::Draft, false],
+    'published to published' => [EventStatus::Published, EventStatus::Published, false],
+    'cancelled to draft' => [EventStatus::Cancelled, EventStatus::Draft, false],
+    'cancelled to published' => [EventStatus::Cancelled, EventStatus::Published, false],
+    'cancelled to cancelled' => [EventStatus::Cancelled, EventStatus::Cancelled, false],
+]);
+
+test('BR-E10: a draft that has not started can be published', function () {
+    $this->freezeSecond();
+    $event = Event::factory()->make(['starts_at' => now()->addDay()]);
+
+    expect($event->canBePublished())->toBeTrue();
+
+    $event->publish();
+
+    expect($event->status)->toBe(EventStatus::Published)
+        ->and($event->published_at->equalTo(now()))->toBeTrue();
+});
+
+test('BR-E10: a published event cannot be published again', function () {
+    $event = Event::factory()->published()->make();
+
+    expect($event->canBePublished())->toBeFalse()
+        ->and(fn () => $event->publish())
+        ->toThrow(InvalidStateTransition::class, 'Only a draft event can be published. This event is published.');
+});
+
+test('BR-E10: a cancelled event cannot be published', function () {
+    $event = Event::factory()->cancelled()->make();
+
+    expect($event->canBePublished())->toBeFalse()
+        ->and(fn () => $event->publish())
+        ->toThrow(InvalidStateTransition::class, 'Only a draft event can be published. This event is cancelled.');
+});
+
+test('BR-E10: a draft that has started cannot be published', function () {
+    $event = Event::factory()->started()->make();
+
+    expect($event->canBePublished())->toBeFalse()
+        ->and(fn () => $event->publish())
+        ->toThrow(EventHasStarted::class, 'The event has started, so it cannot be published.');
+
+    expect($event->status)->toBe(EventStatus::Draft)
+        ->and($event->published_at)->toBeNull();
 });
