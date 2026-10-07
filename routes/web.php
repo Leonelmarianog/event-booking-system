@@ -12,7 +12,9 @@ Route::get('events/{event}', [EventController::class, 'show'])
 
 Route::middleware('auth')->group(function () {
     Route::get('events/create', [EventController::class, 'create'])->name('events.create');
-    Route::post('events', [EventController::class, 'store'])->name('events.store');
+    Route::post('events', [EventController::class, 'store'])
+        ->middleware('throttle:event-writes')
+        ->name('events.store');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
