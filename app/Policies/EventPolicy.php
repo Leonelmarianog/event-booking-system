@@ -64,10 +64,17 @@ class EventPolicy
     }
 
     /**
-     * BR-E17.
+     * BR-E17. A person who cannot see the event gets a 404, so that hidden events stay
+     * unknown. The model checks the state again before the delete.
      */
-    public function delete(User $user, Event $event): bool
+    public function delete(User $user, Event $event): Response
     {
-        return $event->isOrganizedBy($user) && $event->isDraft();
+        if ($this->view($user, $event)->denied()) {
+            return Response::denyAsNotFound();
+        }
+
+        return $event->isOrganizedBy($user) && $event->canBeDeleted()
+            ? Response::allow()
+            : Response::deny();
     }
 }

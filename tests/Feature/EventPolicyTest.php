@@ -189,6 +189,21 @@ test('BR-E17: nobody can delete a published or cancelled event', function () {
         ->and($this->organizer->can('delete', $cancelled))->toBeFalse();
 });
 
+test('BR-E17: another user gets a 404 for a draft event that they cannot see', function () {
+    $event = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    expect(Gate::forUser($this->otherUser)->inspect('delete', $event)->status())->toBe(404);
+});
+
+test('BR-E17: an admin gets a 403 for the draft event of another user', function () {
+    $event = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    $response = Gate::forUser($this->admin)->inspect('delete', $event);
+
+    expect($response->denied())->toBeTrue()
+        ->and($response->status())->toBeNull();
+});
+
 test('BR-E5: nobody can edit a draft event that has started', function () {
     $event = Event::factory()->started()->for($this->organizer, 'organizer')->create();
 

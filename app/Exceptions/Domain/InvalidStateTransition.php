@@ -18,4 +18,14 @@ class InvalidStateTransition extends DomainException
             'status' => $status->value,
         ]));
     }
+
+    /**
+     * BR-E17: only a draft event can be deleted.
+     */
+    public static function cannotDelete(EventStatus $status): self
+    {
+        return new self(__('Only a draft event can be deleted. This event is :status.', [
+            'status' => $status->value,
+        ]));
+    }
 }
