@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -191,4 +192,90 @@ test('BR-E17: an admin does not see the delete button on the draft of another us
     $this->actingAs($this->admin)
         ->get(route('events.show', $event))
         ->assertInertia(fn (Assert $page) => $page->where('can.delete', false));
+});
+
+// Booking box: BR-B1 to BR-B4
+
+test('BR-B2: a user sees the booking form on a bookable event', function () {
+    $event = Event::factory()->published()->create(['capacity' => 10, 'seats_available' => 10]);
+
+    $this->actingAs($this->otherUser)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('booking', ['state' => 'available', 'max_quantity' => 4])
+        );
+});
+
+test('BR-B6: the form allows at most the available seats', function () {
+    $event = Event::factory()->published()->create(['capacity' => 10, 'seats_available' => 2]);
+
+    $this->actingAs($this->otherUser)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('booking', ['state' => 'available', 'max_quantity' => 2])
+        );
+});
+
+test('BR-B4: a user with a confirmed booking sees the booking, not the form', function () {
+    $event = Event::factory()->published()->create();
+    $booking = Booking::factory()->for($event)->for($this->otherUser, 'attendee')->create(['quantity' => 3]);
+
+    $this->actingAs($this->otherUser)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('booking', ['state' => 'booked', 'reference' => $booking->reference, 'quantity' => 3])
+        );
+});
+
+test('BR-B12: a user with only a cancelled booking sees the form', function () {
+    $event = Event::factory()->published()->create();
+    Booking::factory()->cancelled()->for($event)->for($this->otherUser, 'attendee')->create();
+
+    $this->actingAs($this->otherUser)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('booking.state', 'available'));
+});
+
+test('BR-B1: a visitor sees a login link on a bookable event', function () {
+    $event = Event::factory()->published()->create();
+
+    $this->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('booking', ['state' => 'login']));
+});
+
+test('BR-B2: users and visitors see "Sold out" on a sold-out event', function () {
+    $event = Event::factory()->published()->create(['capacity' => 5, 'seats_available' => 0]);
+
+    $this->actingAs($this->otherUser)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('booking', ['state' => 'sold_out']));
+
+    auth()->logout();
+
+    $this->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('booking', ['state' => 'sold_out']));
+});
+
+test('BR-B3: the organizer sees no booking box on their bookable event', function () {
+    $event = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('booking', null));
+});
+
+test('BR-B2: there is no booking box on draft, cancelled and started events', function () {
+    $draft = Event::factory()->for($this->organizer, 'organizer')->create();
+    $cancelled = Event::factory()->cancelled()->for($this->organizer, 'organizer')->create();
+    $started = Event::factory()->published()->started()->create();
+
+    foreach ([$draft, $cancelled] as $event) {
+        $this->actingAs($this->organizer)
+            ->get(route('events.show', $event))
+            ->assertInertia(fn (Assert $page) => $page->where('booking', null));
+    }
+
+    $this->actingAs($this->otherUser)
+        ->get(route('events.show', $started))
+        ->assertInertia(fn (Assert $page) => $page->where('booking', null));
 });

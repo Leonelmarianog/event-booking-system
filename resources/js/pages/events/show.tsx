@@ -1,18 +1,21 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { CalendarDays, MapPin, Pencil, User, Users } from 'lucide-react';
+import { BookingBox } from '@/components/booking-box';
 import { DeleteEventDialog } from '@/components/delete-event-dialog';
 import { LocalDateTime } from '@/components/local-date-time';
 import { PublishEventDialog } from '@/components/publish-event-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { edit, show } from '@/routes/events';
-import type { BreadcrumbItem, EventDetails } from '@/types';
+import type { BreadcrumbItem, EventBookingBox, EventDetails } from '@/types';
 
 export default function ShowEvent({
     event,
+    booking,
     can,
 }: {
     event: EventDetails;
+    booking: EventBookingBox | null;
     can: { update: boolean; publish: boolean; delete: boolean };
 }) {
     setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
@@ -80,6 +83,8 @@ export default function ShowEvent({
                         </dd>
                     </div>
                 </dl>
+
+                {booking && <BookingBox eventId={event.id} booking={booking} />}
 
                 <p className="break-words whitespace-pre-line">
                     {event.description}

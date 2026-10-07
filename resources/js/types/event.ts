@@ -29,3 +29,9 @@ export type UpcomingEvent = {
     venue: string;
     seats_available: number;
 };
+
+export type EventBookingBox =
+    | { state: 'booked'; reference: string; quantity: number }
+    | { state: 'available'; max_quantity: number }
+    | { state: 'login' }
+    | { state: 'sold_out' };
