@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use App\Enums\EventStatus;
+use Carbon\CarbonImmutable;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -15,13 +15,13 @@ use Illuminate\Support\Carbon;
  * @property string $title
  * @property string $description
  * @property string $venue
- * @property Carbon $starts_at
+ * @property CarbonImmutable $starts_at
  * @property int $capacity
  * @property int $seats_available
  * @property EventStatus $status
- * @property Carbon|null $published_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $published_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property-read User $organizer
  */
 class Event extends Model
