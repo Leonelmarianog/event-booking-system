@@ -21,3 +21,11 @@ export type OrganizerEventRow = {
     seats_booked: number;
     can_update: boolean;
 };
+
+export type UpcomingEvent = {
+    id: number;
+    title: string;
+    starts_at: string;
+    venue: string;
+    seats_available: number;
+};
