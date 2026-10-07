@@ -56,3 +56,11 @@ test('the update route uses the same limit', function () {
         ->put(route('events.update', $event), $this->validData)
         ->assertTooManyRequests();
 });
+
+test('the publish route uses the same limit', function () {
+    $event = Event::factory()->for($this->user, 'organizer')->create();
+
+    $this->actingAs($this->user)
+        ->post(route('events.publication.store', $event))
+        ->assertTooManyRequests();
+});

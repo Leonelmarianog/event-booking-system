@@ -43,11 +43,16 @@ class EventPolicy
     }
 
     /**
-     * BR-E9 and BR-A3. The model checks the state of the event (BR-E10).
+     * BR-E9 and BR-A3. The model checks the state of the event (BR-E10). A person who
+     * cannot see the event gets a 404, so that hidden events stay unknown.
      */
-    public function publish(User $user, Event $event): bool
+    public function publish(User $user, Event $event): Response
     {
-        return $event->isOrganizedBy($user);
+        if ($this->view($user, $event)->denied()) {
+            return Response::denyAsNotFound();
+        }
+
+        return $event->isOrganizedBy($user) ? Response::allow() : Response::deny();
     }
 
     /**
