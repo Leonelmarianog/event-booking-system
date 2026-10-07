@@ -139,3 +139,32 @@ test('BR-E5: the organizer does not see the edit link on a started event', funct
         ->get(route('events.show', $event))
         ->assertInertia(fn (Assert $page) => $page->where('can.update', false));
 });
+
+test('BR-E9: the organizer sees the publish button on a draft that has not started', function () {
+    $event = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.publish', true));
+});
+
+test('BR-E10: the organizer does not see the publish button on a published or started event', function () {
+    $published = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+    $started = Event::factory()->started()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $published))
+        ->assertInertia(fn (Assert $page) => $page->where('can.publish', false));
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $started))
+        ->assertInertia(fn (Assert $page) => $page->where('can.publish', false));
+});
+
+test('BR-A3: an admin does not see the publish button on the draft of another user', function () {
+    $event = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->admin)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.publish', false));
+});

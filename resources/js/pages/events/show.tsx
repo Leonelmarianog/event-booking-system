@@ -1,6 +1,7 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { CalendarDays, MapPin, Pencil, User, Users } from 'lucide-react';
 import { LocalDateTime } from '@/components/local-date-time';
+import { PublishEventDialog } from '@/components/publish-event-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { edit, show } from '@/routes/events';
@@ -11,7 +12,7 @@ export default function ShowEvent({
     can,
 }: {
     event: EventDetails;
-    can: { update: boolean };
+    can: { update: boolean; publish: boolean };
 }) {
     setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
         breadcrumbs: [{ title: event.title, href: show(event.id) }],
@@ -31,18 +32,20 @@ export default function ShowEvent({
                     {event.status === 'cancelled' && (
                         <Badge variant="destructive">Cancelled</Badge>
                     )}
-                    {can.update && (
-                        <Button
-                            asChild
-                            variant="outline"
-                            size="sm"
-                            className="ml-auto"
-                        >
-                            <Link href={edit(event.id)}>
-                                <Pencil />
-                                Edit
-                            </Link>
-                        </Button>
+                    {(can.publish || can.update) && (
+                        <div className="ml-auto flex gap-2">
+                            {can.update && (
+                                <Button asChild variant="outline" size="sm">
+                                    <Link href={edit(event.id)}>
+                                        <Pencil />
+                                        Edit
+                                    </Link>
+                                </Button>
+                            )}
+                            {can.publish && (
+                                <PublishEventDialog eventId={event.id} />
+                            )}
+                        </div>
                     )}
                 </div>
 
