@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\EventStatus;
 use App\Exceptions\Domain\CapacityBelowBookedSeats;
+use App\Exceptions\Domain\EventHasStarted;
+use App\Exceptions\Domain\InvalidStateTransition;
 use Carbon\CarbonImmutable;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -118,5 +120,34 @@ class Event extends Model
 
         $this->seats_available += $capacity - $this->capacity;
         $this->capacity = $capacity;
+    }
+
+    /**
+     * Whether the event can be published now (BR-E10). The page uses it to show the
+     * publish button.
+     */
+    public function canBePublished(): bool
+    {
+        return $this->status->canTransitionTo(EventStatus::Published) && ! $this->hasStarted();
+    }
+
+    /**
+     * Publish the event (BR-E10). It does not save the event.
+     *
+     * @throws InvalidStateTransition
+     * @throws EventHasStarted
+     */
+    public function publish(): void
+    {
+        if (! $this->status->canTransitionTo(EventStatus::Published)) {
+            throw InvalidStateTransition::cannotPublish($this->status);
+        }
+
+        if ($this->hasStarted()) {
+            throw EventHasStarted::cannotPublish();
+        }
+
+        $this->status = EventStatus::Published;
+        $this->published_at = now();
     }
 }
