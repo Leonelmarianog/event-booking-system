@@ -20,9 +20,26 @@ M3 is split into eight PRs, in this order:
 7. `DeleteEvent`.
 8. `GetUpcomingEvents`: the public `events/index` page.
 
-PRs 1 to 4 are merged. The current PR (`feat/update-event`) is PR 5. Its plan is
-`docs/superpowers/plans/2026-10-07-m3-update-event.md`. It waits for the review of the
+PRs 1 to 5 are merged. The current PR (`feat/publish-event`) is PR 6. Its plan is
+`docs/superpowers/plans/2026-10-07-m3-publish-event.md`. It waits for the review of the
 owner.
+
+- State changes use REST sub-resource routes: publish is
+  `POST /events/{event}/publication` (`EventPublicationController@store`). Cancel in M4
+  follows the same pattern (`POST /events/{event}/cancellation`).
+- `EventStatus::canTransitionTo()` follows the state diagram in
+  `docs/design/business-rules.md`.
+- `InvalidStateTransition` and `EventHasStarted` have one named constructor for each
+  change (`cannotPublish()`). Cancel in M4 adds `cannotCancel()`.
+- `Event::publish()` checks the status, then the start time, and sets `published_at`.
+  `Event::canBePublished()` gives the same answer as a bool, for the button.
+- `EventPolicy::publish` returns a `Response`: 404 for hidden events, 403 for other
+  users.
+- The event page gets `can.publish` (policy and `canBePublished()`). The "Publish"
+  button opens a confirm dialog with a controlled `open` state, which closes when the
+  request finishes.
+- Tests that compare a stored time with `now()` use `freezeSecond()`, because the
+  `datetime` cast drops the microseconds.
 
 - `EventPolicy::update` returns a `Response`: 404 when the person cannot see the event,
   403 for all other refusals. An admin gets 403 on the draft of another user, because
@@ -207,8 +224,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/update-event` PR, merges it, and asks for a sync.
-2. Then M3 PR 6 (`PublishEvent`). Write its plan first.
+1. The owner reviews the `feat/publish-event` PR, merges it, and asks for a sync.
+2. Then M3 PR 7 (`DeleteEvent`). Write its plan first.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
