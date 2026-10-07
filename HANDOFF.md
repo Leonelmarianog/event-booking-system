@@ -20,9 +20,23 @@ M3 is split into eight PRs, in this order:
 7. `DeleteEvent`.
 8. `GetUpcomingEvents`: the public `events/index` page.
 
-PRs 1 to 6 are merged. The current PR (`feat/delete-event`) is PR 7. Its plan is
-`docs/superpowers/plans/2026-10-07-m3-delete-event.md`. It waits for the review of the
-owner.
+PRs 1 to 7 are merged. The current PR (`feat/upcoming-events`) is PR 8, the last PR of
+M3. Its plan is `docs/superpowers/plans/2026-10-07-m3-upcoming-events.md`. It waits for
+the review of the owner.
+
+- The model has the query scopes `published()` and `upcoming()` (with the `#[Scope]`
+  attribute). `upcoming()` uses the same rule as `Event::hasStarted()`.
+- The public list is `GET /events` (`events.index`): upcoming published events,
+  earliest first, 12 on each page (`?page=N`), as cards. Sold-out events stay in the
+  list with a "Sold out" badge. The list is the same for visitors, users and admins.
+- `/` redirects to `/events`. The route name `home` stays, because the auth layouts and
+  the logout redirect use it. The starter kit welcome page is deleted, and
+  `ExampleTest` now checks the redirect.
+- The sidebar has "Events" for everyone, and the logo opens the list.
+  `app-header.tsx` still links to the dashboard, but the app does not use the header
+  layout.
+- `Paginated<T>` in `resources/js/types/pagination.ts` describes a Laravel
+  `paginate()` result.
 
 - BR-E17 is checked twice. `EventPolicy::delete` allows only the organizer of a draft
   (404 for hidden events, 403 for the rest). `Event::ensureCanBeDeleted()` throws
@@ -234,8 +248,9 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/delete-event` PR, merges it, and asks for a sync.
-2. Then M3 PR 8 (`GetUpcomingEvents`), the last PR of M3. Write its plan first.
+1. The owner reviews the `feat/upcoming-events` PR, merges it, and asks for a sync.
+2. After the merge, M3 is complete. Check that each M3 rule (BR-E1 to BR-E11, BR-E14 to
+   BR-E17, BR-A3, BR-A4) has a test, then plan M4 (bookings) with the owner.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.

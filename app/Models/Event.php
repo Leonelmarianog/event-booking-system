@@ -8,6 +8,8 @@ use App\Exceptions\Domain\EventHasStarted;
 use App\Exceptions\Domain\InvalidStateTransition;
 use Carbon\CarbonImmutable;
 use Database\Factories\EventFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -55,6 +57,28 @@ class Event extends Model
     public function organizer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'organizer_id');
+    }
+
+    /**
+     * Only published events.
+     *
+     * @param  Builder<Event>  $query
+     */
+    #[Scope]
+    protected function published(Builder $query): void
+    {
+        $query->where('status', EventStatus::Published);
+    }
+
+    /**
+     * Only events that have not started.
+     *
+     * @param  Builder<Event>  $query
+     */
+    #[Scope]
+    protected function upcoming(Builder $query): void
+    {
+        $query->where('starts_at', '>', now());
     }
 
     /**

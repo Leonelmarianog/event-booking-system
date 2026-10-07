@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\CreateEvent\CreateEvent;
 use App\Actions\DeleteEvent\DeleteEvent;
 use App\Actions\GetEvent\GetEvent;
+use App\Actions\GetUpcomingEvents\GetUpcomingEvents;
 use App\Actions\UpdateEvent\UpdateEvent;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
@@ -16,6 +17,16 @@ use Inertia\Response;
 
 class EventController extends Controller
 {
+    /**
+     * Show the upcoming published events.
+     */
+    public function index(GetUpcomingEvents $getUpcomingEvents): Response
+    {
+        return Inertia::render('events/index', [
+            'events' => $getUpcomingEvents->handle(),
+        ]);
+    }
+
     /**
      * Show the form to create an event.
      */

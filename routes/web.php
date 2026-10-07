@@ -5,7 +5,9 @@ use App\Http\Controllers\EventPublicationController;
 use App\Http\Controllers\OrganizerEventController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+Route::redirect('/', '/events')->name('home');
+
+Route::get('events', [EventController::class, 'index'])->name('events.index');
 
 Route::get('events/{event}', [EventController::class, 'show'])
     ->whereNumber('event')
