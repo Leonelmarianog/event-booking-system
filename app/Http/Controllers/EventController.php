@@ -9,6 +9,7 @@ use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Models\Event;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -37,10 +38,13 @@ class EventController extends Controller
     /**
      * Show the page of one event.
      */
-    public function show(Event $event, GetEvent $getEvent): Response
+    public function show(Request $request, Event $event, GetEvent $getEvent): Response
     {
         return Inertia::render('events/show', [
             'event' => $getEvent->handle($event),
+            'can' => [
+                'update' => $request->user()?->can('update', $event) ?? false,
+            ],
         ]);
     }
 

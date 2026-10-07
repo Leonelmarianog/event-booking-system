@@ -1,7 +1,7 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { EventStatusBadge } from '@/components/event-status-badge';
 import { LocalDateTime } from '@/components/local-date-time';
-import { create, show } from '@/routes/events';
+import { create, edit, show } from '@/routes/events';
 import { index } from '@/routes/organizer/events';
 import type { BreadcrumbItem, OrganizerEventRow } from '@/types';
 
@@ -32,6 +32,9 @@ function EventTable({
                                 <th className="px-3 py-2 text-right font-medium">
                                     Seats booked
                                 </th>
+                                <th className="px-3 py-2">
+                                    <span className="sr-only">Actions</span>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -57,6 +60,16 @@ function EventTable({
                                     </td>
                                     <td className="px-3 py-2 text-right whitespace-nowrap">
                                         {event.seats_booked} / {event.capacity}
+                                    </td>
+                                    <td className="px-3 py-2 text-right">
+                                        {event.can_update && (
+                                            <Link
+                                                href={edit(event.id)}
+                                                className="font-medium underline-offset-4 hover:underline"
+                                            >
+                                                Edit
+                                            </Link>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

@@ -1,11 +1,18 @@
-import { Head, setLayoutProps } from '@inertiajs/react';
-import { CalendarDays, MapPin, User, Users } from 'lucide-react';
+import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { CalendarDays, MapPin, Pencil, User, Users } from 'lucide-react';
 import { LocalDateTime } from '@/components/local-date-time';
 import { Badge } from '@/components/ui/badge';
-import { show } from '@/routes/events';
+import { Button } from '@/components/ui/button';
+import { edit, show } from '@/routes/events';
 import type { BreadcrumbItem, EventDetails } from '@/types';
 
-export default function ShowEvent({ event }: { event: EventDetails }) {
+export default function ShowEvent({
+    event,
+    can,
+}: {
+    event: EventDetails;
+    can: { update: boolean };
+}) {
     setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
         breadcrumbs: [{ title: event.title, href: show(event.id) }],
     });
@@ -23,6 +30,19 @@ export default function ShowEvent({ event }: { event: EventDetails }) {
                     )}
                     {event.status === 'cancelled' && (
                         <Badge variant="destructive">Cancelled</Badge>
+                    )}
+                    {can.update && (
+                        <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="ml-auto"
+                        >
+                            <Link href={edit(event.id)}>
+                                <Pencil />
+                                Edit
+                            </Link>
+                        </Button>
                     )}
                 </div>
 
