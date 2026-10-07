@@ -26,6 +26,11 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:event-writes')
         ->name('events.update')
         ->can('update', 'event');
+    Route::delete('events/{event}', [EventController::class, 'destroy'])
+        ->whereNumber('event')
+        ->middleware('throttle:event-writes')
+        ->name('events.destroy')
+        ->can('delete', 'event');
     Route::post('events/{event}/publication', [EventPublicationController::class, 'store'])
         ->whereNumber('event')
         ->middleware('throttle:event-writes')

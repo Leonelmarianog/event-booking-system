@@ -64,3 +64,13 @@ test('the publish route uses the same limit', function () {
         ->post(route('events.publication.store', $event))
         ->assertTooManyRequests();
 });
+
+test('the delete route uses the same limit', function () {
+    $event = Event::factory()->for($this->user, 'organizer')->create();
+
+    $this->actingAs($this->user)
+        ->delete(route('events.destroy', $event))
+        ->assertTooManyRequests();
+
+    expect(Event::find($event->id))->not->toBeNull();
+});

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\CreateEvent\CreateEvent;
+use App\Actions\DeleteEvent\DeleteEvent;
 use App\Actions\GetEvent\GetEvent;
 use App\Actions\UpdateEvent\UpdateEvent;
 use App\Http\Requests\StoreEventRequest;
@@ -69,5 +70,17 @@ class EventController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Event updated.')]);
 
         return to_route('events.show', $event);
+    }
+
+    /**
+     * Delete a draft event and show the events of the user.
+     */
+    public function destroy(Event $event, DeleteEvent $deleteEvent): RedirectResponse
+    {
+        $deleteEvent->handle($event);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Event deleted.')]);
+
+        return to_route('organizer.events.index');
     }
 }
