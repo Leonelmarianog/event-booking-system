@@ -1,5 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, CalendarPlus, FolderGit2, LayoutGrid } from 'lucide-react';
+import {
+    BookOpen,
+    CalendarDays,
+    CalendarPlus,
+    FolderGit2,
+    LayoutGrid,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -15,6 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { create } from '@/routes/events';
+import { index as organizerEvents } from '@/routes/organizer/events';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -44,6 +51,11 @@ export function AppSidebar() {
     const navItems: NavItem[] = auth.user
         ? [
               ...mainNavItems,
+              {
+                  title: 'My events',
+                  href: organizerEvents(),
+                  icon: CalendarDays,
+              },
               { title: 'Create event', href: create(), icon: CalendarPlus },
           ]
         : mainNavItems;
