@@ -5,6 +5,7 @@ import {
     CalendarPlus,
     FolderGit2,
     LayoutGrid,
+    Ticket,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -20,11 +21,16 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { create } from '@/routes/events';
+import { create, index as eventsIndex } from '@/routes/events';
 import { index as organizerEvents } from '@/routes/organizer/events';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
+    {
+        title: 'Events',
+        href: eventsIndex(),
+        icon: Ticket,
+    },
     {
         title: 'Dashboard',
         href: dashboard(),
@@ -66,7 +72,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={eventsIndex()} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
