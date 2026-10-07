@@ -53,7 +53,7 @@ class EventController extends Controller
     public function show(Request $request, Event $event, GetEvent $getEvent): Response
     {
         return Inertia::render('events/show', [
-            'event' => $getEvent->handle($event),
+            ...$getEvent->handle($event, $request->user()),
             'can' => [
                 'update' => $request->user()?->can('update', $event) ?? false,
                 'publish' => ($request->user()?->can('publish', $event) ?? false) && $event->canBePublished(),
@@ -68,7 +68,7 @@ class EventController extends Controller
     public function edit(Event $event, GetEvent $getEvent): Response
     {
         return Inertia::render('events/edit', [
-            'event' => $getEvent->handle($event),
+            'event' => $getEvent->handle($event)['event'],
         ]);
     }
 

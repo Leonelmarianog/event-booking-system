@@ -19,9 +19,31 @@ M4 is split into seven PRs, in this order:
 7. `CancelEvent`: `events.cancelled_at`, `Event::cancel()`, and the cancel of all
    confirmed bookings. The email of BR-E13 comes in M5.
 
-The current PR (`feat/bookings-foundation`) is PR 1. Its plan is
-`docs/superpowers/plans/2026-10-07-m4-bookings-foundation.md`. It waits for the review
-of the owner.
+PR 1 is merged. The current PR (`feat/reserve-seats`) is PR 2. Its plan is
+`docs/superpowers/plans/2026-10-07-m4-reserve-seats.md`. It waits for the review of the
+owner.
+
+- The booking route is `POST /events/{event}/bookings` (`events.bookings.store`,
+  `BookingController@store`). It has `auth` (BR-B1), `throttle:bookings` and
+  `can:view,event`, so hidden events give a 404 before the booking rules run.
+- The rate limiter `bookings` allows 10 requests each minute for each user.
+  `CancelBooking` (PR 5) must use it too. `event-writes` and `bookings` share
+  `AppServiceProvider::tooManyRequests()`.
+- `Event::reserve()` checks, in this order: published, not started (both
+  `EventNotBookable`), not the organizer (`EventNotBookable::ownEvent()`), no confirmed
+  booking (`AlreadyBooked`), enough seats (`NotEnoughSeats`, field `quantity`). It
+  decreases the seats and returns an unsaved confirmed booking.
+- `ReserveSeats` locks the event row in a transaction and saves the event and the
+  booking. The concurrency check (PR 3) proves BR-B14.
+- After a booking, the user goes back to the event page. The toast shows the reference.
+- `GetEvent::handle(Event, ?User)` returns `['event' => ..., 'booking' => ...]`. The
+  `booking` prop has the states `booked`, `available` (with `max_quantity`), `login`,
+  `sold_out`, or `null`. The organizer of a sold-out event also sees "Sold out". The
+  edit page uses only `event`.
+- Run `php artisan wayfinder:generate --with-form` if you generate the routes by hand.
+  Without `--with-form`, the `.form()` helpers are missing and `tsc` fails.
+
+PR 1 notes:
 
 - `bookings.reference` is a ULID (lowercase, 26 characters). The model makes it on
   create (`HasUlids` with `uniqueIds()`). The primary key stays a `bigint`.
@@ -266,8 +288,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/bookings-foundation` PR, merges it, and asks for a sync.
-2. After the merge, plan M4 PR 2 (`ReserveSeats`) with the owner.
+1. The owner reviews the `feat/reserve-seats` PR, merges it, and asks for a sync.
+2. After the merge, plan M4 PR 3 (the concurrency check) with the owner.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
