@@ -168,3 +168,27 @@ test('BR-A3: an admin does not see the publish button on the draft of another us
         ->get(route('events.show', $event))
         ->assertInertia(fn (Assert $page) => $page->where('can.publish', false));
 });
+
+test('BR-E17: the organizer sees the delete button on a draft', function () {
+    $event = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.delete', true));
+});
+
+test('BR-E17: the organizer does not see the delete button on a published event', function () {
+    $event = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.delete', false));
+});
+
+test('BR-E17: an admin does not see the delete button on the draft of another user', function () {
+    $event = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->admin)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.delete', false));
+});
