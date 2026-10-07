@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EventStatus;
+use App\Exceptions\Domain\CapacityBelowBookedSeats;
 use Carbon\CarbonImmutable;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -100,5 +101,22 @@ class Event extends Model
     public function seatsBooked(): int
     {
         return $this->capacity - $this->seats_available;
+    }
+
+    /**
+     * Change the capacity and the available seats by the same number (BR-E6, BR-E7, BR-E8).
+     *
+     * @throws CapacityBelowBookedSeats
+     */
+    public function changeCapacity(int $capacity): void
+    {
+        $seatsBooked = $this->seatsBooked();
+
+        if ($capacity < $seatsBooked) {
+            throw new CapacityBelowBookedSeats($seatsBooked);
+        }
+
+        $this->seats_available += $capacity - $this->capacity;
+        $this->capacity = $capacity;
     }
 }
