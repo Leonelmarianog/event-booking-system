@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\BookingStatus;
 use App\Enums\EventStatus;
+use App\Exceptions\Domain\AlreadyBooked;
 use App\Exceptions\Domain\CapacityBelowBookedSeats;
 use App\Exceptions\Domain\EventHasStarted;
+use App\Exceptions\Domain\EventNotBookable;
 use App\Exceptions\Domain\InvalidStateTransition;
+use App\Exceptions\Domain\NotEnoughSeats;
 use Carbon\CarbonImmutable;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -148,6 +152,85 @@ class Event extends Model
     public function seatsBooked(): int
     {
         return $this->capacity - $this->seats_available;
+    }
+
+    /**
+     * Whether the event is published, has not started and has available seats (BR-B2).
+     */
+    public function isBookable(): bool
+    {
+        return $this->isPublished() && ! $this->hasStarted() && $this->seats_available > 0;
+    }
+
+    /**
+     * Whether the event is published, has not started and has no available seats.
+     */
+    public function isSoldOut(): bool
+    {
+        return $this->isPublished() && ! $this->hasStarted() && $this->seats_available === 0;
+    }
+
+    /**
+     * The confirmed booking of the given user for the event, if any.
+     */
+    public function confirmedBookingBy(User $user): ?Booking
+    {
+        return $this->bookings()
+            ->where('user_id', $user->id)
+            ->where('status', BookingStatus::Confirmed)
+            ->first();
+    }
+
+    /**
+     * Whether the given user can book seats now (BR-B2, BR-B3, BR-B4). The page uses it to
+     * show the booking form.
+     */
+    public function canBeBookedBy(User $user): bool
+    {
+        return $this->isBookable()
+            && ! $this->isOrganizedBy($user)
+            && $this->confirmedBookingBy($user) === null;
+    }
+
+    /**
+     * Book seats for the given user (BR-B2 to BR-B4, BR-B6, BR-B7). It decreases the
+     * available seats and returns a new confirmed booking. It saves nothing.
+     *
+     * @throws EventNotBookable
+     * @throws AlreadyBooked
+     * @throws NotEnoughSeats
+     */
+    public function reserve(User $attendee, int $quantity): Booking
+    {
+        if (! $this->isPublished()) {
+            throw EventNotBookable::notPublished();
+        }
+
+        if ($this->hasStarted()) {
+            throw EventNotBookable::hasStarted();
+        }
+
+        if ($this->isOrganizedBy($attendee)) {
+            throw EventNotBookable::ownEvent();
+        }
+
+        if ($this->confirmedBookingBy($attendee) !== null) {
+            throw new AlreadyBooked;
+        }
+
+        if ($quantity > $this->seats_available) {
+            throw new NotEnoughSeats($this->seats_available);
+        }
+
+        $this->seats_available -= $quantity;
+
+        $booking = new Booking;
+        $booking->event_id = $this->id;
+        $booking->user_id = $attendee->id;
+        $booking->quantity = $quantity;
+        $booking->status = BookingStatus::Confirmed;
+
+        return $booking;
     }
 
     /**
