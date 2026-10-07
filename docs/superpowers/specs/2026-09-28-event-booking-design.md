@@ -183,7 +183,8 @@ Read use cases. Each one is an Action that the controller calls:
 - **Rate limiting:** named limiters in `AppServiceProvider`, stored in Redis:
     - `login`: the starter kit default (5 per minute per email + IP).
     - `bookings`: 10 per minute per user, on reserve and cancel.
-    - `event-writes`: 20 per minute per user, on create, update, publish and cancel.
+    - `event-writes`: 20 per minute per user, on create, update, publish, delete and
+      cancel.
       When the limit is exceeded, Inertia requests are redirected back with a flash error,
       so the user sees a toast instead of an error page. All other requests get a plain 429.
 - **Production hardening:** `TrustProxies` configured through the environment,

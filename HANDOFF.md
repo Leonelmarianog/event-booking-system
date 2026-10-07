@@ -20,9 +20,19 @@ M3 is split into eight PRs, in this order:
 7. `DeleteEvent`.
 8. `GetUpcomingEvents`: the public `events/index` page.
 
-PRs 1 to 5 are merged. The current PR (`feat/publish-event`) is PR 6. Its plan is
-`docs/superpowers/plans/2026-10-07-m3-publish-event.md`. It waits for the review of the
+PRs 1 to 6 are merged. The current PR (`feat/delete-event`) is PR 7. Its plan is
+`docs/superpowers/plans/2026-10-07-m3-delete-event.md`. It waits for the review of the
 owner.
+
+- BR-E17 is checked twice. `EventPolicy::delete` allows only the organizer of a draft
+  (404 for hidden events, 403 for the rest). `Event::ensureCanBeDeleted()` throws
+  `InvalidStateTransition::cannotDelete()` as a last line of defense.
+- The delete route is REST: `DELETE /events/{event}` (`EventController@destroy`). It
+  has the `event-writes` limit, and the spec now lists delete for that limit.
+- A draft that has started can be deleted. BR-E17 does not limit the start time.
+- The event page gets `can.delete` from the policy. The red "Delete" button opens a
+  confirm dialog. After the delete, the user sees "My events" and the toast
+  "Event deleted.".
 
 - State changes use REST sub-resource routes: publish is
   `POST /events/{event}/publication` (`EventPublicationController@store`). Cancel in M4
@@ -224,8 +234,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/publish-event` PR, merges it, and asks for a sync.
-2. Then M3 PR 7 (`DeleteEvent`). Write its plan first.
+1. The owner reviews the `feat/delete-event` PR, merges it, and asks for a sync.
+2. Then M3 PR 8 (`GetUpcomingEvents`), the last PR of M3. Write its plan first.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.

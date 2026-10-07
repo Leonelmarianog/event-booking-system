@@ -1,5 +1,6 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { CalendarDays, MapPin, Pencil, User, Users } from 'lucide-react';
+import { DeleteEventDialog } from '@/components/delete-event-dialog';
 import { LocalDateTime } from '@/components/local-date-time';
 import { PublishEventDialog } from '@/components/publish-event-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,7 @@ export default function ShowEvent({
     can,
 }: {
     event: EventDetails;
-    can: { update: boolean; publish: boolean };
+    can: { update: boolean; publish: boolean; delete: boolean };
 }) {
     setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
         breadcrumbs: [{ title: event.title, href: show(event.id) }],
@@ -32,7 +33,7 @@ export default function ShowEvent({
                     {event.status === 'cancelled' && (
                         <Badge variant="destructive">Cancelled</Badge>
                     )}
-                    {(can.publish || can.update) && (
+                    {(can.publish || can.update || can.delete) && (
                         <div className="ml-auto flex gap-2">
                             {can.update && (
                                 <Button asChild variant="outline" size="sm">
@@ -44,6 +45,9 @@ export default function ShowEvent({
                             )}
                             {can.publish && (
                                 <PublishEventDialog eventId={event.id} />
+                            )}
+                            {can.delete && (
+                                <DeleteEventDialog eventId={event.id} />
                             )}
                         </div>
                     )}

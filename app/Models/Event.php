@@ -150,4 +150,25 @@ class Event extends Model
         $this->status = EventStatus::Published;
         $this->published_at = now();
     }
+
+    /**
+     * Whether the event can be deleted (BR-E17). The page uses it with the policy.
+     */
+    public function canBeDeleted(): bool
+    {
+        return $this->isDraft();
+    }
+
+    /**
+     * Check that the event can be deleted (BR-E17). The policy refuses the other events
+     * first, so this is a last line of defense.
+     *
+     * @throws InvalidStateTransition
+     */
+    public function ensureCanBeDeleted(): void
+    {
+        if (! $this->canBeDeleted()) {
+            throw InvalidStateTransition::cannotDelete($this->status);
+        }
+    }
 }

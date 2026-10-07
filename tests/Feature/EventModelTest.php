@@ -149,3 +149,27 @@ test('BR-E10: a draft that has started cannot be published', function () {
     expect($event->status)->toBe(EventStatus::Draft)
         ->and($event->published_at)->toBeNull();
 });
+
+test('BR-E17: a draft can be deleted', function () {
+    $event = Event::factory()->make();
+
+    expect($event->canBeDeleted())->toBeTrue();
+
+    $event->ensureCanBeDeleted();
+});
+
+test('BR-E17: a published event cannot be deleted', function () {
+    $event = Event::factory()->published()->make();
+
+    expect($event->canBeDeleted())->toBeFalse()
+        ->and(fn () => $event->ensureCanBeDeleted())
+        ->toThrow(InvalidStateTransition::class, 'Only a draft event can be deleted. This event is published.');
+});
+
+test('BR-E17: a cancelled event cannot be deleted', function () {
+    $event = Event::factory()->cancelled()->make();
+
+    expect($event->canBeDeleted())->toBeFalse()
+        ->and(fn () => $event->ensureCanBeDeleted())
+        ->toThrow(InvalidStateTransition::class, 'Only a draft event can be deleted. This event is cancelled.');
+});
