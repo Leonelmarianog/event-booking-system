@@ -26,13 +26,20 @@ class EventPolicy
     }
 
     /**
-     * BR-E4, BR-E5 and BR-A3.
+     * BR-E4, BR-E5 and BR-A3. A person who cannot see the event gets a 404, so that
+     * hidden events stay unknown.
      */
-    public function update(User $user, Event $event): bool
+    public function update(User $user, Event $event): Response
     {
-        return $event->isOrganizedBy($user)
-            && ! $event->isCancelled()
-            && ! $event->hasStarted();
+        if ($this->view($user, $event)->denied()) {
+            return Response::denyAsNotFound();
+        }
+
+        if ($event->isOrganizedBy($user) && ! $event->isCancelled() && ! $event->hasStarted()) {
+            return Response::allow();
+        }
+
+        return Response::deny();
     }
 
     /**

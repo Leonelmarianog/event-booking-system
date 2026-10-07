@@ -93,6 +93,30 @@ test('BR-A3: an admin can edit their own events', function () {
     expect($this->admin->can('update', $event))->toBeTrue();
 });
 
+test('BR-E4: another user gets a 404 for a draft event that they cannot see', function () {
+    $event = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    expect(Gate::forUser($this->otherUser)->inspect('update', $event)->status())->toBe(404);
+});
+
+test('BR-E4: another user gets a 403 for a published event', function () {
+    $event = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+
+    $response = Gate::forUser($this->otherUser)->inspect('update', $event);
+
+    expect($response->denied())->toBeTrue()
+        ->and($response->status())->toBeNull();
+});
+
+test('BR-A3: an admin gets a 403 for the draft event of another user', function () {
+    $event = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    $response = Gate::forUser($this->admin)->inspect('update', $event);
+
+    expect($response->denied())->toBeTrue()
+        ->and($response->status())->toBeNull();
+});
+
 // Publish: BR-E9, BR-A3
 
 test('BR-E9: only the organizer can publish an event', function () {
