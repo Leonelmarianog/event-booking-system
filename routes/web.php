@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BookingController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventPublicationController;
 use App\Http\Controllers\OrganizerEventController;
@@ -38,6 +39,11 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:event-writes')
         ->name('events.publication.store')
         ->can('publish', 'event');
+    Route::post('events/{event}/bookings', [BookingController::class, 'store'])
+        ->whereNumber('event')
+        ->middleware('throttle:bookings')
+        ->name('events.bookings.store')
+        ->can('view', 'event');
     Route::get('organizer/events', [OrganizerEventController::class, 'index'])
         ->name('organizer.events.index');
 });
