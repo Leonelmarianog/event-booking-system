@@ -50,3 +50,9 @@ test('BR-E4: an event knows its organizer when the organizer ID is a string', fu
 
     expect($event->isOrganizedBy($organizer))->toBeTrue();
 });
+
+test('an event knows how many seats are booked', function () {
+    $event = Event::factory()->create(['capacity' => 50, 'seats_available' => 38]);
+
+    expect($event->seatsBooked())->toBe(12);
+});

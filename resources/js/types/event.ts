@@ -11,3 +11,12 @@ export type EventDetails = {
     status: EventStatus;
     organizer_name: string;
 };
+
+export type OrganizerEventRow = {
+    id: number;
+    title: string;
+    starts_at: string;
+    status: EventStatus;
+    capacity: number;
+    seats_booked: number;
+};

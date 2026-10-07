@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\OrganizerEventController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -15,6 +16,8 @@ Route::middleware('auth')->group(function () {
     Route::post('events', [EventController::class, 'store'])
         ->middleware('throttle:event-writes')
         ->name('events.store');
+    Route::get('organizer/events', [OrganizerEventController::class, 'index'])
+        ->name('organizer.events.index');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

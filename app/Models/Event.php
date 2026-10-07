@@ -93,4 +93,12 @@ class Event extends Model
     {
         return $this->status === EventStatus::Cancelled;
     }
+
+    /**
+     * The number of seats that attendees have booked.
+     */
+    public function seatsBooked(): int
+    {
+        return $this->capacity - $this->seats_available;
+    }
 }
