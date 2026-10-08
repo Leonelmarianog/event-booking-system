@@ -43,7 +43,12 @@ BR-U1 to BR-U5 has a test.
   the login page with no message (owner decision: log out silently).
 - Password login, "remember me" and passkey login are closed by PR 1 and PR 2 (null
   password, null remember token, deleted passkeys); `DeletedUserAccessTest` pins them.
+- A JSON request from such a session gets 401, like the `auth` middleware gives.
 - BR-U5 is enforced by "Model, Middleware" in `docs/design/business-rules.md`.
+- Known and accepted (owner decision): if a user passes the password step of a
+  two-factor login on one device and deletes the account on another device before
+  entering the code, the code step gives a 500 (Fortify decrypts the empty two-factor
+  secret). Nobody gets in.
 
 M6 PR 2 notes:
 
