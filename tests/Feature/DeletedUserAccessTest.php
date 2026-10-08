@@ -49,3 +49,38 @@ test('BR-U5: a password reset for the old email finds no user and sends no email
     EventFacade::assertNotDispatched(MessageSending::class);
     $this->assertGuest();
 });
+
+test('BR-U5: a session that was open before the delete is logged out', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $user->anonymize();
+    $user->save();
+
+    $this->get(route('bookings.index'))
+        ->assertRedirect(route('login'))
+        ->assertInertiaFlashMissing('toast');
+
+    $this->assertGuest();
+});
+
+test('BR-U5: an Inertia request from such a session is logged out too', function () {
+    $user = User::factory()->anonymized()->create();
+
+    $this->actingAs($user)
+        ->get(route('events.index'), ['X-Inertia' => 'true'])
+        ->assertRedirect(route('login'));
+
+    $this->assertGuest();
+});
+
+test('a public page still works for guests', function () {
+    $this->get(route('events.index'))->assertOk();
+});
+
+test('a normal user stays logged in', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->get(route('bookings.index'))->assertOk();
+
+    $this->assertAuthenticatedAs($user);
+});
