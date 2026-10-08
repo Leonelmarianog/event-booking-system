@@ -10,6 +10,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command(SendEventReminders::class)
-    ->dailyAt('08:00')
-    ->timezone('UTC')
-    ->withoutOverlapping();
+    ->hourly()
+    ->withoutOverlapping(60);

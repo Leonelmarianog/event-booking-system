@@ -25,12 +25,12 @@ test('the command prints "events" for more or less than one event', function () 
         ->assertSuccessful();
 });
 
-test('BR-N4: the command runs daily at 08:00 UTC without overlapping', function () {
+test('BR-N4: the command runs each hour without overlapping, with a 60-minute lock', function () {
     $scheduled = collect(app(Schedule::class)->events())
         ->first(fn (ScheduledEvent $event) => str_contains((string) $event->command, 'events:send-reminders'));
 
     expect($scheduled)->not->toBeNull()
-        ->and($scheduled->expression)->toBe('0 8 * * *')
-        ->and($scheduled->timezone)->toBe('UTC')
-        ->and($scheduled->withoutOverlapping)->toBeTrue();
+        ->and($scheduled->expression)->toBe('0 * * * *')
+        ->and($scheduled->withoutOverlapping)->toBeTrue()
+        ->and($scheduled->expiresAt)->toBe(60);
 });
