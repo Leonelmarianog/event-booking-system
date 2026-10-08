@@ -4,48 +4,61 @@ Last updated: 2026-10-08
 
 ## Where we are
 
-Milestones M1 (Foundation), M2 (CI and production image), M3 (Events) and M4
-(Bookings) are complete. Each M3 and M4 rule has at least one test. M5 (Notifications)
-is complete when its last PR (PR 4, below) is merged.
+Milestones M1 (Foundation), M2 (CI and production image), M3 (Events), M4 (Bookings) and
+M5 (Notifications) are complete. Each rule of M3, M4 and M5 has at least one test.
 
-M5 (Notifications) is split into four PRs, in this order:
+M6 (User accounts) is split into three PRs, in this order:
 
-1. `BookingConfirmed`: `ReserveSeats` sends it (BR-N1, BR-N6).
-2. `BookingCancelled`: `CancelBooking` sends it (BR-N2).
-3. `EventCancelled`: `CancelEvent` sends it to each attendee with a confirmed booking
-   (BR-N3, the email part of BR-E13). These attendees get no `BookingCancelled` email.
-4. Reminders: `events.reminder_sent_at`, the `SendEventReminders` Action and command,
-   scheduled each hour, and `EventReminder` (BR-N4, BR-N5).
+1. The account rules on the `User` model: `users.anonymized_at`, a nullable
+   `users.password`, `User::ensureCanBeDeleted()` (BR-U1, BR-U2) and
+   `User::anonymize()` (BR-U4). No route and no page.
+2. The `DeleteAccount` Action on the existing "Delete account" page
+   (`profile.destroy`): one transaction that checks the rules, deletes the drafts of the
+   user (BR-U3), anonymizes the user and deletes the passkeys; then log out. A blocked
+   delete shows an error toast.
+3. BR-U5 on every login path (password, passkey, password reset) and a middleware that
+   ends the open sessions of an anonymized user (sessions are in Redis).
 
-PRs 1 to 3 are merged (#37, #38, #39). BR-E13 is complete (also the email part). The
-current PR (`feat/event-reminders`) is PR 4, the last PR of M5. Its plan is
-`docs/superpowers/plans/2026-10-08-m5-event-reminders.md`. It is open as a PR and waits
-for the merge. With this PR, M5 is complete: every rule BR-N1 to BR-N7 has a test.
+Owner decisions for M6:
 
-- `CancelBooking` sends `BookingCancelled` (BR-N2). `CancelEvent` sends
-  `EventCancelled` to the attendee of each booking that it cancels, and no
-  `BookingCancelled` (BR-N3).
-- A migration `add_reminder_sent_at_to_events_table` adds `events.reminder_sent_at`
-  (`timestampTz`, nullable). The factory state `reminderSent()` sets it.
-- An event is due for a reminder when it is published, has not started, starts in the
-  next 24 hours (24 hours included) and has no `reminder_sent_at`: the scope
-  `Event::dueForReminder()` and `Event::needsReminder()`. `Event::markReminderSent()`
-  sets the time and saves nothing.
-- `SendEventReminders` reads the due event IDs, then handles each event in its own
-  transaction: lock the event row, check `needsReminder()` again, mark, save, and send
-  `EventReminder` to the attendee of each confirmed booking. Each event is wrapped in
-  `rescue()`, so an error is logged and the run goes on. A due event with no confirmed
-  bookings is also marked (owner decision).
-- The command `events:send-reminders` runs each hour with `withoutOverlapping(60)`
-  (`routes/console.php`). It prints "Reminders sent for N events.". The owner chose
-  hourly over daily at 08:00 after the review: with one run each day, some reminders
-  came minutes before the start, and an event published after 08:00 that started
-  before the next 08:00 got none. Hourly runs send the reminder about 23 to 24 hours
-  ahead. The 60-minute lock stops a killed run from blocking the next runs.
-- A start time change after the reminder sends no second reminder and no other email
-  (BR-N5, BR-N7; owner decision). An "event changed" email stays a future feature.
+- The placeholder email is `deleted-user-{id}@deleted.invalid` (`.invalid` never
+  resolves; the ID keeps it unique).
+- `DeleteAccount`, `ReserveSeats`, `CreateEvent` and `PublishEvent` lock the user row
+  first (PR 2), so a booking or a publish cannot slip in during a delete.
+- Only drafts are deleted (BR-U3). Cancelled and past events stay, with "Deleted user"
+  as the organizer.
 
-Each notification of M5 follows the same pattern (PR 1 sets it):
+The current PR (`feat/account-rules`) is PR 1. Its plan is
+`docs/superpowers/plans/2026-10-08-m6-account-rules.md`. It is open as a PR and waits
+for the merge.
+
+- Migrations `add_anonymized_at_to_users_table` (`timestampTz`, nullable) and
+  `make_password_nullable_on_users_table`.
+- `User::ensureCanBeDeleted()` throws `AccountCannotBeDeleted`: first BR-U1 (a published
+  event of the user that has not started), then BR-U2 (a confirmed booking for an event
+  that has not started). "Has not started" is the scope `Event::upcoming()`.
+- `User::anonymize()` sets the name "Deleted user", the placeholder email, a null
+  password, remember token and two-factor fields, and `anonymized_at`. It saves nothing
+  and does not touch passkeys (PR 2 deletes them). `User::isAnonymized()`, the
+  relation `User::organizedEvents()` and the factory state `anonymized()`.
+- Until PR 2, the "Delete account" page still calls `$user->delete()`. For a user with
+  events or bookings, it fails with a database error (the foreign keys restrict the
+  delete).
+
+M5 notes:
+
+- `ReserveSeats` sends `BookingConfirmed`, `CancelBooking` sends `BookingCancelled`, and
+  `CancelEvent` sends `EventCancelled` (no `BookingCancelled`) (BR-N1 to BR-N3).
+- `events.reminder_sent_at`; an event is due for a reminder when it is published, has
+  not started, starts in the next 24 hours and has no reminder yet
+  (`Event::dueForReminder()`, `Event::needsReminder()`). `SendEventReminders` handles
+  each due event in its own transaction with `rescue()`. The command
+  `events:send-reminders` runs each hour with `withoutOverlapping(60)` (owner decision
+  after the review; reminders arrive about 23 to 24 hours ahead).
+- A start time change sends no email and no second reminder (BR-N5, BR-N7). An "event
+  changed" email is a future feature.
+
+Each notification follows the same pattern (M5 PR 1 set it):
 
 - `implements ShouldQueue`, `use Queueable`, and `$this->afterCommit()` in the
   constructor. The queue connections have `after_commit => false`, so the notification
@@ -402,8 +415,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/event-reminders` PR, merges it, and asks for a sync.
-2. After the merge, M5 is complete. Split M6 (user accounts) into PRs with the owner.
+1. The owner reviews the `feat/account-rules` PR, merges it, and asks for a sync.
+2. After the merge, M6 PR 2: the `DeleteAccount` Action on the "Delete account" page.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
