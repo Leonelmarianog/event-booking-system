@@ -19,9 +19,39 @@ M4 is split into seven PRs, in this order:
 7. `CancelEvent`: `events.cancelled_at`, `Event::cancel()`, and the cancel of all
    confirmed bookings. The email of BR-E13 comes in M5.
 
-PR 1 is merged. The current PR (`feat/reserve-seats`) is PR 2. Its plan is
-`docs/superpowers/plans/2026-10-07-m4-reserve-seats.md`. It waits for the review of the
-owner.
+PRs 1 and 2 are merged. The current PR (`test/concurrency-check`) is PR 3. Its plan is
+`docs/superpowers/plans/2026-10-07-m4-concurrency-check.md`. It waits for the review of
+the owner.
+
+- BR-B14 has two automatic checks. The owner chose automatic checks over a manual
+  proof that the check catches a missing lock.
+- Layer 1: `tests/Concurrency/ReserveSeatsLockTest.php`. A second database connection
+  holds a `FOR KEY SHARE` lock on the event row, and `ReserveSeats` must stop with a
+  lock timeout (`lock_timeout = '1s'`). `FOR KEY SHARE` blocks only
+  `SELECT ... FOR UPDATE`, not the plain `UPDATE` of the event. With `FOR UPDATE`, the
+  test would also pass without `lockForUpdate()`. The test fails when the lock is
+  removed (checked once while writing it).
+- The `Concurrency` test suite (`tests/Pest.php`, `phpunit.xml`) uses
+  `DatabaseTruncation`, because the second connection must see committed rows. It
+  truncates `bookings`, `events` and `users` after each test.
+- Layer 2: `scripts/check-concurrency.sh [base-url]` (`make concurrency-test`). It seeds
+  the data with `ConcurrencyCheckSeeder`, logs in 20 users with curl (the
+  `XSRF-TOKEN` cookie goes back in the `X-XSRF-TOKEN` header), sends 20 booking
+  requests at the same time, and expects 20 responses with 302, 1 confirmed booking and
+  0 available seats. It deletes the rows of its run on exit, also after a failure.
+  `ARTISAN` selects how it runs Artisan (default `docker compose exec -T app php
+artisan`).
+- `ConcurrencyCheckSeeder` uses plain models, because the runtime image has no Faker.
+  Each run has a unique tag in the emails (`concurrency-<tag>-<n>@example.test`).
+- `compose.concurrency.yaml` runs the runtime image (`web` role) with PostgreSQL and
+  Redis, for CI. `WEB_PORT` (default 8080) lets it run next to the local stack. It
+  needs `APP_KEY`, also for `down` (`APP_KEY=x` is enough).
+- The CI job `concurrency` builds the runtime image again from the GitHub Actions cache
+  (read only) and runs the script. On failure, it prints the logs of the web role.
+- PHP-FPM has 5 workers (the default), so up to 5 booking requests run at the same
+  time.
+
+PR 2 notes:
 
 - The booking route is `POST /events/{event}/bookings` (`events.bookings.store`,
   `BookingController@store`). It has `auth` (BR-B1), `throttle:bookings` and
@@ -177,7 +207,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
   after a fresh clone. Use the Boost guidelines and skills to write Laravel code.
 - CI: `.github/workflows/ci.yml` runs on each PR and on each push to `main`. The jobs
   `lint` (Pint, PHPStan, `vp check`, `tsc`, `npm audit`), `test` (Pest on PostgreSQL,
-  coverage in the job summary) and `image` (build, role check, Trivy) run in parallel. `main` has
+  coverage in the job summary), `image` (build, role check, Trivy) and `concurrency`
+  (the parallel booking check) run in parallel. `main` has
   no branch protection rule.
 - `scripts/check-image-roles.sh <image> <env-file>` checks the four roles of the
   runtime image. Locally, set `DOCKER_NETWORK=event-booking_default`.
@@ -288,8 +319,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/reserve-seats` PR, merges it, and asks for a sync.
-2. After the merge, plan M4 PR 3 (the concurrency check) with the owner.
+1. The owner reviews the `test/concurrency-check` PR, merges it, and asks for a sync.
+2. After the merge, plan M4 PR 4 (`GetBookings`, the "My bookings" page) with the owner.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
