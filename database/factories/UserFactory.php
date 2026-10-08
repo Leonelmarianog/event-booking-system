@@ -76,11 +76,16 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'name' => 'Deleted user',
+            'email' => 'deleted-user-'.fake()->unique()->numberBetween(1_000_000, 9_999_999).'@'.User::ANONYMIZED_EMAIL_DOMAIN,
             'password' => null,
             'remember_token' => null,
+            'two_factor_secret' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_confirmed_at' => null,
             'anonymized_at' => now(),
         ])->afterCreating(function (User $user): void {
-            $user->forceFill(['email' => "deleted-user-{$user->id}@".User::ANONYMIZED_EMAIL_DOMAIN])->save();
+            $user->anonymize();
+            $user->save();
         });
     }
 }

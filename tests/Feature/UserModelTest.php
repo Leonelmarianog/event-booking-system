@@ -129,3 +129,19 @@ test('events and bookings of other users do not block the delete', function () {
 
     $user->ensureCanBeDeleted();
 })->throwsNoExceptions();
+
+test('the anonymized factory state clears the two-factor fields', function () {
+    $user = User::factory()->withTwoFactor()->anonymized()->create();
+
+    expect($user->fresh()->two_factor_secret)->toBeNull()
+        ->and($user->fresh()->two_factor_recovery_codes)->toBeNull()
+        ->and($user->fresh()->two_factor_confirmed_at)->toBeNull()
+        ->and($user->fresh()->email)->toBe("deleted-user-{$user->id}@deleted.invalid");
+});
+
+test('the anonymized factory state gives a placeholder email also with make', function () {
+    $user = User::factory()->anonymized()->make();
+
+    expect($user->email)->toEndWith('@deleted.invalid')
+        ->and($user->isAnonymized())->toBeTrue();
+});
