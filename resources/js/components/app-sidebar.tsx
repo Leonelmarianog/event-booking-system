@@ -6,6 +6,7 @@ import {
     FolderGit2,
     LayoutGrid,
     Ticket,
+    TicketCheck,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -21,6 +22,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as bookingsIndex } from '@/routes/bookings';
 import { create, index as eventsIndex } from '@/routes/events';
 import { index as organizerEvents } from '@/routes/organizer/events';
 import type { NavItem } from '@/types';
@@ -61,6 +63,11 @@ export function AppSidebar() {
                   title: 'My events',
                   href: organizerEvents(),
                   icon: CalendarDays,
+              },
+              {
+                  title: 'My bookings',
+                  href: bookingsIndex(),
+                  icon: TicketCheck,
               },
               { title: 'Create event', href: create(), icon: CalendarPlus },
           ]
