@@ -99,6 +99,7 @@ test('BR-B10: a cancelled booking cannot be cancelled again, and the seats stay 
 });
 
 test('BR-B10: a booking of a started event cannot be cancelled', function () {
+    Notification::fake();
     $this->event->forceFill(['starts_at' => now()->subHour()])->save();
 
     $this->actingAs($this->attendee)
@@ -112,6 +113,8 @@ test('BR-B10: a booking of a started event cannot be cancelled', function () {
 
     expect($this->booking->fresh()->isConfirmed())->toBeTrue()
         ->and($this->event->fresh()->seats_available)->toBe(7);
+
+    Notification::assertNothingSent();
 });
 
 test('BR-B12: after a cancel, the attendee can book the same event again', function () {
@@ -188,9 +191,10 @@ test('BR-N6: no cancel email when the transaction rolls back', function () {
         DB::transaction(function () {
             app(CancelBooking::class)->handle($this->booking);
 
-            throw new RuntimeException('A later step fails.');
+            throw new LogicException('A later step fails.');
         });
-    } catch (RuntimeException) {
+    } catch (LogicException $exception) {
+        expect($exception->getMessage())->toBe('A later step fails.');
     }
 
     EventFacade::assertNotDispatched(NotificationSent::class);

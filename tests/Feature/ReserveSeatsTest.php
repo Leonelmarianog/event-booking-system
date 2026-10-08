@@ -202,9 +202,10 @@ test('BR-N6: no email when the transaction rolls back', function () {
         DB::transaction(function () {
             app(ReserveSeats::class)->handle($this->event, $this->attendee, 1);
 
-            throw new RuntimeException('A later step fails.');
+            throw new LogicException('A later step fails.');
         });
-    } catch (RuntimeException) {
+    } catch (LogicException $exception) {
+        expect($exception->getMessage())->toBe('A later step fails.');
     }
 
     EventFacade::assertNotDispatched(NotificationSent::class);
