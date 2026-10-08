@@ -19,9 +19,27 @@ M4 is split into seven PRs, in this order:
 7. `CancelEvent`: `events.cancelled_at`, `Event::cancel()`, and the cancel of all
    confirmed bookings. The email of BR-E13 comes in M5.
 
-PRs 1 and 2 are merged. The current PR (`test/concurrency-check`) is PR 3. Its plan is
-`docs/superpowers/plans/2026-10-07-m4-concurrency-check.md`. It is open as PR #32 and
-waits for the merge. The next step is the plan of PR 4 (`GetBookings`).
+PRs 1 to 3 are merged. The current PR (`feat/get-bookings`) is PR 4. Its plan is
+`docs/superpowers/plans/2026-10-08-m4-get-bookings.md`. It waits for the owner's review.
+
+- The route is `GET /bookings` (`bookings.index`, `BookingController@index`). It has
+  only `auth`, not `verified`, and no policy check: the `GetBookings` Action reads only
+  the bookings of the user (BR-B13).
+- The page `bookings/index` has two tables: "Upcoming" (earliest event first) and
+  "Past" (most recent event first). The split uses `Event::hasStarted()`, so a booking
+  for an event that starts now is in "Past". Equal start times sort by booking ID.
+- The page shows confirmed and cancelled bookings. A user can have a cancelled booking
+  and a new booking for the same event (BR-B12); both rows show.
+- Columns: Event (link to the event page), Starts, Venue, Seats, Reference (all 26
+  characters), Status (`BookingStatusBadge`). No pagination.
+- Admins and organizers also see only their own bookings on this page.
+- The sidebar shows "My bookings" to logged-in users, after "My events". A user with no
+  bookings sees "You have no bookings yet." and a link to the events page.
+- The page has no cancel button yet. `CancelBooking` (PR 5) adds it.
+- `config/inertia.php` has `ensure_pages_exist` set to `true`, so a feature test that
+  renders a page needs the page file.
+
+PR 3 notes:
 
 - BR-B14 has two automatic checks. The owner chose automatic checks over a manual
   proof that the check catches a missing lock.
@@ -319,8 +337,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `test/concurrency-check` PR, merges it, and asks for a sync.
-2. After the merge, plan M4 PR 4 (`GetBookings`, the "My bookings" page) with the owner.
+1. The owner reviews the `feat/get-bookings` PR, merges it, and asks for a sync.
+2. After the merge, plan M4 PR 5 (`CancelBooking`) with the owner.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
