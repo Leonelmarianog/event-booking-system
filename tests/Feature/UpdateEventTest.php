@@ -1,8 +1,10 @@
 <?php
 
 use App\Enums\EventStatus;
+use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -137,4 +139,25 @@ test('BR-E6: the capacity cannot be less than the booked seats', function () {
     expect($event->title)->toBe('Old title')
         ->and($event->capacity)->toBe(50)
         ->and($event->seats_available)->toBe(38);
+});
+
+test('BR-N7: a start time change sends no email to the attendees', function () {
+    Notification::fake();
+    Booking::factory()->for($this->event)->create();
+
+    $this->actingAs($this->organizer)
+        ->put(route('events.update', $this->event), $this->validData)
+        ->assertRedirect(route('events.show', $this->event));
+
+    expect($this->event->fresh()->starts_at->utc()->toIso8601String())->toBe('2030-05-01T18:30:00+00:00');
+    Notification::assertNothingSent();
+});
+
+test('BR-N5: a start time change does not reset the reminder', function () {
+    $this->event->forceFill(['reminder_sent_at' => now()])->save();
+
+    $this->actingAs($this->organizer)
+        ->put(route('events.update', $this->event), $this->validData);
+
+    expect($this->event->fresh()->reminder_sent_at)->not->toBeNull();
 });
