@@ -1,9 +1,14 @@
 <?php
 
+use App\Actions\CancelEvent\CancelEvent;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
 use App\Notifications\BookingCancelled;
+use App\Notifications\EventCancelled;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event as EventFacade;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -172,4 +177,81 @@ test('a cancelled event sends no booking cancelled email', function () {
         ->and($this->second->fresh()->isCancelled())->toBeTrue();
     Notification::assertNotSentTo($this->first->attendee, BookingCancelled::class);
     Notification::assertNotSentTo($this->second->attendee, BookingCancelled::class);
+});
+
+test('BR-N3: each attendee with a confirmed booking gets an event cancelled email', function () {
+    Notification::fake();
+
+    $this->actingAs($this->organizer)
+        ->post(route('events.cancellation.store', $this->event));
+
+    Notification::assertSentTo(
+        $this->first->attendee,
+        EventCancelled::class,
+        fn (EventCancelled $notification) => $notification->booking->is($this->first),
+    );
+    Notification::assertSentTo(
+        $this->second->attendee,
+        EventCancelled::class,
+        fn (EventCancelled $notification) => $notification->booking->is($this->second),
+    );
+    Notification::assertNotSentTo($this->earlierCancel->attendee, EventCancelled::class);
+    Notification::assertNotSentTo($this->organizer, EventCancelled::class);
+    Notification::assertCount(2);
+});
+
+test('BR-N3: an event with no confirmed bookings sends no email', function () {
+    Notification::fake();
+    $draft = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->organizer)
+        ->post(route('events.cancellation.store', $draft))
+        ->assertInertiaFlash('toast.message', 'Event cancelled.');
+
+    Notification::assertNothingSent();
+});
+
+test('BR-N3: no email when the cancel fails a rule', function () {
+    Notification::fake();
+    $this->event->forceFill(['starts_at' => now()->subHour()])->save();
+
+    $this->actingAs($this->organizer)
+        ->post(route('events.cancellation.store', $this->event))
+        ->assertInertiaFlash('toast.message', 'The event has started, so it cannot be cancelled.');
+
+    Notification::assertNothingSent();
+});
+
+test('BR-N6: the event cancelled emails are sent only after the transaction commits', function () {
+    EventFacade::fake([NotificationSent::class]);
+
+    DB::transaction(function () {
+        app(CancelEvent::class)->handle($this->event);
+
+        EventFacade::assertNotDispatched(NotificationSent::class);
+    });
+
+    EventFacade::assertDispatchedTimes(NotificationSent::class, 2);
+    EventFacade::assertDispatched(
+        NotificationSent::class,
+        fn (NotificationSent $sent) => $sent->notification instanceof EventCancelled
+            && $sent->notifiable->is($this->first->attendee),
+    );
+});
+
+test('BR-N6: no event cancelled email when the transaction rolls back', function () {
+    EventFacade::fake([NotificationSent::class]);
+
+    try {
+        DB::transaction(function () {
+            app(CancelEvent::class)->handle($this->event);
+
+            throw new LogicException('A later step fails.');
+        });
+    } catch (LogicException $exception) {
+        expect($exception->getMessage())->toBe('A later step fails.');
+    }
+
+    EventFacade::assertNotDispatched(NotificationSent::class);
+    expect($this->event->fresh()->isPublished())->toBeTrue();
 });
