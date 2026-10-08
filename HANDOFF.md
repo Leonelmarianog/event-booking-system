@@ -5,7 +5,8 @@ Last updated: 2026-10-08
 ## Where we are
 
 Milestones M1 (Foundation), M2 (CI and production image) and M3 (Events) are complete.
-Each M3 rule has at least one test. Milestone M4 (Bookings) has started.
+Each M3 rule has at least one test. Milestone M4 (Bookings) is complete when its last
+PR (PR 7, below) is merged.
 
 M4 is split into seven PRs, in this order:
 
@@ -19,27 +20,43 @@ M4 is split into seven PRs, in this order:
 7. `CancelEvent`: `events.cancelled_at`, `Event::cancel()`, and the cancel of all
    confirmed bookings. The email of BR-E13 comes in M5.
 
-PRs 1 to 5 are merged. The current PR (`feat/event-attendees`) is PR 6. Its plan is
-`docs/superpowers/plans/2026-10-08-m4-event-attendees.md`. It is open as a PR and waits
-for the merge. The next step is the plan of PR 7 (`CancelEvent`).
+PRs 1 to 6 are merged. The current PR (`feat/cancel-event`) is PR 7, the last PR of
+M4. Its plan is `docs/superpowers/plans/2026-10-08-m4-cancel-event.md`. It is open as a
+PR and waits for the merge. With this PR, M4 is complete: every M4 rule (BR-B1 to
+BR-B14, BR-E12, BR-E13, BR-A1, BR-A2) has a test. The email part of BR-E13 comes in M5.
 
-- `EventPolicy::viewAttendees`: 404 when the person cannot see the event; the organizer
-  and admins are allowed (BR-A2); other users get 403.
-- The route is `GET /events/{event}/attendees` (`events.attendees.index`,
-  `EventAttendeeController@index`) with `auth` and `can:viewAttendees,event`. The page
-  is `organizer/events/attendees`.
-- `GetEventAttendees` reads only confirmed bookings with the user name and email, first
-  booked first (then booking ID), 50 for each page. Columns: Name, Email, Seats,
-  Reference, Booked at. The summary line uses the paginator total and
-  `Event::seatsBooked()`.
-- The event page has an "Attendees" button (`can.viewAttendees`). Each "My events" row
-  has an "Attendees" link.
-- `PaginationNav` (shared Previous/Next links) is used by `/events` and the attendee
-  page.
-- `vp check --fix` also formats the code blocks inside Markdown plans, which can break
-  a JSX snippet. Copy JSX from a plan with care.
+- A migration adds `events.cancelled_at` (`timestampTz`, nullable). The factory state
+  `cancelled()` sets it.
+- `Event::cancel()` checks the status first (`InvalidStateTransition::cannotCancel`),
+  then the start time (`EventHasStarted::cannotCancel`) (BR-E12). It sets `status` and
+  `cancelled_at` and saves nothing. `Event::canBeCancelled()` does the same checks for
+  the button.
+- `EventPolicy::cancel` now returns a `Response`: 404 when the person cannot see the
+  event, allowed for the organizer and admins (BR-E11, BR-A1), 403 for other users.
+- `CancelEvent` locks the event row, calls `cancel()`, then locks the confirmed bookings
+  and calls `Booking::cancel()` on each (BR-E13), so the seats go back and
+  `seats_available` equals the capacity. It returns the number of cancelled bookings.
+  All three write Actions on bookings lock the event row first.
+- The route is `POST /events/{event}/cancellation` (`events.cancellation.store`,
+  `EventCancellationController@store`) with `auth`, `throttle:event-writes` and
+  `can:cancel,event`. Success redirects to the event page with the toast "Event
+  cancelled. N bookings were cancelled." (also "1 booking was" and no count for 0).
+- The event page shows `CancelEventDialog` when `can.cancel` is true (policy and
+  `canBeCancelled()`). Its buttons are "Keep event" and "Cancel event". The button group
+  wraps on small screens.
+- Each "My bookings" row has `event_cancelled`; the badge then says "Event cancelled".
+- The `EventCancelled` emails come in M5.
 - `config/inertia.php` has `ensure_pages_exist` set to `true`, so a feature test that
   renders a page needs the page file.
+- `vp check --fix` also formats the code blocks inside Markdown plans, which can break
+  a JSX snippet. Copy JSX from a plan with care.
+
+PR 6 notes:
+
+- `EventPolicy::viewAttendees` (404 / allowed for organizer and admins / 403) and
+  `GET /events/{event}/attendees`. `GetEventAttendees` lists confirmed bookings with
+  name and email, first booked first, 50 for each page. `PaginationNav` is shared by
+  `/events` and the attendee page.
 
 PR 5 notes:
 
@@ -351,10 +368,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/event-attendees` PR, merges it, and asks for a sync.
-2. After the merge, plan M4 PR 7 (`CancelEvent`) with the owner. `CancelEvent` must lock
-   the event row first, then its bookings, the same order as `ReserveSeats` and
-   `CancelBooking` (advice from the PR 5 review).
+1. The owner reviews the `feat/cancel-event` PR, merges it, and asks for a sync.
+2. After the merge, M4 is complete. Split M5 (notifications) into PRs with the owner.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
