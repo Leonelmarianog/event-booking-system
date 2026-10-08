@@ -80,7 +80,7 @@ class UserFactory extends Factory
             'remember_token' => null,
             'anonymized_at' => now(),
         ])->afterCreating(function (User $user): void {
-            $user->forceFill(['email' => "deleted-user-{$user->id}@deleted.invalid"])->save();
+            $user->forceFill(['email' => "deleted-user-{$user->id}@".User::ANONYMIZED_EMAIL_DOMAIN])->save();
         });
     }
 }

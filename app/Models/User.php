@@ -45,6 +45,12 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
+     * The email domain of anonymized users. It never resolves, and nobody can register
+     * with it (see ProfileValidationRules).
+     */
+    public const ANONYMIZED_EMAIL_DOMAIN = 'deleted.invalid';
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -110,7 +116,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function anonymize(): void
     {
         $this->name = 'Deleted user';
-        $this->email = "deleted-user-{$this->id}@deleted.invalid";
+        $this->email = "deleted-user-{$this->id}@".self::ANONYMIZED_EMAIL_DOMAIN;
         $this->password = null;
         $this->remember_token = null;
         $this->two_factor_secret = null;

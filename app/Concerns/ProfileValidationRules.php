@@ -32,7 +32,9 @@ trait ProfileValidationRules
     }
 
     /**
-     * Get the validation rules used to validate user emails.
+     * Get the validation rules used to validate user emails. The email domain of
+     * anonymized users is not allowed, so that nobody can take a placeholder email
+     * before the account delete needs it (BR-U4).
      *
      * @return array<int, ValidationRule|array<mixed>|string>
      */
@@ -43,6 +45,7 @@ trait ProfileValidationRules
             'string',
             'email',
             'max:255',
+            'not_regex:/@'.preg_quote(User::ANONYMIZED_EMAIL_DOMAIN, '/').'$/i',
             $userId === null
                 ? Rule::unique(User::class)
                 : Rule::unique(User::class)->ignore($userId),
