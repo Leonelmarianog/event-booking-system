@@ -19,41 +19,37 @@ M4 is split into seven PRs, in this order:
 7. `CancelEvent`: `events.cancelled_at`, `Event::cancel()`, and the cancel of all
    confirmed bookings. The email of BR-E13 comes in M5.
 
-PRs 1 to 4 are merged. The current PR (`feat/cancel-booking`) is PR 5. Its plan is
-`docs/superpowers/plans/2026-10-08-m4-cancel-booking.md`. It is open as a PR and waits
-for the merge. The next step is the plan of PR 6 (`GetEventAttendees`).
+PRs 1 to 5 are merged. The current PR (`feat/event-attendees`) is PR 6. Its plan is
+`docs/superpowers/plans/2026-10-08-m4-event-attendees.md`. It is open as a PR and waits
+for the merge. The next step is the plan of PR 7 (`CancelEvent`).
 
-- The route is `POST /bookings/{booking:reference}/cancellation`
-  (`bookings.cancellation.store`, `BookingCancellationController@store`). It has `auth`
-  (not `verified`), `throttle:bookings` (shared with `ReserveSeats`) and
-  `can:cancel,booking`. The URL uses the booking reference, not the numeric ID.
-- `BookingPolicy::cancel` (from PR 1): 404 when the person cannot see the booking, 403
-  for the organizer of the event (BR-B9).
-- `CancelBooking` locks the event row first, then the booking row, in one transaction.
-  A second request for the same booking waits, sees a cancelled booking and gets an
-  error toast, so the seats go back only one time.
-- `Booking::cancel()` checks the status first (`BookingStatus::canTransitionTo()`,
-  `InvalidStateTransition::cannotCancelBooking`), then that the event has not started
-  (`EventHasStarted::cannotCancelBooking`) (BR-B10). Then it sets `status` and
-  `cancelled_at` and calls `Event::releaseSeats()`, which never goes above the capacity
-  (BR-B11). It saves nothing.
-- Success: redirect back (fallback `bookings.index`) with the toast "You cancelled your
-  booking. Reference: ...".
-- `can_cancel` (`Booking::canBeCancelled()`) is on each "My bookings" row and on the
-  `booked` state of the event booking box. `CancelBookingDialog` asks "Cancel this
-  booking?" with the buttons "Keep booking" and "Cancel booking". The trigger says
-  "Cancel" in the table and "Cancel booking" in the box.
-- The `BookingCancelled` email comes in M5.
+- `EventPolicy::viewAttendees`: 404 when the person cannot see the event; the organizer
+  and admins are allowed (BR-A2); other users get 403.
+- The route is `GET /events/{event}/attendees` (`events.attendees.index`,
+  `EventAttendeeController@index`) with `auth` and `can:viewAttendees,event`. The page
+  is `organizer/events/attendees`.
+- `GetEventAttendees` reads only confirmed bookings with the user name and email, first
+  booked first (then booking ID), 50 for each page. Columns: Name, Email, Seats,
+  Reference, Booked at. The summary line uses the paginator total and
+  `Event::seatsBooked()`.
+- The event page has an "Attendees" button (`can.viewAttendees`). Each "My events" row
+  has an "Attendees" link.
+- `PaginationNav` (shared Previous/Next links) is used by `/events` and the attendee
+  page.
+- `vp check --fix` also formats the code blocks inside Markdown plans, which can break
+  a JSX snippet. Copy JSX from a plan with care.
 
-PR 4 notes:
+PR 5 notes:
 
-- `GET /bookings` (`bookings.index`) has only `auth` and no policy: `GetBookings` reads
-  only the bookings of the user (BR-B13). Admins and organizers see only their own.
-- Two tables, "Upcoming" and "Past", split with `Event::hasStarted()`. Confirmed and
-  cancelled bookings show. Columns: Event, Starts, Venue, Seats, Reference, Status. No
-  pagination. Sidebar link "My bookings" after "My events".
-- `config/inertia.php` has `ensure_pages_exist` set to `true`, so a feature test that
-  renders a page needs the page file.
+- `POST /bookings/{booking:reference}/cancellation` (`bookings.cancellation.store`) has
+  `auth`, `throttle:bookings` and `can:cancel,booking` (404 when the person cannot see
+  the booking, 403 for the organizer, BR-B9).
+- `CancelBooking` locks the event row first, then the booking row. `Booking::cancel()`
+  checks the status, then the start time (BR-B10), and calls `Event::releaseSeats()`
+  (never above the capacity, BR-B11). Success redirects back with a toast.
+- `can_cancel` (`Booking::canBeCancelled()`) is on "My bookings" rows and on the
+  `booked` state of the booking box. `CancelBookingDialog` names the event for screen
+  readers.
 
 PR 3 notes:
 
@@ -353,8 +349,10 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/cancel-booking` PR, merges it, and asks for a sync.
-2. After the merge, plan M4 PR 6 (`GetEventAttendees`) with the owner.
+1. The owner reviews the `feat/event-attendees` PR, merges it, and asks for a sync.
+2. After the merge, plan M4 PR 7 (`CancelEvent`) with the owner. `CancelEvent` must lock
+   the event row first, then its bookings, the same order as `ReserveSeats` and
+   `CancelBooking` (advice from the PR 5 review).
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.

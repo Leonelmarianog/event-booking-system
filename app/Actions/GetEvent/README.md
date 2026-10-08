@@ -31,6 +31,10 @@ The `booked` state comes first, also for a started event. It has `can_cancel`
 (`Booking::canBeCancelled()`: the booking is confirmed and the event has not started).
 When it is true, the box shows a "Cancel booking" button (BR-B10, see `CancelBooking`).
 
+The controller also sends `can` flags for the buttons of the page. `can.viewAttendees`
+(`EventPolicy::viewAttendees`, BR-A2) shows the "Attendees" link to the organizer and
+admins (see `GetEventAttendees`).
+
 The edit page uses the same Action with no user, and uses only the event data.
 
 ## The event is shown
