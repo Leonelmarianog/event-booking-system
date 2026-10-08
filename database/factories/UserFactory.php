@@ -68,4 +68,19 @@ class UserFactory extends Factory
             'is_admin' => true,
         ]);
     }
+
+    /**
+     * Indicate that the user deleted the account.
+     */
+    public function anonymized(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name' => 'Deleted user',
+            'password' => null,
+            'remember_token' => null,
+            'anonymized_at' => now(),
+        ])->afterCreating(function (User $user): void {
+            $user->forceFill(['email' => "deleted-user-{$user->id}@deleted.invalid"])->save();
+        });
+    }
 }

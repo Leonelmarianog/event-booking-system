@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -21,11 +22,12 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $name
  * @property string $email
  * @property Carbon|null $email_verified_at
- * @property string $password
+ * @property string|null $password
  * @property bool $is_admin
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
+ * @property CarbonImmutable|null $anonymized_at
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -50,6 +52,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
+            'anonymized_at' => 'datetime',
         ];
     }
 
@@ -61,5 +64,29 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * Replace the personal data of the user and remove the ways to log in (BR-U4). The
+     * row stays, so that events and bookings keep their history. Saves nothing.
+     */
+    public function anonymize(): void
+    {
+        $this->name = 'Deleted user';
+        $this->email = "deleted-user-{$this->id}@deleted.invalid";
+        $this->password = null;
+        $this->remember_token = null;
+        $this->two_factor_secret = null;
+        $this->two_factor_recovery_codes = null;
+        $this->two_factor_confirmed_at = null;
+        $this->anonymized_at = now();
+    }
+
+    /**
+     * Whether the user deleted the account.
+     */
+    public function isAnonymized(): bool
+    {
+        return $this->anonymized_at !== null;
     }
 }
