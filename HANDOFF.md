@@ -16,9 +16,13 @@ M5 (Notifications) is split into four PRs, in this order:
 4. Reminders: `events.reminder_sent_at`, the `SendEventReminders` Action and command,
    scheduled daily at 08:00 UTC, and `EventReminder` (BR-N4, BR-N5).
 
-The current PR (`feat/booking-confirmed-email`) is PR 1. Its plan is
-`docs/superpowers/plans/2026-10-08-m5-booking-confirmed.md`. It is open as a PR and
+PR 1 is merged (#37). The current PR (`feat/booking-cancelled-email`) is PR 2. Its plan
+is `docs/superpowers/plans/2026-10-08-m5-booking-cancelled.md`. It is open as a PR and
 waits for the merge.
+
+- `CancelBooking` sends `BookingCancelled` (BR-N2). `CancelEvent` cancels the bookings
+  itself and does not use `CancelBooking`, so a cancelled event sends no
+  `BookingCancelled`. A test in `CancelEventTest` guards this.
 
 Each notification of M5 follows the same pattern (PR 1 sets it):
 
@@ -374,9 +378,9 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/booking-confirmed-email` PR, merges it, and asks for a
+1. The owner reviews the `feat/booking-cancelled-email` PR, merges it, and asks for a
    sync.
-2. After the merge, M5 PR 2: `BookingCancelled` from `CancelBooking`, with the same
+2. After the merge, M5 PR 3: `EventCancelled` from `CancelEvent`, with the same
    pattern.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to

@@ -1,8 +1,14 @@
 <?php
 
+use App\Actions\CancelBooking\CancelBooking;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
+use App\Notifications\BookingCancelled;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event as EventFacade;
+use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
     $this->freezeSecond();
@@ -93,6 +99,7 @@ test('BR-B10: a cancelled booking cannot be cancelled again, and the seats stay 
 });
 
 test('BR-B10: a booking of a started event cannot be cancelled', function () {
+    Notification::fake();
     $this->event->forceFill(['starts_at' => now()->subHour()])->save();
 
     $this->actingAs($this->attendee)
@@ -106,6 +113,8 @@ test('BR-B10: a booking of a started event cannot be cancelled', function () {
 
     expect($this->booking->fresh()->isConfirmed())->toBeTrue()
         ->and($this->event->fresh()->seats_available)->toBe(7);
+
+    Notification::assertNothingSent();
 });
 
 test('BR-B12: after a cancel, the attendee can book the same event again', function () {
@@ -129,4 +138,65 @@ test('the cancel uses the bookings rate limit', function () {
     $this->actingAs($this->attendee)
         ->post(route('bookings.cancellation.store', $this->booking))
         ->assertTooManyRequests();
+});
+
+test('BR-N2: the attendee gets a booking cancelled email', function () {
+    Notification::fake();
+
+    $this->actingAs($this->attendee)
+        ->post(route('bookings.cancellation.store', $this->booking));
+
+    Notification::assertSentTo(
+        $this->attendee,
+        BookingCancelled::class,
+        fn (BookingCancelled $notification) => $notification->booking->is($this->booking),
+    );
+    Notification::assertNotSentTo($this->organizer, BookingCancelled::class);
+    Notification::assertCount(1);
+});
+
+test('BR-N2: no email when the cancel fails a rule', function () {
+    Notification::fake();
+
+    $this->actingAs($this->attendee)
+        ->post(route('bookings.cancellation.store', $this->booking));
+    $this->actingAs($this->attendee)
+        ->post(route('bookings.cancellation.store', $this->booking))
+        ->assertInertiaFlash('toast.message', 'Only a confirmed booking can be cancelled. This booking is cancelled.');
+
+    Notification::assertSentTimes(BookingCancelled::class, 1);
+});
+
+test('BR-N6: the cancel email is sent only after the transaction commits', function () {
+    EventFacade::fake([NotificationSent::class]);
+
+    DB::transaction(function () {
+        app(CancelBooking::class)->handle($this->booking);
+
+        EventFacade::assertNotDispatched(NotificationSent::class);
+    });
+
+    EventFacade::assertDispatchedTimes(NotificationSent::class, 1);
+    EventFacade::assertDispatched(
+        NotificationSent::class,
+        fn (NotificationSent $sent) => $sent->notification instanceof BookingCancelled
+            && $sent->notifiable->is($this->attendee),
+    );
+});
+
+test('BR-N6: no cancel email when the transaction rolls back', function () {
+    EventFacade::fake([NotificationSent::class]);
+
+    try {
+        DB::transaction(function () {
+            app(CancelBooking::class)->handle($this->booking);
+
+            throw new LogicException('A later step fails.');
+        });
+    } catch (LogicException $exception) {
+        expect($exception->getMessage())->toBe('A later step fails.');
+    }
+
+    EventFacade::assertNotDispatched(NotificationSent::class);
+    expect($this->booking->fresh()->isConfirmed())->toBeTrue();
 });
