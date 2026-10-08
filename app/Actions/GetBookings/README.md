@@ -22,9 +22,11 @@ time, the venue, the number of seats, the booking reference and the status.
 Each row also tells if the booking can be cancelled (`Booking::canBeCancelled()`: the
 booking is confirmed and the event has not started), so that the page shows a "Cancel"
 button (see `CancelBooking`).
-Each row also tells if the event is cancelled (`event_cancelled`). Then the status badge
-says "Event cancelled" instead of "Cancelled", so that the attendee knows that the
-organizer or an admin cancelled the event (see `CancelEvent`).
+Each row also tells if the booking ended because the organizer or an admin cancelled
+the event (`event_cancelled`, `Booking::wasCancelledWithEvent()`). Then the status badge
+says "Event cancelled" instead of "Cancelled" (see `CancelEvent`). A booking that the
+attendee cancelled before the event was cancelled keeps the badge "Cancelled". The
+check compares the two `cancelled_at` times.
 
 ## The bookings are shown
 

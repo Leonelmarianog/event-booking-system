@@ -23,7 +23,7 @@ M4 is split into seven PRs, in this order:
 PRs 1 to 6 are merged. The current PR (`feat/cancel-event`) is PR 7, the last PR of
 M4. Its plan is `docs/superpowers/plans/2026-10-08-m4-cancel-event.md`. It is open as a
 PR and waits for the merge. With this PR, M4 is complete: every M4 rule (BR-B1 to
-BR-B14, BR-E12, BR-E13, BR-A1, BR-A2) has a test. The email part of BR-E13 comes in M5.
+BR-B14, BR-E11, BR-E12, BR-E13, BR-A1, BR-A2) has a test. The email part of BR-E13 comes in M5.
 
 - A migration adds `events.cancelled_at` (`timestampTz`, nullable). The factory state
   `cancelled()` sets it.
@@ -42,9 +42,12 @@ BR-B14, BR-E12, BR-E13, BR-A1, BR-A2) has a test. The email part of BR-E13 comes
   `can:cancel,event`. Success redirects to the event page with the toast "Event
   cancelled. N bookings were cancelled." (also "1 booking was" and no count for 0).
 - The event page shows `CancelEventDialog` when `can.cancel` is true (policy and
-  `canBeCancelled()`). Its buttons are "Keep event" and "Cancel event". The button group
-  wraps on small screens.
-- Each "My bookings" row has `event_cancelled`; the badge then says "Event cancelled".
+  `canBeCancelled()`). Its buttons are "Keep event" and "Cancel event". The trigger is an
+  outline button with red text, so that it does not look like "Delete" on drafts. The
+  button group wraps on small screens.
+- Each "My bookings" row has `event_cancelled` (`Booking::wasCancelledWithEvent()`:
+  the event is cancelled and the booking was cancelled at the same time or later); the
+  badge then says "Event cancelled".
 - The `EventCancelled` emails come in M5.
 - `config/inertia.php` has `ensure_pages_exist` set to `true`, so a feature test that
   renders a page needs the page file.
