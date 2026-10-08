@@ -16,13 +16,15 @@ M5 (Notifications) is split into four PRs, in this order:
 4. Reminders: `events.reminder_sent_at`, the `SendEventReminders` Action and command,
    scheduled daily at 08:00 UTC, and `EventReminder` (BR-N4, BR-N5).
 
-PR 1 is merged (#37). The current PR (`feat/booking-cancelled-email`) is PR 2. Its plan
-is `docs/superpowers/plans/2026-10-08-m5-booking-cancelled.md`. It is open as a PR and
-waits for the merge.
+PRs 1 and 2 are merged (#37, #38). The current PR (`feat/event-cancelled-email`) is
+PR 3. Its plan is `docs/superpowers/plans/2026-10-08-m5-event-cancelled.md`. It is open
+as a PR and waits for the merge. With this PR, BR-E13 is complete (also the email part).
 
-- `CancelBooking` sends `BookingCancelled` (BR-N2). `CancelEvent` cancels the bookings
-  itself and does not use `CancelBooking`, so a cancelled event sends no
-  `BookingCancelled`. A test in `CancelEventTest` guards this.
+- `CancelBooking` sends `BookingCancelled` (BR-N2).
+- `CancelEvent` loads the confirmed bookings with their attendees and sends
+  `EventCancelled` to the attendee of each booking that it cancels (BR-N3). It does not
+  use `CancelBooking`, so a cancelled event sends no `BookingCancelled`. A test in
+  `CancelEventTest` guards this.
 
 Each notification of M5 follows the same pattern (PR 1 sets it):
 
@@ -42,6 +44,9 @@ Each notification of M5 follows the same pattern (PR 1 sets it):
   `sync` queue of the test environment and `Event::fake([NotificationSent::class])`:
   nothing is sent inside an open transaction, one email after the commit, none after a
   rollback.
+- Rollback tests throw and catch a `LogicException` and check its message. Domain
+  exceptions extend `RuntimeException`, so an Action that fails cannot make the test
+  pass by mistake.
 
 General notes:
 
@@ -378,10 +383,10 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/booking-cancelled-email` PR, merges it, and asks for a
+1. The owner reviews the `feat/event-cancelled-email` PR, merges it, and asks for a
    sync.
-2. After the merge, M5 PR 3: `EventCancelled` from `CancelEvent`, with the same
-   pattern.
+2. After the merge, M5 PR 4: the reminders (`events.reminder_sent_at`,
+   `SendEventReminders` Action and command, daily at 08:00 UTC, `EventReminder`).
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.

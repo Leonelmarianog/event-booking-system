@@ -53,7 +53,7 @@ stops the request earlier, because sessions and rate limits also use Redis.
 
 When an event is cancelled, `CancelEvent` cancels the bookings itself and does not use
 this Action. Thus, those attendees get no `BookingCancelled` email. They get the
-`EventCancelled` email (M5).
+`EventCancelled` email.
 
 ## The booking is cancelled
 
