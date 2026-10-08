@@ -55,6 +55,16 @@ class EventFactory extends Factory
     }
 
     /**
+     * Indicate that the reminder of the event was sent.
+     */
+    public function reminderSent(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'reminder_sent_at' => now(),
+        ]);
+    }
+
+    /**
      * Indicate that the event started one hour ago.
      */
     public function started(): static
