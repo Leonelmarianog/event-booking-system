@@ -1,8 +1,14 @@
 <?php
 
+use App\Actions\CancelBooking\CancelBooking;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
+use App\Notifications\BookingCancelled;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event as EventFacade;
+use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
     $this->freezeSecond();
@@ -129,4 +135,64 @@ test('the cancel uses the bookings rate limit', function () {
     $this->actingAs($this->attendee)
         ->post(route('bookings.cancellation.store', $this->booking))
         ->assertTooManyRequests();
+});
+
+test('BR-N2: the attendee gets a booking cancelled email', function () {
+    Notification::fake();
+
+    $this->actingAs($this->attendee)
+        ->post(route('bookings.cancellation.store', $this->booking));
+
+    Notification::assertSentTo(
+        $this->attendee,
+        BookingCancelled::class,
+        fn (BookingCancelled $notification) => $notification->booking->is($this->booking),
+    );
+    Notification::assertNotSentTo($this->organizer, BookingCancelled::class);
+    Notification::assertCount(1);
+});
+
+test('BR-N2: no email when the cancel fails a rule', function () {
+    Notification::fake();
+
+    $this->actingAs($this->attendee)
+        ->post(route('bookings.cancellation.store', $this->booking));
+    $this->actingAs($this->attendee)
+        ->post(route('bookings.cancellation.store', $this->booking))
+        ->assertInertiaFlash('toast.message', 'Only a confirmed booking can be cancelled. This booking is cancelled.');
+
+    Notification::assertSentTimes(BookingCancelled::class, 1);
+});
+
+test('BR-N6: the cancel email is sent only after the transaction commits', function () {
+    EventFacade::fake([NotificationSent::class]);
+
+    DB::transaction(function () {
+        app(CancelBooking::class)->handle($this->booking);
+
+        EventFacade::assertNotDispatched(NotificationSent::class);
+    });
+
+    EventFacade::assertDispatchedTimes(NotificationSent::class, 1);
+    EventFacade::assertDispatched(
+        NotificationSent::class,
+        fn (NotificationSent $sent) => $sent->notification instanceof BookingCancelled
+            && $sent->notifiable->is($this->attendee),
+    );
+});
+
+test('BR-N6: no cancel email when the transaction rolls back', function () {
+    EventFacade::fake([NotificationSent::class]);
+
+    try {
+        DB::transaction(function () {
+            app(CancelBooking::class)->handle($this->booking);
+
+            throw new RuntimeException('A later step fails.');
+        });
+    } catch (RuntimeException) {
+    }
+
+    EventFacade::assertNotDispatched(NotificationSent::class);
+    expect($this->booking->fresh()->isConfirmed())->toBeTrue();
 });

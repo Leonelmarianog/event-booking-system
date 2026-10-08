@@ -3,6 +3,8 @@
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
+use App\Notifications\BookingCancelled;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -158,4 +160,16 @@ test('BR-E13: after the cancel, the attendee sees "Event cancelled" on My bookin
             ->where('upcoming.0.status', 'cancelled')
             ->where('upcoming.0.event_cancelled', true)
         );
+});
+
+test('a cancelled event sends no booking cancelled email', function () {
+    Notification::fake();
+
+    $this->actingAs($this->organizer)
+        ->post(route('events.cancellation.store', $this->event));
+
+    expect($this->first->fresh()->isCancelled())->toBeTrue()
+        ->and($this->second->fresh()->isCancelled())->toBeTrue();
+    Notification::assertNotSentTo($this->first->attendee, BookingCancelled::class);
+    Notification::assertNotSentTo($this->second->attendee, BookingCancelled::class);
 });
