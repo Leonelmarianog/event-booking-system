@@ -5,7 +5,8 @@ Last updated: 2026-10-08
 ## Where we are
 
 Milestones M1 (Foundation), M2 (CI and production image), M3 (Events), M4 (Bookings) and
-M5 (Notifications) are complete. Each rule of M3, M4 and M5 has at least one test.
+M5 (Notifications) are complete. Each rule of M3, M4 and M5 has at least one test. M6
+(User accounts) is complete when its last PR (PR 3, below) is merged.
 
 M6 (User accounts) is split into three PRs, in this order:
 
@@ -29,25 +30,35 @@ Owner decisions for M6:
 - Only drafts are deleted (BR-U3). Cancelled and past events stay, with "Deleted user"
   as the organizer.
 
-PR 1 is merged (#41). The current PR (`feat/delete-account`) is PR 2. Its plan is
-`docs/superpowers/plans/2026-10-08-m6-delete-account.md`. It is open as a PR and waits
-for the merge.
+PRs 1 and 2 are merged (#41, #42). The current PR (`feat/deleted-user-access`) is PR 3,
+the last PR of M6. Its plan is `docs/superpowers/plans/2026-10-08-m6-deleted-user-access.md`.
+It is open as a PR and waits for the merge. With this PR, M6 is complete: every rule
+BR-U1 to BR-U5 has a test.
 
-- `DeleteAccount` (one transaction): lock the user row, `ensureCanBeDeleted()`, delete
-  the drafts (BR-U3), the `password_reset_tokens` row of the old email and the passkeys,
-  `anonymize()`, save. `ProfileController@destroy` calls it, logs out with
-  `Auth::logoutCurrentDevice()` (no new remember token on the anonymized row), and
-  redirects to the `home` route with the toast "Your account is deleted.".
-- `AccountCannotBeDeleted::field()` is `password`: a blocked delete shows the message
-  under the password field in the dialog and as an error toast (owner decision).
-- The dialog has new texts: drafts are deleted, name, email and password are removed,
-  past events and bookings stay with "Deleted user" (owner decision).
-- `ReserveSeats`, `CreateEvent` and `PublishEvent` lock the user row first and call
-  `User::ensureNotAnonymized()` (`AccountDeleted`, "Your account was deleted."). Lock
-  order: the user row, then the event row. `CreateEvent` and `PublishEvent` now run in a
-  transaction; `PublishEvent` also locks the event row.
-- The starter-kit test `test_user_can_delete_their_account` now asserts that the row
-  stays and is anonymized.
+- `User::routeNotificationForMail()` returns null for an anonymized user, so the mail
+  channel sends nothing: no queued email and no password reset link reach the
+  placeholder address.
+- The middleware `LogOutDeletedUser` (first in the web group) ends the session of an
+  anonymized user, for example a session still open on another device, and redirects to
+  the login page with no message (owner decision: log out silently).
+- Password login, "remember me" and passkey login are closed by PR 1 and PR 2 (null
+  password, null remember token, deleted passkeys); `DeletedUserAccessTest` pins them.
+- A JSON request from such a session gets 401, like the `auth` middleware gives.
+- BR-U5 is enforced by "Model, Middleware" in `docs/design/business-rules.md`.
+- Known and accepted (owner decision): if a user passes the password step of a
+  two-factor login on one device and deletes the account on another device before
+  entering the code, the code step gives a 500 (Fortify decrypts the empty two-factor
+  secret). Nobody gets in.
+
+M6 PR 2 notes:
+
+- `DeleteAccount` (one transaction): lock the user row, check BR-U1 and BR-U2, delete the
+  drafts, the reset token of the old email and the passkeys, anonymize, save.
+  `ProfileController@destroy` logs out with `logoutCurrentDevice()` and redirects to
+  `home` with "Your account is deleted.". A blocked delete shows the message under the
+  password field and as a toast.
+- `ReserveSeats`, `CreateEvent` and `PublishEvent` lock the user row first and refuse
+  with `AccountDeleted`; `tests/Concurrency/UserRowLockTest.php` pins the lock.
 
 M6 PR 1 notes:
 
@@ -428,17 +439,13 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/delete-account` PR, merges it, and asks for a sync.
-2. After the merge, M6 PR 3: BR-U5 on every login path (password, passkey, password
-   reset), a middleware that ends the open sessions of an anonymized user, and a test
-   that a password reset for an anonymized user or for a placeholder email logs nobody
-   in and sends no email.
-   Also `User::routeNotificationForMail()` returns null for an anonymized user, so a
-   queued email (for example `BookingCancelled` queued just before the delete) is not
-   sent to the placeholder address (found in the PR 2 review).
-3. Email verification: the v1 scope says that it is off, but the dashboard of the
-   starter kit sends a new user to `/email/verify`. The owner decides later when to
-   change it.
+1. The owner reviews the `feat/deleted-user-access` PR, merges it, and asks for a sync.
+2. After the merge, M6 is complete. Split M7 (Demo ready) into PRs with the owner.
+3. Email verification: the owner wants email verification at some point. Until then,
+   the starter kit's `verified` middleware stays: a user must verify the email (link in
+   Mailpit locally) before deleting the account or using the security, password and
+   appearance pages. When this work is planned, change the v1 scope text that says
+   verification is off (spec section 6, and the "Scope of v1" decision below).
 4. Optional, for the owner to decide: `Model::shouldBeStrict()` outside production, so
    that reading a column that the query did not select throws an error.
 5. Later, for the owner to decide: rewrite `scripts/check-concurrency.sh` in Python

@@ -45,8 +45,20 @@ transaction rolls back. Nothing changes. The handler in `bootstrap/app.php` redi
 back. The message shows under the password field in the open dialog and as an error
 toast. The user stays logged in.
 
-The other ways to log in (passkeys on other devices, open sessions, password reset) are
-closed in the next PR of M6 (BR-U5).
+## After the delete
+
+A deleted user cannot get back in (BR-U5):
+
+- Password login fails: the password is empty, and the old email no longer exists.
+- "Remember me" fails: the remember token is empty, so no cookie matches it.
+- Passkey login fails: the Action deleted the passkeys.
+- A session that is still open on another device ends at its next request. The
+  middleware `LogOutDeletedUser` (web group) logs it out and redirects to the login page,
+  with no message.
+- A password reset finds no user for the old email. For the placeholder email, it sends
+  nothing.
+- The user gets no more email. `User::routeNotificationForMail()` returns no address for
+  a deleted user, also for an email that was queued before the delete.
 
 ## The account is deleted
 
