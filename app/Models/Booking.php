@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\BookingStatus;
+use App\Exceptions\Domain\EventHasStarted;
+use App\Exceptions\Domain\InvalidStateTransition;
 use Carbon\CarbonImmutable;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -96,5 +98,36 @@ class Booking extends Model
     public function isCancelled(): bool
     {
         return $this->status === BookingStatus::Cancelled;
+    }
+
+    /**
+     * Whether the booking can be cancelled now (BR-B10). The pages use it to show the
+     * cancel button.
+     */
+    public function canBeCancelled(): bool
+    {
+        return $this->status->canTransitionTo(BookingStatus::Cancelled) && ! $this->event->hasStarted();
+    }
+
+    /**
+     * Cancel the booking and give its seats back to the event (BR-B10, BR-B11). It saves
+     * neither the booking nor the event.
+     *
+     * @throws InvalidStateTransition
+     * @throws EventHasStarted
+     */
+    public function cancel(): void
+    {
+        if (! $this->status->canTransitionTo(BookingStatus::Cancelled)) {
+            throw InvalidStateTransition::cannotCancelBooking($this->status);
+        }
+
+        if ($this->event->hasStarted()) {
+            throw EventHasStarted::cannotCancelBooking();
+        }
+
+        $this->status = BookingStatus::Cancelled;
+        $this->cancelled_at = now();
+        $this->event->releaseSeats($this->quantity);
     }
 }

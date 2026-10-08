@@ -13,7 +13,7 @@ class GetEvent
      *
      * @return array{
      *     event: array{id: int, title: string, description: string, venue: string, starts_at: string, capacity: int, seats_available: int, status: string, organizer_name: string},
-     *     booking: array{state: 'booked', reference: string, quantity: int}|array{state: 'available', max_quantity: int}|array{state: 'login'}|array{state: 'sold_out'}|null,
+     *     booking: array{state: 'booked', reference: string, quantity: int, can_cancel: bool}|array{state: 'available', max_quantity: int}|array{state: 'login'}|array{state: 'sold_out'}|null,
      * }
      */
     public function handle(Event $event, ?User $viewer = null): array
@@ -39,14 +39,21 @@ class GetEvent
     /**
      * What the booking box shows to the viewer.
      *
-     * @return array{state: 'booked', reference: string, quantity: int}|array{state: 'available', max_quantity: int}|array{state: 'login'}|array{state: 'sold_out'}|null
+     * @return array{state: 'booked', reference: string, quantity: int, can_cancel: bool}|array{state: 'available', max_quantity: int}|array{state: 'login'}|array{state: 'sold_out'}|null
      */
     private function bookingBox(Event $event, ?User $viewer): ?array
     {
         $booking = $viewer === null ? null : $event->confirmedBookingBy($viewer);
 
         if ($booking !== null) {
-            return ['state' => 'booked', 'reference' => $booking->reference, 'quantity' => $booking->quantity];
+            $booking->setRelation('event', $event);
+
+            return [
+                'state' => 'booked',
+                'reference' => $booking->reference,
+                'quantity' => $booking->quantity,
+                'can_cancel' => $booking->canBeCancelled(),
+            ];
         }
 
         if ($viewer !== null && $event->canBeBookedBy($viewer)) {

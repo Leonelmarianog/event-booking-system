@@ -49,6 +49,7 @@ test('the attendee sees the data of each booking', function () {
                 'reference' => $booking->reference,
                 'quantity' => 3,
                 'status' => 'confirmed',
+                'can_cancel' => true,
                 'event' => [
                     'id' => $event->id,
                     'title' => 'Laravel Meetup',
@@ -136,5 +137,20 @@ test('an admin sees only their own bookings', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->where('upcoming', [])
             ->where('past', [])
+        );
+});
+
+test('BR-B10: only confirmed bookings of events that have not started can be cancelled', function () {
+    bookingOf($this->attendee, 'Upcoming', now()->addDay());
+    bookingOf($this->attendee, 'Cancelled', now()->addDays(2), cancelled: true);
+    bookingOf($this->attendee, 'Started', now()->subDay());
+
+    $this->actingAs($this->attendee)
+        ->get(route('bookings.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('upcoming', fn ($rows) => collect($rows)->pluck('can_cancel', 'event.title')->all()
+                === ['Upcoming' => true, 'Cancelled' => false])
+            ->where('past', fn ($rows) => collect($rows)->pluck('can_cancel', 'event.title')->all()
+                === ['Started' => false])
         );
 });

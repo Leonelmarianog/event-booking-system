@@ -223,7 +223,19 @@ test('BR-B4: a user with a confirmed booking sees the booking, not the form', fu
     $this->actingAs($this->otherUser)
         ->get(route('events.show', $event))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('booking', ['state' => 'booked', 'reference' => $booking->reference, 'quantity' => 3])
+            ->where('booking', ['state' => 'booked', 'reference' => $booking->reference, 'quantity' => 3, 'can_cancel' => true])
+        );
+});
+
+test('BR-B10: a user with a booking of a started event cannot cancel it', function () {
+    $event = Event::factory()->published()->started()->create();
+    Booking::factory()->for($event)->for($this->otherUser, 'attendee')->create();
+
+    $this->actingAs($this->otherUser)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('booking.state', 'booked')
+            ->where('booking.can_cancel', false)
         );
 });
 

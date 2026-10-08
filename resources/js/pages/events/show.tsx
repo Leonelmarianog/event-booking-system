@@ -84,7 +84,13 @@ export default function ShowEvent({
                     </div>
                 </dl>
 
-                {booking && <BookingBox eventId={event.id} booking={booking} />}
+                {booking && (
+                    <BookingBox
+                        eventId={event.id}
+                        eventTitle={event.title}
+                        booking={booking}
+                    />
+                )}
 
                 <p className="break-words whitespace-pre-line">
                     {event.description}

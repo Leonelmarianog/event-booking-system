@@ -173,3 +173,19 @@ test('BR-E17: a cancelled event cannot be deleted', function () {
         ->and(fn () => $event->ensureCanBeDeleted())
         ->toThrow(InvalidStateTransition::class, 'Only a draft event can be deleted. This event is cancelled.');
 });
+
+test('BR-B11: releasing seats increases the available seats', function () {
+    $event = Event::factory()->published()->create(['capacity' => 10, 'seats_available' => 4]);
+
+    $event->releaseSeats(3);
+
+    expect($event->seats_available)->toBe(7);
+});
+
+test('BR-B11: releasing seats never goes above the capacity', function () {
+    $event = Event::factory()->published()->create(['capacity' => 10, 'seats_available' => 9]);
+
+    $event->releaseSeats(4);
+
+    expect($event->seats_available)->toBe(10);
+});

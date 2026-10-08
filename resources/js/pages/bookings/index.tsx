@@ -1,5 +1,6 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { BookingStatusBadge } from '@/components/booking-status-badge';
+import { CancelBookingDialog } from '@/components/cancel-booking-dialog';
 import { LocalDateTime } from '@/components/local-date-time';
 import { index } from '@/routes/bookings';
 import { index as eventsIndex, show } from '@/routes/events';
@@ -36,6 +37,9 @@ function BookingTable({
                                 <th className="px-3 py-2 font-medium">
                                     Status
                                 </th>
+                                <th className="px-3 py-2">
+                                    <span className="sr-only">Actions</span>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -70,6 +74,15 @@ function BookingTable({
                                         <BookingStatusBadge
                                             status={booking.status}
                                         />
+                                    </td>
+                                    <td className="px-3 py-2 text-right">
+                                        {booking.can_cancel && (
+                                            <CancelBookingDialog
+                                                reference={booking.reference}
+                                                eventTitle={booking.event.title}
+                                                triggerLabel="Cancel"
+                                            />
+                                        )}
                                     </td>
                                 </tr>
                             ))}

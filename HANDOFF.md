@@ -14,29 +14,44 @@ M4 is split into seven PRs, in this order:
 2. `ReserveSeats`: the booking form on `events/show`.
 3. The concurrency check: the script, `make concurrency-test` and the CI job.
 4. `GetBookings`: the "My bookings" page.
-5. `CancelBooking`: `POST /bookings/{booking}/cancellation`.
+5. `CancelBooking`: `POST /bookings/{booking:reference}/cancellation`.
 6. `GetEventAttendees`: the attendee list page.
 7. `CancelEvent`: `events.cancelled_at`, `Event::cancel()`, and the cancel of all
    confirmed bookings. The email of BR-E13 comes in M5.
 
-PRs 1 to 3 are merged. The current PR (`feat/get-bookings`) is PR 4. Its plan is
-`docs/superpowers/plans/2026-10-08-m4-get-bookings.md`. It is open as PR #33 and
-waits for the merge. The next step is the plan of PR 5 (`CancelBooking`).
+PRs 1 to 4 are merged. The current PR (`feat/cancel-booking`) is PR 5. Its plan is
+`docs/superpowers/plans/2026-10-08-m4-cancel-booking.md`. It is open as a PR and waits
+for the merge. The next step is the plan of PR 6 (`GetEventAttendees`).
 
-- The route is `GET /bookings` (`bookings.index`, `BookingController@index`). It has
-  only `auth`, not `verified`, and no policy check: the `GetBookings` Action reads only
-  the bookings of the user (BR-B13).
-- The page `bookings/index` has two tables: "Upcoming" (earliest event first) and
-  "Past" (most recent event first). The split uses `Event::hasStarted()`, so a booking
-  for an event that starts now is in "Past". Equal start times sort by booking ID.
-- The page shows confirmed and cancelled bookings. A user can have a cancelled booking
-  and a new booking for the same event (BR-B12); both rows show.
-- Columns: Event (link to the event page), Starts, Venue, Seats, Reference (all 26
-  characters), Status (`BookingStatusBadge`). No pagination.
-- Admins and organizers also see only their own bookings on this page.
-- The sidebar shows "My bookings" to logged-in users, after "My events". A user with no
-  bookings sees "You have no bookings yet." and a link to the events page.
-- The page has no cancel button yet. `CancelBooking` (PR 5) adds it.
+- The route is `POST /bookings/{booking:reference}/cancellation`
+  (`bookings.cancellation.store`, `BookingCancellationController@store`). It has `auth`
+  (not `verified`), `throttle:bookings` (shared with `ReserveSeats`) and
+  `can:cancel,booking`. The URL uses the booking reference, not the numeric ID.
+- `BookingPolicy::cancel` (from PR 1): 404 when the person cannot see the booking, 403
+  for the organizer of the event (BR-B9).
+- `CancelBooking` locks the event row first, then the booking row, in one transaction.
+  A second request for the same booking waits, sees a cancelled booking and gets an
+  error toast, so the seats go back only one time.
+- `Booking::cancel()` checks the status first (`BookingStatus::canTransitionTo()`,
+  `InvalidStateTransition::cannotCancelBooking`), then that the event has not started
+  (`EventHasStarted::cannotCancelBooking`) (BR-B10). Then it sets `status` and
+  `cancelled_at` and calls `Event::releaseSeats()`, which never goes above the capacity
+  (BR-B11). It saves nothing.
+- Success: redirect back (fallback `bookings.index`) with the toast "You cancelled your
+  booking. Reference: ...".
+- `can_cancel` (`Booking::canBeCancelled()`) is on each "My bookings" row and on the
+  `booked` state of the event booking box. `CancelBookingDialog` asks "Cancel this
+  booking?" with the buttons "Keep booking" and "Cancel booking". The trigger says
+  "Cancel" in the table and "Cancel booking" in the box.
+- The `BookingCancelled` email comes in M5.
+
+PR 4 notes:
+
+- `GET /bookings` (`bookings.index`) has only `auth` and no policy: `GetBookings` reads
+  only the bookings of the user (BR-B13). Admins and organizers see only their own.
+- Two tables, "Upcoming" and "Past", split with `Event::hasStarted()`. Confirmed and
+  cancelled bookings show. Columns: Event, Starts, Venue, Seats, Reference, Status. No
+  pagination. Sidebar link "My bookings" after "My events".
 - `config/inertia.php` has `ensure_pages_exist` set to `true`, so a feature test that
   renders a page needs the page file.
 
@@ -338,8 +353,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/get-bookings` PR, merges it, and asks for a sync.
-2. After the merge, plan M4 PR 5 (`CancelBooking`) with the owner.
+1. The owner reviews the `feat/cancel-booking` PR, merges it, and asks for a sync.
+2. After the merge, plan M4 PR 6 (`GetEventAttendees`) with the owner.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.

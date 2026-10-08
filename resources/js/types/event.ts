@@ -31,7 +31,12 @@ export type UpcomingEvent = {
 };
 
 export type EventBookingBox =
-    | { state: 'booked'; reference: string; quantity: number }
+    | {
+          state: 'booked';
+          reference: string;
+          quantity: number;
+          can_cancel: boolean;
+      }
     | { state: 'available'; max_quantity: number }
     | { state: 'login' }
     | { state: 'sold_out' };
