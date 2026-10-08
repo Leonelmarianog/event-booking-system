@@ -31,7 +31,11 @@ unique ULID reference (BR-B8). If the model throws an exception, the transaction
 handler in `bootstrap/app.php` turns the exception into a redirect back with an error
 toast. For `NotEnoughSeats`, the error also shows under the "Seats" field.
 
-The `BookingConfirmed` email comes in M5.
+After the saves, the Action sends the `BookingConfirmed` notification to the attendee
+(BR-N1). The notification is queued and marked "after commit", so the queue keeps the
+job until the transaction commits. On a rollback, the queue drops the job and no email
+goes out (BR-N6). The worker sends the email. It tries 3 times, with a wait of 10 and
+then 60 seconds between the tries.
 
 ## The seats are booked
 
@@ -45,6 +49,7 @@ sequenceDiagram
     participant Action as ReserveSeats
     participant Event
     participant DB as PostgreSQL
+    participant Queue
 
     Browser->>Middleware: POST /events/{event}/bookings
     Middleware->>Middleware: Check login and rate limit
@@ -62,7 +67,10 @@ sequenceDiagram
     Event->>DB: Read the confirmed booking of the user
     DB-->>Event: No booking
     Event-->>Action: Available seats decreased, new confirmed booking
-    Action->>DB: Update the event, insert the booking, commit
+    Action->>DB: Update the event, insert the booking
+    Action->>Queue: BookingConfirmed (held until the commit)
+    Action->>DB: Commit
+    Queue-->>Queue: Release the job after the commit
     Action-->>Controller: Booking
     Controller-->>Browser: Redirect to /events/{event}, toast with the reference
 ```
