@@ -133,6 +133,27 @@ test('BR-E4: other users and visitors do not see the edit link', function () {
         ->assertInertia(fn (Assert $page) => $page->where('can.update', false));
 });
 
+test('BR-A2: the organizer and admins see the attendees link, other users and visitors do not', function () {
+    $event = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.viewAttendees', true));
+
+    $this->actingAs($this->admin)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.viewAttendees', true));
+
+    $this->actingAs($this->otherUser)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.viewAttendees', false));
+
+    auth()->logout();
+
+    $this->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.viewAttendees', false));
+});
+
 test('BR-E5: the organizer does not see the edit link on a started event', function () {
     $event = Event::factory()->published()->started()->for($this->organizer, 'organizer')->create();
 

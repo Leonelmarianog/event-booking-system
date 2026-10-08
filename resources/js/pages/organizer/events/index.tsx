@@ -2,6 +2,7 @@ import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { EventStatusBadge } from '@/components/event-status-badge';
 import { LocalDateTime } from '@/components/local-date-time';
 import { create, edit, show } from '@/routes/events';
+import { index as attendees } from '@/routes/events/attendees';
 import { index } from '@/routes/organizer/events';
 import type { BreadcrumbItem, OrganizerEventRow } from '@/types';
 
@@ -61,11 +62,17 @@ function EventTable({
                                     <td className="px-3 py-2 text-right whitespace-nowrap">
                                         {event.seats_booked} / {event.capacity}
                                     </td>
-                                    <td className="px-3 py-2 text-right">
+                                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                                        <Link
+                                            href={attendees(event.id)}
+                                            className="font-medium underline-offset-4 hover:underline"
+                                        >
+                                            Attendees
+                                        </Link>
                                         {event.can_update && (
                                             <Link
                                                 href={edit(event.id)}
-                                                className="font-medium underline-offset-4 hover:underline"
+                                                className="ml-4 font-medium underline-offset-4 hover:underline"
                                             >
                                                 Edit
                                             </Link>

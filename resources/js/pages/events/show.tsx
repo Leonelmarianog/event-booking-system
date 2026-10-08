@@ -7,6 +7,7 @@ import { PublishEventDialog } from '@/components/publish-event-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { edit, show } from '@/routes/events';
+import { index as attendees } from '@/routes/events/attendees';
 import type { BreadcrumbItem, EventBookingBox, EventDetails } from '@/types';
 
 export default function ShowEvent({
@@ -16,7 +17,12 @@ export default function ShowEvent({
 }: {
     event: EventDetails;
     booking: EventBookingBox | null;
-    can: { update: boolean; publish: boolean; delete: boolean };
+    can: {
+        update: boolean;
+        publish: boolean;
+        delete: boolean;
+        viewAttendees: boolean;
+    };
 }) {
     setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
         breadcrumbs: [{ title: event.title, href: show(event.id) }],
@@ -36,8 +42,19 @@ export default function ShowEvent({
                     {event.status === 'cancelled' && (
                         <Badge variant="destructive">Cancelled</Badge>
                     )}
-                    {(can.publish || can.update || can.delete) && (
+                    {(can.publish ||
+                        can.update ||
+                        can.delete ||
+                        can.viewAttendees) && (
                         <div className="ml-auto flex gap-2">
+                            {can.viewAttendees && (
+                                <Button asChild variant="outline" size="sm">
+                                    <Link href={attendees(event.id)}>
+                                        <Users />
+                                        Attendees
+                                    </Link>
+                                </Button>
+                            )}
                             {can.update && (
                                 <Button asChild variant="outline" size="sm">
                                     <Link href={edit(event.id)}>
