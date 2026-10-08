@@ -1,5 +1,6 @@
 import { Form, Link } from '@inertiajs/react';
 import { Ticket } from 'lucide-react';
+import { CancelBookingDialog } from '@/components/cancel-booking-dialog';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,13 +23,21 @@ export function BookingBox({
     return (
         <section aria-label="Booking" className="rounded-lg border p-4 text-sm">
             {booking.state === 'booked' && (
-                <p>
-                    You booked {booking.quantity}{' '}
-                    {booking.quantity === 1 ? 'seat' : 'seats'}. Reference:{' '}
-                    <span className="font-mono break-all">
-                        {booking.reference}
-                    </span>
-                </p>
+                <div className="flex flex-col items-start gap-3">
+                    <p>
+                        You booked {booking.quantity}{' '}
+                        {booking.quantity === 1 ? 'seat' : 'seats'}. Reference:{' '}
+                        <span className="font-mono break-all">
+                            {booking.reference}
+                        </span>
+                    </p>
+                    {booking.can_cancel && (
+                        <CancelBookingDialog
+                            reference={booking.reference}
+                            triggerLabel="Cancel booking"
+                        />
+                    )}
+                </div>
             )}
 
             {booking.state === 'available' && (
