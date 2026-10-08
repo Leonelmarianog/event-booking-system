@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\DeleteAccount\DeleteAccount;
 use App\Models\Booking;
 use App\Models\User;
 use App\Notifications\BookingCancelled;
@@ -83,4 +84,40 @@ test('a normal user stays logged in', function () {
     $this->actingAs($user)->get(route('bookings.index'))->assertOk();
 
     $this->assertAuthenticatedAs($user);
+});
+
+test('BR-U5: a deleted user cannot log in with the old email and password', function () {
+    $user = User::factory()->create(['email' => 'ada@example.com']);
+    $user->anonymize();
+    $user->save();
+
+    $this->post(route('login.store'), ['email' => 'ada@example.com', 'password' => 'password'])
+        ->assertSessionHasErrors('email');
+
+    $this->assertGuest();
+});
+
+test('BR-U5: nobody can log in with the placeholder email', function () {
+    $user = User::factory()->create();
+    $user->anonymize();
+    $user->save();
+
+    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password'])
+        ->assertSessionHasErrors('email');
+
+    $this->assertGuest();
+});
+
+test('BR-U5: a deleted user has no remember token and no passkeys', function () {
+    $user = User::factory()->create();
+    $user->passkeys()->create([
+        'name' => 'Laptop',
+        'credential_id' => 'credential-'.$user->id,
+        'credential' => ['id' => 'credential-'.$user->id],
+    ]);
+
+    app(DeleteAccount::class)->handle($user);
+
+    expect($user->fresh()->remember_token)->toBeNull()
+        ->and($user->passkeys()->count())->toBe(0);
 });
