@@ -72,6 +72,19 @@ class EventPolicy
     }
 
     /**
+     * BR-A2. A person who cannot see the event gets a 404, so that hidden events stay
+     * unknown.
+     */
+    public function viewAttendees(User $user, Event $event): Response
+    {
+        if ($this->view($user, $event)->denied()) {
+            return Response::denyAsNotFound();
+        }
+
+        return $user->is_admin || $event->isOrganizedBy($user) ? Response::allow() : Response::deny();
+    }
+
+    /**
      * BR-E17. A person who cannot see the event gets a 404, so that hidden events stay
      * unknown. The model checks the state again before the delete.
      */

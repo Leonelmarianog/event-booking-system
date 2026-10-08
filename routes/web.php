@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BookingCancellationController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\EventAttendeeController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventPublicationController;
 use App\Http\Controllers\OrganizerEventController;
@@ -45,6 +46,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:bookings')
         ->name('events.bookings.store')
         ->can('view', 'event');
+    Route::get('events/{event}/attendees', [EventAttendeeController::class, 'index'])
+        ->whereNumber('event')
+        ->name('events.attendees.index')
+        ->can('viewAttendees', 'event');
     Route::get('bookings', [BookingController::class, 'index'])->name('bookings.index');
     Route::post('bookings/{booking:reference}/cancellation', [BookingCancellationController::class, 'store'])
         ->middleware('throttle:bookings')

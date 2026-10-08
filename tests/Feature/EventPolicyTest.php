@@ -231,3 +231,35 @@ test('BR-E5: nobody can edit a draft event that has started', function () {
 
     expect($this->organizer->can('update', $event))->toBeFalse();
 });
+
+// View attendees: BR-A2
+
+test('BR-A2: the organizer and admins can see the attendee list', function () {
+    $event = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+
+    expect($this->organizer->can('viewAttendees', $event))->toBeTrue()
+        ->and($this->admin->can('viewAttendees', $event))->toBeTrue()
+        ->and($this->otherUser->can('viewAttendees', $event))->toBeFalse();
+});
+
+test('BR-A2: another user gets a 403 for a published event and a 404 for a draft', function () {
+    $published = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+    $draft = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    $response = Gate::forUser($this->otherUser)->inspect('viewAttendees', $published);
+
+    expect($response->denied())->toBeTrue()
+        ->and($response->status())->toBeNull()
+        ->and(Gate::forUser($this->otherUser)->inspect('viewAttendees', $draft)->status())->toBe(404);
+});
+
+test('BR-A2: an attendee of a cancelled event can see the event but not the attendee list', function () {
+    $event = Event::factory()->cancelled()->for($this->organizer, 'organizer')->create();
+    Booking::factory()->cancelled()->for($event)->for($this->otherUser, 'attendee')->create();
+
+    $response = Gate::forUser($this->otherUser)->inspect('viewAttendees', $event);
+
+    expect($this->otherUser->can('view', $event))->toBeTrue()
+        ->and($response->denied())->toBeTrue()
+        ->and($response->status())->toBeNull();
+});
