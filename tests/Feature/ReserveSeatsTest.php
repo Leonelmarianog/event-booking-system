@@ -172,7 +172,8 @@ test('BR-N1: no email when the booking fails a rule', function () {
     $this->actingAs($this->attendee)
         ->post(route('events.bookings.store', $this->event), ['quantity' => 2]);
     $this->actingAs($this->attendee)
-        ->post(route('events.bookings.store', $this->event), ['quantity' => 1]);
+        ->post(route('events.bookings.store', $this->event), ['quantity' => 1])
+        ->assertInertiaFlash('toast.message', 'You already have a booking for this event.');
 
     Notification::assertSentTimes(BookingConfirmed::class, 1);
 });
@@ -186,6 +187,7 @@ test('BR-N6: the email is sent only after the transaction commits', function () 
         EventFacade::assertNotDispatched(NotificationSent::class);
     });
 
+    EventFacade::assertDispatchedTimes(NotificationSent::class, 1);
     EventFacade::assertDispatched(
         NotificationSent::class,
         fn (NotificationSent $sent) => $sent->notification instanceof BookingConfirmed
