@@ -1,6 +1,6 @@
 # Handoff — Event Booking Demo
 
-Last updated: 2026-10-07
+Last updated: 2026-10-08
 
 ## Where we are
 
@@ -20,8 +20,8 @@ M4 is split into seven PRs, in this order:
    confirmed bookings. The email of BR-E13 comes in M5.
 
 PRs 1 and 2 are merged. The current PR (`test/concurrency-check`) is PR 3. Its plan is
-`docs/superpowers/plans/2026-10-07-m4-concurrency-check.md`. It waits for the review of
-the owner.
+`docs/superpowers/plans/2026-10-07-m4-concurrency-check.md`. It is open as PR #32 and
+waits for the merge. The next step is the plan of PR 4 (`GetBookings`).
 
 - BR-B14 has two automatic checks. The owner chose automatic checks over a manual
   proof that the check catches a missing lock.
