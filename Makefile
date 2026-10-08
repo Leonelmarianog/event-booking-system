@@ -9,10 +9,10 @@ APP := $(COMPOSE) exec app
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup up down test lint fresh
+.PHONY: help setup up down test lint fresh concurrency-test
 
 help: ## Show the targets
-	@grep -E '^[a-z]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-8s %s\n", $$1, $$2}'
+	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
 
 setup: ## First start after a clone: install, start and migrate
 	test -f .env || cp .env.example .env
@@ -39,3 +39,6 @@ lint: ## Run the static checks of CI (no file changes)
 
 fresh: ## Delete all local data, then migrate and seed again
 	$(APP) php artisan migrate:fresh --seed --force
+
+concurrency-test: ## Check that parallel bookings never overbook (needs a running stack)
+	scripts/check-concurrency.sh
