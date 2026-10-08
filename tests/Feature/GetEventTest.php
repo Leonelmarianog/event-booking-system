@@ -154,6 +154,35 @@ test('BR-A2: the organizer and admins see the attendees link, other users and vi
         ->assertInertia(fn (Assert $page) => $page->where('can.viewAttendees', false));
 });
 
+test('BR-E11, BR-A1: the organizer and admins see the cancel button, other users do not', function () {
+    $event = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.cancel', true));
+
+    $this->actingAs($this->admin)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.cancel', true));
+
+    $this->actingAs($this->otherUser)
+        ->get(route('events.show', $event))
+        ->assertInertia(fn (Assert $page) => $page->where('can.cancel', false));
+});
+
+test('BR-E12: there is no cancel button on started or cancelled events', function () {
+    $started = Event::factory()->published()->started()->for($this->organizer, 'organizer')->create();
+    $cancelled = Event::factory()->cancelled()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $started))
+        ->assertInertia(fn (Assert $page) => $page->where('can.cancel', false));
+
+    $this->actingAs($this->organizer)
+        ->get(route('events.show', $cancelled))
+        ->assertInertia(fn (Assert $page) => $page->where('can.cancel', false));
+});
+
 test('BR-E5: the organizer does not see the edit link on a started event', function () {
     $event = Event::factory()->published()->started()->for($this->organizer, 'organizer')->create();
 

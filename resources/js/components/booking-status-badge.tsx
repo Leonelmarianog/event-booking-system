@@ -11,6 +11,16 @@ const variants = {
     cancelled: 'destructive',
 } as const;
 
-export function BookingStatusBadge({ status }: { status: BookingStatus }) {
+export function BookingStatusBadge({
+    status,
+    eventCancelled = false,
+}: {
+    status: BookingStatus;
+    eventCancelled?: boolean;
+}) {
+    if (eventCancelled) {
+        return <Badge variant="destructive">Event cancelled</Badge>;
+    }
+
     return <Badge variant={variants[status]}>{labels[status]}</Badge>;
 }

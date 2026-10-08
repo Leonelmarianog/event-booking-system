@@ -1,6 +1,7 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { CalendarDays, MapPin, Pencil, User, Users } from 'lucide-react';
 import { BookingBox } from '@/components/booking-box';
+import { CancelEventDialog } from '@/components/cancel-event-dialog';
 import { DeleteEventDialog } from '@/components/delete-event-dialog';
 import { LocalDateTime } from '@/components/local-date-time';
 import { PublishEventDialog } from '@/components/publish-event-dialog';
@@ -20,6 +21,7 @@ export default function ShowEvent({
     can: {
         update: boolean;
         publish: boolean;
+        cancel: boolean;
         delete: boolean;
         viewAttendees: boolean;
     };
@@ -44,9 +46,10 @@ export default function ShowEvent({
                     )}
                     {(can.publish ||
                         can.update ||
+                        can.cancel ||
                         can.delete ||
                         can.viewAttendees) && (
-                        <div className="ml-auto flex gap-2">
+                        <div className="ml-auto flex flex-wrap gap-2">
                             {can.viewAttendees && (
                                 <Button asChild variant="outline" size="sm">
                                     <Link href={attendees(event.id)}>
@@ -65,6 +68,9 @@ export default function ShowEvent({
                             )}
                             {can.publish && (
                                 <PublishEventDialog eventId={event.id} />
+                            )}
+                            {can.cancel && (
+                                <CancelEventDialog eventId={event.id} />
                             )}
                             {can.delete && (
                                 <DeleteEventDialog eventId={event.id} />

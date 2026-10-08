@@ -5,6 +5,7 @@ export type BookingRow = {
     quantity: number;
     status: BookingStatus;
     can_cancel: boolean;
+    event_cancelled: boolean;
     event: {
         id: number;
         title: string;

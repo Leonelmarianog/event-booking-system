@@ -50,6 +50,7 @@ test('the attendee sees the data of each booking', function () {
                 'quantity' => 3,
                 'status' => 'confirmed',
                 'can_cancel' => true,
+                'event_cancelled' => false,
                 'event' => [
                     'id' => $event->id,
                     'title' => 'Laravel Meetup',
@@ -152,5 +153,18 @@ test('BR-B10: only confirmed bookings of events that have not started can be can
                 === ['Upcoming' => true, 'Cancelled' => false])
             ->where('past', fn ($rows) => collect($rows)->pluck('can_cancel', 'event.title')->all()
                 === ['Started' => false])
+        );
+});
+
+test('BR-E13: the bookings of a cancelled event say that the event is cancelled', function () {
+    bookingOf($this->attendee, 'Still on', now()->addDay());
+    $booking = bookingOf($this->attendee, 'Called off', now()->addDays(2), cancelled: true);
+    $booking->event->forceFill(['status' => 'cancelled', 'cancelled_at' => now()])->save();
+
+    $this->actingAs($this->attendee)
+        ->get(route('bookings.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('upcoming', fn ($rows) => collect($rows)->pluck('event_cancelled', 'event.title')->all()
+                === ['Still on' => false, 'Called off' => true])
         );
 });
