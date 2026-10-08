@@ -113,6 +113,7 @@ test('BR-E12: a started event cannot be cancelled', function () {
 
 test('BR-E12: a cancelled event cannot be cancelled again', function () {
     $this->actingAs($this->organizer)->post(route('events.cancellation.store', $this->event));
+    Notification::fake();
 
     $this->actingAs($this->organizer)
         ->from(route('events.show', $this->event))
@@ -121,6 +122,8 @@ test('BR-E12: a cancelled event cannot be cancelled again', function () {
             'type' => 'error',
             'message' => 'Only a draft or published event can be cancelled. This event is cancelled.',
         ]);
+
+    Notification::assertNothingSent();
 });
 
 test('BR-B2: booking after the cancel fails', function () {
@@ -211,7 +214,7 @@ test('BR-N3: an event with no confirmed bookings sends no email', function () {
     Notification::assertNothingSent();
 });
 
-test('BR-N3: no email when the cancel fails a rule', function () {
+test('BR-N3: no email when the event has started', function () {
     Notification::fake();
     $this->event->forceFill(['starts_at' => now()->subHour()])->save();
 
