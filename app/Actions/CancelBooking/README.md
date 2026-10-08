@@ -40,7 +40,20 @@ bookings"), with a toast that shows the reference. If the model throws an except
 the transaction rolls back. The handler in `bootstrap/app.php` turns the exception into
 a redirect back with an error toast.
 
-The `BookingCancelled` email comes in M5.
+After the saves, the Action sends the `BookingCancelled` notification to the attendee
+(BR-N2). The notification is queued and marked "after commit", so the queue keeps the
+job until the transaction commits. On a rollback, the queue drops the job and no email
+goes out (BR-N6). The worker sends the email. It tries 3 times, with a wait of 10 and
+then 60 seconds between the tries.
+
+The queue puts the job on Redis right after the database commit. If Redis fails at that
+moment, the booking is cancelled, but the request ends with an error and no email goes
+out. The attendee then sees the cancelled booking on "My bookings". A full Redis outage
+stops the request earlier, because sessions and rate limits also use Redis.
+
+When an event is cancelled, `CancelEvent` cancels the bookings itself and does not use
+this Action. Thus, those attendees get no `BookingCancelled` email. They get the
+`EventCancelled` email (M5).
 
 ## The booking is cancelled
 
@@ -53,6 +66,7 @@ sequenceDiagram
     participant Action as CancelBooking
     participant Booking
     participant DB as PostgreSQL
+    participant Queue
 
     Browser->>Middleware: POST /bookings/{reference}/cancellation
     Middleware->>Middleware: Check login and rate limit
@@ -68,7 +82,10 @@ sequenceDiagram
     DB-->>Action: Booking row
     Action->>Booking: cancel()
     Booking-->>Action: Booking cancelled, seats given back to the event
-    Action->>DB: Update the event and the booking, commit
+    Action->>DB: Update the event and the booking
+    Action->>Queue: BookingCancelled (held until the commit)
+    Action->>DB: Commit
+    Queue-->>Queue: Release the job after the commit
     Action-->>Controller: Booking
     Controller-->>Browser: Redirect back, toast with the reference
 ```
