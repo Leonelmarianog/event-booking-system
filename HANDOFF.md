@@ -327,6 +327,9 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 4. The `users` column `anonymized_at` comes in M6.
 5. Optional, for the owner to decide: `Model::shouldBeStrict()` outside production, so
    that reading a column that the query did not select throws an error.
+6. Later, for the owner to decide: rewrite `scripts/check-concurrency.sh` in Python
+   (standard library only: `urllib`, `http.cookiejar`, `threading.Barrier`,
+   `subprocess`), for readability. `check-image-roles.sh` can stay in bash.
 
 Write the plan of each PR first and get the owner's approval.
 
