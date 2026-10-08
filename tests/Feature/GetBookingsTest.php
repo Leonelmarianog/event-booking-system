@@ -168,3 +168,16 @@ test('BR-E13: the bookings of a cancelled event say that the event is cancelled'
                 === ['Still on' => false, 'Called off' => true])
         );
 });
+
+test('BR-E13: a booking that the attendee cancelled before the event was cancelled keeps the plain status', function () {
+    $booking = bookingOf($this->attendee, 'Dropped earlier', now()->addDays(2), cancelled: true);
+    $booking->forceFill(['cancelled_at' => now()->subDay()])->save();
+    $booking->event->forceFill(['status' => 'cancelled', 'cancelled_at' => now()])->save();
+
+    $this->actingAs($this->attendee)
+        ->get(route('bookings.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('upcoming.0.event_cancelled', false)
+            ->where('upcoming.0.status', 'cancelled')
+        );
+});

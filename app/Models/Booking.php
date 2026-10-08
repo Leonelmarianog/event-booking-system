@@ -101,6 +101,23 @@ class Booking extends Model
     }
 
     /**
+     * Whether the booking ended because its event was cancelled (BR-E13). A booking that
+     * the attendee cancelled before the event was cancelled does not count.
+     */
+    public function wasCancelledWithEvent(): bool
+    {
+        if (! $this->event->isCancelled()) {
+            return false;
+        }
+
+        if ($this->cancelled_at === null || $this->event->cancelled_at === null) {
+            return true;
+        }
+
+        return $this->cancelled_at->greaterThanOrEqualTo($this->event->cancelled_at);
+    }
+
+    /**
      * Whether the booking can be cancelled now (BR-B10). The pages use it to show the
      * cancel button.
      */

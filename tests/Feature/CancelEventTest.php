@@ -3,6 +3,7 @@
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->freezeSecond();
@@ -136,4 +137,25 @@ test('the cancel uses the event-writes rate limit', function () {
     $this->actingAs($this->organizer)
         ->post(route('events.cancellation.store', $this->event))
         ->assertTooManyRequests();
+});
+
+test('BR-E11: another user gets a 404 for a draft', function () {
+    $draft = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    $this->actingAs(User::factory()->create())
+        ->post(route('events.cancellation.store', $draft))
+        ->assertNotFound();
+
+    expect($draft->fresh()->isDraft())->toBeTrue();
+});
+
+test('BR-E13: after the cancel, the attendee sees "Event cancelled" on My bookings', function () {
+    $this->actingAs($this->organizer)->post(route('events.cancellation.store', $this->event));
+
+    $this->actingAs($this->first->attendee)
+        ->get(route('bookings.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('upcoming.0.status', 'cancelled')
+            ->where('upcoming.0.event_cancelled', true)
+        );
 });

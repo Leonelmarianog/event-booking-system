@@ -21,7 +21,7 @@ class GetBookings
             ->whereBelongsTo($user, 'attendee')
             ->orderBy('events.starts_at')
             ->orderBy('bookings.id')
-            ->with('event:id,title,venue,starts_at,status')
+            ->with('event:id,title,venue,starts_at,status,cancelled_at')
             ->get();
 
         [$past, $upcoming] = $bookings->partition(fn (Booking $booking): bool => $booking->event->hasStarted());
@@ -44,7 +44,7 @@ class GetBookings
             'quantity' => $booking->quantity,
             'status' => $booking->status->value,
             'can_cancel' => $booking->canBeCancelled(),
-            'event_cancelled' => $booking->event->isCancelled(),
+            'event_cancelled' => $booking->wasCancelledWithEvent(),
             'event' => [
                 'id' => $booking->event->id,
                 'title' => $booking->event->title,
