@@ -24,7 +24,11 @@ export function CancelEventDialog({ eventId }: { eventId: number }) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" variant="destructive">
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-destructive hover:text-destructive"
+                >
                     <Ban />
                     Cancel event
                 </Button>
