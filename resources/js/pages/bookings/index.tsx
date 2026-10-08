@@ -79,6 +79,7 @@ function BookingTable({
                                         {booking.can_cancel && (
                                             <CancelBookingDialog
                                                 reference={booking.reference}
+                                                eventTitle={booking.event.title}
                                                 triggerLabel="Cancel"
                                             />
                                         )}

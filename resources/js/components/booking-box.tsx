@@ -15,9 +15,11 @@ import type { EventBookingBox } from '@/types';
  */
 export function BookingBox({
     eventId,
+    eventTitle,
     booking,
 }: {
     eventId: number;
+    eventTitle: string;
     booking: EventBookingBox;
 }) {
     return (
@@ -34,6 +36,7 @@ export function BookingBox({
                     {booking.can_cancel && (
                         <CancelBookingDialog
                             reference={booking.reference}
+                            eventTitle={eventTitle}
                             triggerLabel="Cancel booking"
                         />
                     )}

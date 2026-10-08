@@ -19,9 +19,11 @@ import { store } from '@/routes/bookings/cancellation';
  */
 export function CancelBookingDialog({
     reference,
+    eventTitle,
     triggerLabel,
 }: {
     reference: string;
+    eventTitle: string;
     triggerLabel: string;
 }) {
     const [open, setOpen] = useState(false);
@@ -29,7 +31,11 @@ export function CancelBookingDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
+                <Button
+                    size="sm"
+                    variant="outline"
+                    aria-label={`Cancel booking for ${eventTitle}`}
+                >
                     <X />
                     {triggerLabel}
                 </Button>
@@ -37,8 +43,9 @@ export function CancelBookingDialog({
             <DialogContent>
                 <DialogTitle>Cancel this booking?</DialogTitle>
                 <DialogDescription>
-                    Your seats go back to the event. You can book again while
-                    seats are available.
+                    Your booking for {eventTitle} (reference {reference}) ends,
+                    and your seats go back to the event. You can book again
+                    while seats are available.
                 </DialogDescription>
                 <Form
                     {...store.form(reference)}
