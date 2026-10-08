@@ -114,3 +114,38 @@ test('the delete error belongs to the password field', function () {
     expect(AccountCannotBeDeleted::organizesUpcomingEvent()->field())->toBe('password')
         ->and(AccountCannotBeDeleted::holdsUpcomingBooking()->field())->toBe('password');
 });
+
+test('BR-U4: the page deletes the account, logs out and shows a toast', function () {
+    $this->actingAs($this->user)
+        ->delete(route('profile.destroy'), ['password' => 'password'])
+        ->assertRedirect(route('home'))
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Your account is deleted.']);
+
+    $this->assertGuest();
+    expect($this->user->fresh()->isAnonymized())->toBeTrue();
+});
+
+test('BR-U1: a blocked delete shows the reason in the dialog and as a toast', function () {
+    Event::factory()->published()->for($this->user, 'organizer')->create(['starts_at' => now()->addDay()]);
+    $message = 'You organize a published event that has not started. Cancel the event before you delete your account.';
+
+    $this->actingAs($this->user)
+        ->from(route('profile.edit'))
+        ->delete(route('profile.destroy'), ['password' => 'password'])
+        ->assertRedirect(route('profile.edit'))
+        ->assertSessionHasErrors(['password' => $message])
+        ->assertInertiaFlash('toast', ['type' => 'error', 'message' => $message]);
+
+    $this->assertAuthenticatedAs($this->user);
+    expect($this->user->fresh()->isAnonymized())->toBeFalse();
+});
+
+test('a wrong password changes nothing', function () {
+    $this->actingAs($this->user)
+        ->from(route('profile.edit'))
+        ->delete(route('profile.destroy'), ['password' => 'wrong-password'])
+        ->assertSessionHasErrors('password');
+
+    $this->assertAuthenticatedAs($this->user);
+    expect($this->user->fresh()->isAnonymized())->toBeFalse();
+});

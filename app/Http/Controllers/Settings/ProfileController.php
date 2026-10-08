@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Actions\DeleteAccount\DeleteAccount;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
@@ -44,18 +45,19 @@ class ProfileController extends Controller
     }
 
     /**
-     * Delete the user's profile.
+     * Delete the account of the user with the DeleteAccount Action (BR-U1 to BR-U4), then
+     * log out.
      */
-    public function destroy(ProfileDeleteRequest $request): RedirectResponse
+    public function destroy(ProfileDeleteRequest $request, DeleteAccount $deleteAccount): RedirectResponse
     {
-        $user = $request->user();
+        $deleteAccount->handle($request->user());
 
         Auth::logout();
 
-        $user->delete();
-
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Your account is deleted.')]);
 
         return redirect('/');
     }
