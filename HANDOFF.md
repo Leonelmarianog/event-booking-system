@@ -4,55 +4,58 @@ Last updated: 2026-10-08
 
 ## Where we are
 
-Milestones M1 (Foundation), M2 (CI and production image) and M3 (Events) are complete.
-Each M3 rule has at least one test. Milestone M4 (Bookings) is complete when its last
-PR (PR 7, below) is merged.
+Milestones M1 (Foundation), M2 (CI and production image), M3 (Events) and M4
+(Bookings) are complete. Each M3 and M4 rule has at least one test.
 
-M4 is split into seven PRs, in this order:
+M5 (Notifications) is split into four PRs, in this order:
 
-1. `bookings` table, `Booking` model, `BookingStatus` enum, `BookingPolicy`, and the
-   attendee part of BR-E16. No routes and no pages.
-2. `ReserveSeats`: the booking form on `events/show`.
-3. The concurrency check: the script, `make concurrency-test` and the CI job.
-4. `GetBookings`: the "My bookings" page.
-5. `CancelBooking`: `POST /bookings/{booking:reference}/cancellation`.
-6. `GetEventAttendees`: the attendee list page.
-7. `CancelEvent`: `events.cancelled_at`, `Event::cancel()`, and the cancel of all
-   confirmed bookings. The email of BR-E13 comes in M5.
+1. `BookingConfirmed`: `ReserveSeats` sends it (BR-N1, BR-N6).
+2. `BookingCancelled`: `CancelBooking` sends it (BR-N2).
+3. `EventCancelled`: `CancelEvent` sends it to each attendee with a confirmed booking
+   (BR-N3, the email part of BR-E13). These attendees get no `BookingCancelled` email.
+4. Reminders: `events.reminder_sent_at`, the `SendEventReminders` Action and command,
+   scheduled daily at 08:00 UTC, and `EventReminder` (BR-N4, BR-N5).
 
-PRs 1 to 6 are merged. The current PR (`feat/cancel-event`) is PR 7, the last PR of
-M4. Its plan is `docs/superpowers/plans/2026-10-08-m4-cancel-event.md`. It is open as a
-PR and waits for the merge. With this PR, M4 is complete: every M4 rule (BR-B1 to
-BR-B14, BR-E11, BR-E12, BR-E13, BR-A1, BR-A2) has a test. The email part of BR-E13 comes in M5.
+The current PR (`feat/booking-confirmed-email`) is PR 1. Its plan is
+`docs/superpowers/plans/2026-10-08-m5-booking-confirmed.md`. It is open as a PR and
+waits for the merge.
 
-- A migration adds `events.cancelled_at` (`timestampTz`, nullable). The factory state
-  `cancelled()` sets it.
-- `Event::cancel()` checks the status first (`InvalidStateTransition::cannotCancel`),
-  then the start time (`EventHasStarted::cannotCancel`) (BR-E12). It sets `status` and
-  `cancelled_at` and saves nothing. `Event::canBeCancelled()` does the same checks for
-  the button.
-- `EventPolicy::cancel` now returns a `Response`: 404 when the person cannot see the
-  event, allowed for the organizer and admins (BR-E11, BR-A1), 403 for other users.
-- `CancelEvent` locks the event row, calls `cancel()`, then locks the confirmed bookings
-  and calls `Booking::cancel()` on each (BR-E13), so the seats go back and
-  `seats_available` equals the capacity. It returns the number of cancelled bookings.
-  All three write Actions on bookings lock the event row first.
-- The route is `POST /events/{event}/cancellation` (`events.cancellation.store`,
-  `EventCancellationController@store`) with `auth`, `throttle:event-writes` and
-  `can:cancel,event`. Success redirects to the event page with the toast "Event
-  cancelled. N bookings were cancelled." (also "1 booking was" and no count for 0).
-- The event page shows `CancelEventDialog` when `can.cancel` is true (policy and
-  `canBeCancelled()`). Its buttons are "Keep event" and "Cancel event". The trigger is an
-  outline button with red text, so that it does not look like "Delete" on drafts. The
-  button group wraps on small screens.
-- Each "My bookings" row has `event_cancelled` (`Booking::wasCancelledWithEvent()`:
-  the event is cancelled and the booking was cancelled at the same time or later); the
-  badge then says "Event cancelled".
-- The `EventCancelled` emails come in M5.
+Each notification of M5 follows the same pattern (PR 1 sets it):
+
+- `implements ShouldQueue`, `use Queueable`, and `$this->afterCommit()` in the
+  constructor. The queue connections have `after_commit => false`, so the notification
+  must ask for it (BR-N6).
+- `#[Tries(3)]` and `#[Backoff([10, 60])]` on the class (spec section 7). The class
+  values win over `--tries` of the worker.
+- `via()` returns `['mail']`. `toMail()` uses the default `MailMessage` (a subject, a
+  greeting, lines, one action button). No custom mail templates.
+- Times in the email use `->utc()->format('D j M Y, H:i')` and the suffix ` UTC`. The
+  `utc()` call keeps the text correct when the database session uses another time zone.
+- The Action calls `notify()` inside its transaction, after the saves. The queue holds
+  the job until the commit and drops it on a rollback.
+- Tests: `Notification::fake()` for "who gets which email" (BR-N1 to BR-N3).
+  `Notification::fake()` ignores `afterCommit()`, so the BR-N6 tests use the real
+  `sync` queue of the test environment and `Event::fake([NotificationSent::class])`:
+  nothing is sent inside an open transaction, one email after the commit, none after a
+  rollback.
+
+General notes:
+
 - `config/inertia.php` has `ensure_pages_exist` set to `true`, so a feature test that
   renders a page needs the page file.
 - `vp check --fix` also formats the code blocks inside Markdown plans, which can break
   a JSX snippet. Copy JSX from a plan with care.
+
+M4 PR 7 notes:
+
+- `events.cancelled_at`; `Event::cancel()` checks the status, then the start time
+  (BR-E12). `EventPolicy::cancel`: 404 / allowed for organizer and admins / 403.
+- `CancelEvent` locks the event row, then the confirmed bookings, and calls
+  `Booking::cancel()` on each (BR-E13). All write Actions on bookings lock the event row
+  first.
+- `POST /events/{event}/cancellation` with `auth`, `throttle:event-writes` and
+  `can:cancel,event`. "My bookings" rows have `event_cancelled`
+  (`Booking::wasCancelledWithEvent()`), shown as the "Event cancelled" badge.
 
 PR 6 notes:
 
@@ -371,8 +374,10 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/cancel-event` PR, merges it, and asks for a sync.
-2. After the merge, M4 is complete. Split M5 (notifications) into PRs with the owner.
+1. The owner reviews the `feat/booking-confirmed-email` PR, merges it, and asks for a
+   sync.
+2. After the merge, M5 PR 2: `BookingCancelled` from `CancelBooking`, with the same
+   pattern.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.

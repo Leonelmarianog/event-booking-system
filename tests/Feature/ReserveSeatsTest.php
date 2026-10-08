@@ -1,8 +1,14 @@
 <?php
 
+use App\Actions\ReserveSeats\ReserveSeats;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
+use App\Notifications\BookingConfirmed;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event as EventFacade;
+use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
     $this->organizer = User::factory()->create();
@@ -141,4 +147,66 @@ test('BR-B5: a user can book 4 seats', function () {
         ->assertSessionHasNoErrors();
 
     expect(Booking::sole()->quantity)->toBe(4);
+});
+
+test('BR-N1: the attendee gets a booking confirmed email', function () {
+    Notification::fake();
+
+    $this->actingAs($this->attendee)
+        ->post(route('events.bookings.store', $this->event), ['quantity' => 2]);
+
+    $booking = Booking::sole();
+
+    Notification::assertSentTo(
+        $this->attendee,
+        BookingConfirmed::class,
+        fn (BookingConfirmed $notification) => $notification->booking->is($booking),
+    );
+    Notification::assertNotSentTo($this->organizer, BookingConfirmed::class);
+    Notification::assertCount(1);
+});
+
+test('BR-N1: no email when the booking fails a rule', function () {
+    Notification::fake();
+
+    $this->actingAs($this->attendee)
+        ->post(route('events.bookings.store', $this->event), ['quantity' => 2]);
+    $this->actingAs($this->attendee)
+        ->post(route('events.bookings.store', $this->event), ['quantity' => 1])
+        ->assertInertiaFlash('toast.message', 'You already have a booking for this event.');
+
+    Notification::assertSentTimes(BookingConfirmed::class, 1);
+});
+
+test('BR-N6: the email is sent only after the transaction commits', function () {
+    EventFacade::fake([NotificationSent::class]);
+
+    DB::transaction(function () {
+        app(ReserveSeats::class)->handle($this->event, $this->attendee, 1);
+
+        EventFacade::assertNotDispatched(NotificationSent::class);
+    });
+
+    EventFacade::assertDispatchedTimes(NotificationSent::class, 1);
+    EventFacade::assertDispatched(
+        NotificationSent::class,
+        fn (NotificationSent $sent) => $sent->notification instanceof BookingConfirmed
+            && $sent->notifiable->is($this->attendee),
+    );
+});
+
+test('BR-N6: no email when the transaction rolls back', function () {
+    EventFacade::fake([NotificationSent::class]);
+
+    try {
+        DB::transaction(function () {
+            app(ReserveSeats::class)->handle($this->event, $this->attendee, 1);
+
+            throw new RuntimeException('A later step fails.');
+        });
+    } catch (RuntimeException) {
+    }
+
+    EventFacade::assertNotDispatched(NotificationSent::class);
+    expect(Booking::count())->toBe(0);
 });
