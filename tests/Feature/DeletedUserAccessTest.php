@@ -5,16 +5,25 @@ use App\Models\Booking;
 use App\Models\User;
 use App\Notifications\BookingCancelled;
 use Illuminate\Mail\Events\MessageSending;
+use Illuminate\Notifications\ChannelManager;
+use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Event as EventFacade;
 
-test('BR-U5: a deleted user gets no email, also from a queued notification', function () {
+test('BR-U5: an email queued before the delete is not sent after it', function () {
     EventFacade::fake([MessageSending::class]);
     $user = User::factory()->create();
     $booking = Booking::factory()->cancelled()->for($user, 'attendee')->create();
-    $user->anonymize();
-    $user->save();
 
-    $user->notify(new BookingCancelled($booking));
+    // The job is queued while the user is a normal user.
+    $queuedJob = serialize(new SendQueuedNotifications($user, new BookingCancelled($booking), ['mail']));
+
+    // The account is deleted before the worker runs the job.
+    $deleted = User::find($user->id);
+    $deleted->anonymize();
+    $deleted->save();
+
+    // The worker loads the job, which reads the user again from the database.
+    unserialize($queuedJob)->handle(app(ChannelManager::class));
 
     EventFacade::assertNotDispatched(MessageSending::class);
 });
@@ -120,4 +129,14 @@ test('BR-U5: a deleted user has no remember token and no passkeys', function () 
 
     expect($user->fresh()->remember_token)->toBeNull()
         ->and($user->passkeys()->count())->toBe(0);
+});
+
+test('BR-U5: a JSON request from such a session gets 401', function () {
+    $user = User::factory()->anonymized()->create();
+
+    $this->actingAs($user)
+        ->getJson(route('events.index'))
+        ->assertUnauthorized();
+
+    $this->assertGuest();
 });

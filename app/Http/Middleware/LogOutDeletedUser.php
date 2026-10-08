@@ -12,7 +12,7 @@ class LogOutDeletedUser
     /**
      * End the session of a user who deleted the account, for example a session that is
      * still open on another device (BR-U5). The user goes to the login page with no
-     * message.
+     * message. A JSON request gets 401, like the `auth` middleware gives.
      *
      * @param  Closure(Request): (Response)  $next
      */
@@ -23,6 +23,10 @@ class LogOutDeletedUser
 
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
+            if ($request->expectsJson()) {
+                abort(401);
+            }
 
             return to_route('login');
         }
