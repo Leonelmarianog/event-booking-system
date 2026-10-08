@@ -15,7 +15,8 @@ M6 (User accounts) is split into three PRs, in this order:
 2. The `DeleteAccount` Action on the existing "Delete account" page
    (`profile.destroy`): one transaction that checks the rules, deletes the drafts of the
    user (BR-U3), deletes the `password_reset_tokens` row of the old email, anonymizes the
-   user and deletes the passkeys; then log out. A blocked delete shows an error toast.
+   user and deletes the passkeys; then log out. A blocked delete shows the message under
+   the password field and as an error toast.
 3. BR-U5 on every login path (password, passkey, password reset) and a middleware that
    ends the open sessions of an anonymized user (sessions are in Redis).
 
@@ -28,27 +29,34 @@ Owner decisions for M6:
 - Only drafts are deleted (BR-U3). Cancelled and past events stay, with "Deleted user"
   as the organizer.
 
-The current PR (`feat/account-rules`) is PR 1. Its plan is
-`docs/superpowers/plans/2026-10-08-m6-account-rules.md`. It is open as a PR and waits
+PR 1 is merged (#41). The current PR (`feat/delete-account`) is PR 2. Its plan is
+`docs/superpowers/plans/2026-10-08-m6-delete-account.md`. It is open as a PR and waits
 for the merge.
 
-- Migrations `add_anonymized_at_to_users_table` (`timestampTz`, nullable) and
-  `make_password_nullable_on_users_table`.
-- `User::ensureCanBeDeleted()` throws `AccountCannotBeDeleted`: first BR-U1 (a published
-  event of the user that has not started), then BR-U2 (a confirmed booking for an event
-  that has not started). "Has not started" is the scope `Event::upcoming()`.
-- `User::anonymize()` sets the name "Deleted user", the placeholder email, a null
-  password, remember token and two-factor fields, and `anonymized_at`. It saves nothing
-  and does not touch passkeys (PR 2 deletes them). `User::isAnonymized()`, the
-  relation `User::organizedEvents()` and the factory state `anonymized()`.
-- `User::ANONYMIZED_EMAIL_DOMAIN` (`deleted.invalid`). `ProfileValidationRules` rejects
-  this domain (any case) on registration and profile update, so that nobody can take a
-  placeholder email before the delete needs it (found in the review).
-- The migration `make_password_nullable_on_users_table` is one-way in practice: its
-  `down()` fails once a password is null.
-- Until PR 2, the "Delete account" page still calls `$user->delete()`. For a user with
-  events or bookings, it fails with a database error (the foreign keys restrict the
-  delete).
+- `DeleteAccount` (one transaction): lock the user row, `ensureCanBeDeleted()`, delete
+  the drafts (BR-U3), the `password_reset_tokens` row of the old email and the passkeys,
+  `anonymize()`, save. `ProfileController@destroy` calls it, logs out with
+  `Auth::logoutCurrentDevice()` (no new remember token on the anonymized row), and
+  redirects to the `home` route with the toast "Your account is deleted.".
+- `AccountCannotBeDeleted::field()` is `password`: a blocked delete shows the message
+  under the password field in the dialog and as an error toast (owner decision).
+- The dialog has new texts: drafts are deleted, name, email and password are removed,
+  past events and bookings stay with "Deleted user" (owner decision).
+- `ReserveSeats`, `CreateEvent` and `PublishEvent` lock the user row first and call
+  `User::ensureNotAnonymized()` (`AccountDeleted`, "Your account was deleted."). Lock
+  order: the user row, then the event row. `CreateEvent` and `PublishEvent` now run in a
+  transaction; `PublishEvent` also locks the event row.
+- The starter-kit test `test_user_can_delete_their_account` now asserts that the row
+  stays and is anonymized.
+
+M6 PR 1 notes:
+
+- `users.anonymized_at`, nullable `users.password` (the migration is one-way in
+  practice). `User::ensureCanBeDeleted()` (BR-U1, then BR-U2), `User::anonymize()`
+  (BR-U4), `User::isAnonymized()`, `User::organizedEvents()`, factory state
+  `anonymized()`.
+- `User::ANONYMIZED_EMAIL_DOMAIN` (`deleted.invalid`); `ProfileValidationRules` rejects
+  it on registration and profile update.
 
 M5 notes:
 
@@ -420,11 +428,14 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/account-rules` PR, merges it, and asks for a sync.
-2. After the merge, M6 PR 2: the `DeleteAccount` Action on the "Delete account" page.
-   Its transaction also deletes the `password_reset_tokens` row of the old email (read
-   the email before `anonymize()`). M6 PR 3 adds a test that a password reset for an
-   anonymized user or for a placeholder email logs nobody in and sends no email.
+1. The owner reviews the `feat/delete-account` PR, merges it, and asks for a sync.
+2. After the merge, M6 PR 3: BR-U5 on every login path (password, passkey, password
+   reset), a middleware that ends the open sessions of an anonymized user, and a test
+   that a password reset for an anonymized user or for a placeholder email logs nobody
+   in and sends no email.
+   Also `User::routeNotificationForMail()` returns null for an anonymized user, so a
+   queued email (for example `BookingCancelled` queued just before the delete) is not
+   sent to the placeholder address (found in the PR 2 review).
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.

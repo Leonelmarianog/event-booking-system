@@ -24,7 +24,7 @@ export default function DeleteUser() {
             <Heading
                 variant="small"
                 title="Delete account"
-                description="Delete your account and all of its resources"
+                description='Delete your account. Past events and bookings stay, with the name "Deleted user".'
             />
             <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
                 <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
@@ -48,10 +48,10 @@ export default function DeleteUser() {
                             Are you sure you want to delete your account?
                         </DialogTitle>
                         <DialogDescription>
-                            Once your account is deleted, all of its resources
-                            and data will also be permanently deleted. Please
-                            enter your password to confirm you would like to
-                            permanently delete your account.
+                            Your drafts are deleted, and your name, email and
+                            password are removed. Past events and bookings stay,
+                            with the name &quot;Deleted user&quot;. You cannot
+                            undo this. Enter your password to confirm.
                         </DialogDescription>
 
                         <Form

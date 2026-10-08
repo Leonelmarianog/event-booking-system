@@ -11,9 +11,12 @@ Before the controller runs:
   who cannot see the event gets 404, so that hidden events stay unknown.
 - `StoreBookingRequest` validates the quantity: an integer from 1 to 4 (BR-B5).
 
-The Action starts a transaction and locks the event row. Parallel requests for the same
-event wait for the lock, one after the other. Thus, two users never get the same last
-seat (BR-B14), and two requests of the same user cannot make two bookings (BR-B4).
+The Action starts a transaction. It locks the user row first, and refuses with
+`AccountDeleted` when the user deleted the account (BR-U5). An account delete
+(`DeleteAccount`) locks the same row, so a booking cannot slip in while the delete runs.
+Then the Action locks the event row. Parallel requests for the same event wait for the
+lock, one after the other. Thus, two users never get the same last seat (BR-B14), and
+two requests of the same user cannot make two bookings (BR-B4).
 
 `Event::reserve()` checks the rules on the locked row, in this order:
 
@@ -66,7 +69,7 @@ sequenceDiagram
     Request-->>Middleware: Quantity is valid
     Middleware->>Controller: store(request, event)
     Controller->>Action: handle(event, user, quantity)
-    Action->>DB: Begin, lock the event row
+    Action->>DB: Begin, lock the user row, then the event row
     DB-->>Action: Event row
     Action->>Event: reserve(user, quantity)
     Event->>DB: Read the confirmed booking of the user
@@ -96,7 +99,7 @@ sequenceDiagram
     Middleware->>Middleware: Check login, rate limit, policy and quantity
     Middleware->>Controller: store(request, event)
     Controller->>Action: handle(event, user, quantity)
-    Action->>DB: Begin, lock the event row
+    Action->>DB: Begin, lock the user row, then the event row
     DB-->>Action: Event row
     Action->>Event: reserve(user, quantity)
     Event-->>Action: EventNotBookable
@@ -121,7 +124,7 @@ sequenceDiagram
     Middleware->>Middleware: Check login, rate limit, policy and quantity
     Middleware->>Controller: store(request, event)
     Controller->>Action: handle(event, user, quantity)
-    Action->>DB: Begin, lock the event row
+    Action->>DB: Begin, lock the user row, then the event row
     DB-->>Action: Event row
     Action->>Event: reserve(user, quantity)
     Event->>DB: Read the confirmed booking of the user
@@ -148,7 +151,7 @@ sequenceDiagram
     Middleware->>Middleware: Check login, rate limit, policy and quantity
     Middleware->>Controller: store(request, event)
     Controller->>Action: handle(event, user, quantity)
-    Action->>DB: Begin, lock the event row
+    Action->>DB: Begin, lock the user row, then the event row
     DB-->>Action: Event row
     Action->>Event: reserve(user, quantity)
     Event->>DB: Read the confirmed booking of the user

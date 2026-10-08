@@ -10,6 +10,11 @@ Before the controller runs:
 - `StoreEventRequest` validates the data: the capacity is from 1 to 10,000 (BR-E2) and
   the start time is in the future (BR-E3).
 
+The Action starts a transaction and locks the user row first. It refuses with
+`AccountDeleted` when the user deleted the account (BR-U5). An account delete
+(`DeleteAccount`) locks the same row, so a new event cannot slip in while the delete
+runs.
+
 The form sends the start time in UTC. The browser converts the local time of the
 organizer before it sends the form.
 
@@ -30,7 +35,9 @@ sequenceDiagram
     Request-->>Middleware: Data is valid
     Middleware->>Controller: store(request)
     Controller->>Action: handle(user, data)
-    Action->>DB: Insert the event (draft, all seats available)
+    Action->>DB: Begin, lock the user row
+    DB-->>Action: User row, account not deleted
+    Action->>DB: Insert the event (draft, all seats available), commit
     DB-->>Action: Event row
     Action-->>Controller: Event
     Controller-->>Browser: Redirect to /events/{event}, toast "Event created."
