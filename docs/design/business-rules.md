@@ -5,10 +5,10 @@ sequence diagrams and the tests refer to these IDs.
 
 The column "Enforced by" tells which part of the code makes the rule true:
 
-- **Model**: a method on `Event` or `Booking`, or an enum. It throws a domain exception.
+- **Model**: a method on `Event`, `Booking` or `User`, or an enum. It throws a domain exception.
 - **Policy**: `EventPolicy` or `BookingPolicy`. It gives a 403 response.
 - **Request**: a FormRequest. It gives a validation error.
-- **Middleware**: a route middleware, for example `auth`. It sends the visitor to the login page.
+- **Middleware**: a route or web-group middleware, for example `auth` or `LogOutDeletedUser`. It sends the visitor to the login page.
 - **Database**: a constraint or an index. It is the last line of defense.
 
 ## Events
@@ -54,13 +54,13 @@ The column "Enforced by" tells which part of the code makes the rule true:
 
 ## User accounts
 
-| ID    | Rule                                                                                                                                                                                                                                       | Enforced by |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
-| BR-U1 | A user cannot delete their account while they organize a published event that has not started.                                                                                                                                             | Model       |
-| BR-U2 | A user cannot delete their account while they hold a confirmed booking for an event that has not started.                                                                                                                                  | Model       |
-| BR-U3 | When a user deletes their account, the system deletes the draft events of the user.                                                                                                                                                        | Action      |
-| BR-U4 | When a user deletes their account, the system keeps the user row, so that events and bookings keep their history. The system replaces the name with "Deleted user", replaces the email with a unique placeholder and removes the password. | Action      |
-| BR-U5 | A deleted user cannot log in.                                                                                                                                                                                                              | Model       |
+| ID    | Rule                                                                                                                                                                                                                                       | Enforced by       |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
+| BR-U1 | A user cannot delete their account while they organize a published event that has not started.                                                                                                                                             | Model             |
+| BR-U2 | A user cannot delete their account while they hold a confirmed booking for an event that has not started.                                                                                                                                  | Model             |
+| BR-U3 | When a user deletes their account, the system deletes the draft events of the user.                                                                                                                                                        | Action            |
+| BR-U4 | When a user deletes their account, the system keeps the user row, so that events and bookings keep their history. The system replaces the name with "Deleted user", replaces the email with a unique placeholder and removes the password. | Action            |
+| BR-U5 | A deleted user cannot log in.                                                                                                                                                                                                              | Model, Middleware |
 
 ## Admins
 
