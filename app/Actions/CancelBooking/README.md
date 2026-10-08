@@ -123,7 +123,25 @@ sequenceDiagram
     Handler-->>Browser: Redirect back, error toast
 ```
 
-## The person may not cancel the booking
+## The person cannot see the booking
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Middleware
+    participant Policy as BookingPolicy
+    participant DB as PostgreSQL
+
+    Browser->>Middleware: POST /bookings/{reference}/cancellation
+    Middleware->>Middleware: Check login and rate limit
+    Middleware->>DB: Read the booking by reference
+    DB-->>Middleware: Booking row
+    Middleware->>Policy: cancel(user, booking)
+    Policy-->>Middleware: Deny as not found
+    Middleware-->>Browser: 404
+```
+
+## The organizer of the event tries to cancel
 
 ```mermaid
 sequenceDiagram
@@ -138,5 +156,5 @@ sequenceDiagram
     DB-->>Middleware: Booking row
     Middleware->>Policy: cancel(user, booking)
     Policy-->>Middleware: Deny
-    Middleware-->>Browser: 404 (cannot see the booking) or 403 (organizer of the event)
+    Middleware-->>Browser: 403
 ```

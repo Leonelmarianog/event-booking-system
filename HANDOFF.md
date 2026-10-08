@@ -14,7 +14,7 @@ M4 is split into seven PRs, in this order:
 2. `ReserveSeats`: the booking form on `events/show`.
 3. The concurrency check: the script, `make concurrency-test` and the CI job.
 4. `GetBookings`: the "My bookings" page.
-5. `CancelBooking`: `POST /bookings/{booking}/cancellation`.
+5. `CancelBooking`: `POST /bookings/{booking:reference}/cancellation`.
 6. `GetEventAttendees`: the attendee list page.
 7. `CancelEvent`: `events.cancelled_at`, `Event::cancel()`, and the cancel of all
    confirmed bookings. The email of BR-E13 comes in M5.
