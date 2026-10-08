@@ -16,8 +16,11 @@ Before the controller runs:
 Otherwise the model throws `InvalidStateTransition` or `EventHasStarted`. The handler
 in `bootstrap/app.php` turns them into a redirect back with an error toast.
 
-The Action makes one update, with no transaction. If two publish requests come at the
-same time, both set the same status.
+The Action starts a transaction. It locks the organizer's user row first, and refuses
+with `AccountDeleted` when the organizer deleted the account (BR-U5). An account delete
+(`DeleteAccount`) locks the same row, so a publish cannot slip in while the delete runs.
+Then the Action locks the event row, so two publish requests run one after the other;
+the second one gets `InvalidStateTransition`.
 
 ## The event is published
 
@@ -39,9 +42,11 @@ sequenceDiagram
     Policy-->>Middleware: Allow
     Middleware->>Controller: store(event)
     Controller->>Action: handle(event)
+    Action->>DB: Begin, lock the user row, then the event row
+    DB-->>Action: User row, event row
     Action->>Event: publish()
     Event-->>Action: Status published, publication time set
-    Action->>DB: Update the event
+    Action->>DB: Update the event, commit
     Action-->>Controller: Event
     Controller-->>Browser: Redirect to /events/{event}, toast "Event published."
 ```
