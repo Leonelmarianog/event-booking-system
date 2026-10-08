@@ -40,7 +40,18 @@ toast.
 
 On "My bookings", the bookings of a cancelled event show the badge "Event cancelled".
 
-The `EventCancelled` emails to the attendees come in M5.
+The Action loads the confirmed bookings together with their attendees. After the saves,
+it sends the `EventCancelled` notification to the attendee of each booking that it
+cancelled (BR-N3). Bookings that were cancelled before get no email. The attendees get
+no `BookingCancelled` email. The notifications are queued and marked "after commit", so
+the queue keeps the jobs until the transaction commits. On a rollback, the queue drops
+the jobs and no email goes out (BR-N6). The worker sends the emails. It tries each email
+3 times, with a wait of 10 and then 60 seconds between the tries.
+
+The queue puts the jobs on Redis right after the database commit. If Redis fails at that
+moment, the event is cancelled, but the request ends with an error and some or all
+emails do not go out. A full Redis outage stops the request earlier, because sessions
+and rate limits also use Redis.
 
 ## The event is cancelled
 
@@ -54,6 +65,7 @@ sequenceDiagram
     participant Event
     participant Booking
     participant DB as PostgreSQL
+    participant Queue
 
     Browser->>Middleware: POST /events/{event}/cancellation
     Middleware->>Middleware: Check login and rate limit
@@ -67,11 +79,14 @@ sequenceDiagram
     DB-->>Action: Event row
     Action->>Event: cancel()
     Event-->>Action: Event cancelled
-    Action->>DB: Lock the confirmed bookings of the event
+    Action->>DB: Lock the confirmed bookings of the event, load their attendees
     DB-->>Action: Booking rows
     Action->>Booking: cancel() for each booking
     Booking-->>Action: Bookings cancelled, seats given back to the event
-    Action->>DB: Update the bookings and the event, commit
+    Action->>DB: Update the bookings and the event
+    Action->>Queue: EventCancelled for each cancelled booking (held until the commit)
+    Action->>DB: Commit
+    Queue-->>Queue: Release the jobs after the commit
     Action-->>Controller: Number of cancelled bookings
     Controller-->>Browser: Redirect to /events/{event}, toast with the number
 ```
