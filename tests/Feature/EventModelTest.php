@@ -189,3 +189,44 @@ test('BR-B11: releasing seats never goes above the capacity', function () {
 
     expect($event->seats_available)->toBe(10);
 });
+
+test('BR-E12: a draft or published event can be cancelled', function (string $state) {
+    $this->freezeSecond();
+    $event = $state === 'draft' ? Event::factory()->create() : Event::factory()->published()->create();
+
+    $event->cancel();
+    $event->save();
+
+    $event = $event->fresh();
+
+    expect($event->isCancelled())->toBeTrue()
+        ->and($event->cancelled_at->equalTo(now()))->toBeTrue();
+})->with(['draft', 'published']);
+
+test('BR-E12: a cancelled event cannot be cancelled again', function () {
+    $event = Event::factory()->cancelled()->create();
+
+    expect(fn () => $event->cancel())
+        ->toThrow(InvalidStateTransition::class, 'Only a draft or published event can be cancelled. This event is cancelled.');
+});
+
+test('BR-E12: a started event cannot be cancelled', function () {
+    $event = Event::factory()->published()->started()->create();
+
+    expect(fn () => $event->cancel())
+        ->toThrow(EventHasStarted::class, 'The event has started, so it cannot be cancelled.');
+
+    expect($event->isPublished())->toBeTrue()
+        ->and($event->cancelled_at)->toBeNull();
+});
+
+test('BR-E12: only a draft or published event that has not started can be cancelled', function () {
+    expect(Event::factory()->create()->canBeCancelled())->toBeTrue()
+        ->and(Event::factory()->published()->create()->canBeCancelled())->toBeTrue()
+        ->and(Event::factory()->cancelled()->create()->canBeCancelled())->toBeFalse()
+        ->and(Event::factory()->published()->started()->create()->canBeCancelled())->toBeFalse();
+});
+
+test('the cancelled factory state sets the cancel time', function () {
+    expect(Event::factory()->cancelled()->create()->fresh()->cancelled_at)->not->toBeNull();
+});

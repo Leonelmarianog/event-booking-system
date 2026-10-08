@@ -16,6 +16,14 @@ class EventHasStarted extends DomainException
     }
 
     /**
+     * BR-E12: only an event that has not started can be cancelled.
+     */
+    public static function cannotCancel(): self
+    {
+        return new self(__('The event has started, so it cannot be cancelled.'));
+    }
+
+    /**
      * BR-B10: a booking can be cancelled only before the event starts.
      */
     public static function cannotCancelBooking(): self

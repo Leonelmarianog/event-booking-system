@@ -50,6 +50,7 @@ class EventFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => EventStatus::Cancelled,
+            'cancelled_at' => now(),
         ]);
     }
 

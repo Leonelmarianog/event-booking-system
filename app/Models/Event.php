@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $seats_available
  * @property EventStatus $status
  * @property CarbonImmutable|null $published_at
+ * @property CarbonImmutable|null $cancelled_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read User $organizer
@@ -52,6 +53,7 @@ class Event extends Model
             'organizer_id' => 'integer',
             'starts_at' => 'datetime',
             'published_at' => 'datetime',
+            'cancelled_at' => 'datetime',
             'status' => EventStatus::class,
         ];
     }
@@ -286,6 +288,36 @@ class Event extends Model
 
         $this->status = EventStatus::Published;
         $this->published_at = now();
+    }
+
+    /**
+     * Whether the event can be cancelled now (BR-E12). The page uses it with the policy
+     * to show the cancel button.
+     */
+    public function canBeCancelled(): bool
+    {
+        return $this->status->canTransitionTo(EventStatus::Cancelled) && ! $this->hasStarted();
+    }
+
+    /**
+     * Cancel the event (BR-E12). It does not cancel the bookings and does not save the
+     * event; the CancelEvent Action does both.
+     *
+     * @throws InvalidStateTransition
+     * @throws EventHasStarted
+     */
+    public function cancel(): void
+    {
+        if (! $this->status->canTransitionTo(EventStatus::Cancelled)) {
+            throw InvalidStateTransition::cannotCancel($this->status);
+        }
+
+        if ($this->hasStarted()) {
+            throw EventHasStarted::cannotCancel();
+        }
+
+        $this->status = EventStatus::Cancelled;
+        $this->cancelled_at = now();
     }
 
     /**
