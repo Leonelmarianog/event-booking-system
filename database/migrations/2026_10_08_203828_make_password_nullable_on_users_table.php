@@ -17,7 +17,8 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Reverse the migrations. This fails once an anonymized user has a null password,
+     * so in practice the migration is one-way.
      */
     public function down(): void
     {

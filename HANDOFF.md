@@ -14,8 +14,8 @@ M6 (User accounts) is split into three PRs, in this order:
    `User::anonymize()` (BR-U4). No route and no page.
 2. The `DeleteAccount` Action on the existing "Delete account" page
    (`profile.destroy`): one transaction that checks the rules, deletes the drafts of the
-   user (BR-U3), anonymizes the user and deletes the passkeys; then log out. A blocked
-   delete shows an error toast.
+   user (BR-U3), deletes the `password_reset_tokens` row of the old email, anonymizes the
+   user and deletes the passkeys; then log out. A blocked delete shows an error toast.
 3. BR-U5 on every login path (password, passkey, password reset) and a middleware that
    ends the open sessions of an anonymized user (sessions are in Redis).
 
@@ -41,6 +41,11 @@ for the merge.
   password, remember token and two-factor fields, and `anonymized_at`. It saves nothing
   and does not touch passkeys (PR 2 deletes them). `User::isAnonymized()`, the
   relation `User::organizedEvents()` and the factory state `anonymized()`.
+- `User::ANONYMIZED_EMAIL_DOMAIN` (`deleted.invalid`). `ProfileValidationRules` rejects
+  this domain (any case) on registration and profile update, so that nobody can take a
+  placeholder email before the delete needs it (found in the review).
+- The migration `make_password_nullable_on_users_table` is one-way in practice: its
+  `down()` fails once a password is null.
 - Until PR 2, the "Delete account" page still calls `$user->delete()`. For a user with
   events or bookings, it fails with a database error (the foreign keys restrict the
   delete).
@@ -417,13 +422,15 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 1. The owner reviews the `feat/account-rules` PR, merges it, and asks for a sync.
 2. After the merge, M6 PR 2: the `DeleteAccount` Action on the "Delete account" page.
+   Its transaction also deletes the `password_reset_tokens` row of the old email (read
+   the email before `anonymize()`). M6 PR 3 adds a test that a password reset for an
+   anonymized user or for a placeholder email logs nobody in and sends no email.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
-4. The `users` column `anonymized_at` comes in M6.
-5. Optional, for the owner to decide: `Model::shouldBeStrict()` outside production, so
+4. Optional, for the owner to decide: `Model::shouldBeStrict()` outside production, so
    that reading a column that the query did not select throws an error.
-6. Later, for the owner to decide: rewrite `scripts/check-concurrency.sh` in Python
+5. Later, for the owner to decide: rewrite `scripts/check-concurrency.sh` in Python
    (standard library only: `urllib`, `http.cookiejar`, `threading.Barrier`,
    `subprocess`), for readability. `check-image-roles.sh` can stay in bash.
 
