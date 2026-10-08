@@ -234,6 +234,15 @@ class Event extends Model
     }
 
     /**
+     * Give back seats of a cancelled booking (BR-B11). The available seats never go above
+     * the capacity. It does not save the event.
+     */
+    public function releaseSeats(int $quantity): void
+    {
+        $this->seats_available = min($this->capacity, $this->seats_available + $quantity);
+    }
+
+    /**
      * Change the capacity and the available seats by the same number (BR-E6, BR-E7, BR-E8).
      *
      * @throws CapacityBelowBookedSeats

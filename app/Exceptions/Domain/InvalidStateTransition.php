@@ -2,10 +2,12 @@
 
 namespace App\Exceptions\Domain;
 
+use App\Enums\BookingStatus;
 use App\Enums\EventStatus;
 
 /**
- * The status of the event does not allow the change (see EventStatus::canTransitionTo()).
+ * The status does not allow the change (see EventStatus::canTransitionTo() and
+ * BookingStatus::canTransitionTo()).
  */
 class InvalidStateTransition extends DomainException
 {
@@ -25,6 +27,16 @@ class InvalidStateTransition extends DomainException
     public static function cannotDelete(EventStatus $status): self
     {
         return new self(__('Only a draft event can be deleted. This event is :status.', [
+            'status' => $status->value,
+        ]));
+    }
+
+    /**
+     * BR-B10: only a confirmed booking can be cancelled.
+     */
+    public static function cannotCancelBooking(BookingStatus $status): self
+    {
+        return new self(__('Only a confirmed booking can be cancelled. This booking is :status.', [
             'status' => $status->value,
         ]));
     }
