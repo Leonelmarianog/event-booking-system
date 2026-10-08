@@ -149,3 +149,10 @@ test('a wrong password changes nothing', function () {
     $this->assertAuthenticatedAs($this->user);
     expect($this->user->fresh()->isAnonymized())->toBeFalse();
 });
+
+test('BR-U4: the logout after the delete leaves no remember token on the row', function () {
+    $this->actingAs($this->user)
+        ->delete(route('profile.destroy'), ['password' => 'password']);
+
+    expect($this->user->fresh()->remember_token)->toBeNull();
+});

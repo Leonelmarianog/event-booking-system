@@ -46,19 +46,20 @@ class ProfileController extends Controller
 
     /**
      * Delete the account of the user with the DeleteAccount Action (BR-U1 to BR-U4), then
-     * log out.
+     * log out. logoutCurrentDevice() writes no new remember token, so the anonymized row
+     * keeps none.
      */
     public function destroy(ProfileDeleteRequest $request, DeleteAccount $deleteAccount): RedirectResponse
     {
         $deleteAccount->handle($request->user());
 
-        Auth::logout();
+        Auth::logoutCurrentDevice();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Your account is deleted.')]);
 
-        return redirect('/');
+        return to_route('home');
     }
 }
