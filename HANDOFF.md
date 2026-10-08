@@ -38,6 +38,8 @@ for the merge. The next step is the plan of PR 7 (`CancelEvent`).
   page.
 - `vp check --fix` also formats the code blocks inside Markdown plans, which can break
   a JSX snippet. Copy JSX from a plan with care.
+- `config/inertia.php` has `ensure_pages_exist` set to `true`, so a feature test that
+  renders a page needs the page file.
 
 PR 5 notes:
 
