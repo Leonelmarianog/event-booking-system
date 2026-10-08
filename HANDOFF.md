@@ -35,8 +35,9 @@ for the merge.
 
 - `DeleteAccount` (one transaction): lock the user row, `ensureCanBeDeleted()`, delete
   the drafts (BR-U3), the `password_reset_tokens` row of the old email and the passkeys,
-  `anonymize()`, save. `ProfileController@destroy` calls it, logs out, and redirects to
-  `/` with the toast "Your account is deleted.".
+  `anonymize()`, save. `ProfileController@destroy` calls it, logs out with
+  `Auth::logoutCurrentDevice()` (no new remember token on the anonymized row), and
+  redirects to the `home` route with the toast "Your account is deleted.".
 - `AccountCannotBeDeleted::field()` is `password`: a blocked delete shows the message
   under the password field in the dialog and as an error toast (owner decision).
 - The dialog has new texts: drafts are deleted, name, email and password are removed,
@@ -432,6 +433,9 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
    reset), a middleware that ends the open sessions of an anonymized user, and a test
    that a password reset for an anonymized user or for a placeholder email logs nobody
    in and sends no email.
+   Also `User::routeNotificationForMail()` returns null for an anonymized user, so a
+   queued email (for example `BookingCancelled` queued just before the delete) is not
+   sent to the placeholder address (found in the PR 2 review).
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
