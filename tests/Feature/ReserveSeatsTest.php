@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\ReserveSeats\ReserveSeats;
+use App\Exceptions\Domain\AccountDeleted;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
@@ -210,4 +211,15 @@ test('BR-N6: no email when the transaction rolls back', function () {
 
     EventFacade::assertNotDispatched(NotificationSent::class);
     expect(Booking::count())->toBe(0);
+});
+
+test('a user who was deleted during the request cannot book', function () {
+    $loaded = User::find($this->attendee->id);
+    $this->attendee->anonymize();
+    $this->attendee->save();
+
+    expect(fn () => app(ReserveSeats::class)->handle($this->event, $loaded, 1))
+        ->toThrow(AccountDeleted::class);
+    expect(Booking::count())->toBe(0)
+        ->and($this->event->fresh()->seats_available)->toBe(10);
 });

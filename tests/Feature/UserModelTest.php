@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\Domain\AccountCannotBeDeleted;
+use App\Exceptions\Domain\AccountDeleted;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
@@ -145,3 +146,11 @@ test('the anonymized factory state gives a placeholder email also with make', fu
     expect($user->email)->toEndWith('@deleted.invalid')
         ->and($user->isAnonymized())->toBeTrue();
 });
+
+test('an anonymized user cannot act', function () {
+    User::factory()->anonymized()->create()->ensureNotAnonymized();
+})->throws(AccountDeleted::class, 'Your account was deleted.');
+
+test('a normal user can act', function () {
+    User::factory()->create()->ensureNotAnonymized();
+})->throwsNoExceptions();

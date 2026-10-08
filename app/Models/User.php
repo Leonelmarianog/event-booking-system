@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\BookingStatus;
 use App\Exceptions\Domain\AccountCannotBeDeleted;
+use App\Exceptions\Domain\AccountDeleted;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -130,5 +131,17 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function isAnonymized(): bool
     {
         return $this->anonymized_at !== null;
+    }
+
+    /**
+     * Check that the user did not delete the account (BR-U5).
+     *
+     * @throws AccountDeleted
+     */
+    public function ensureNotAnonymized(): void
+    {
+        if ($this->isAnonymized()) {
+            throw new AccountDeleted;
+        }
     }
 }

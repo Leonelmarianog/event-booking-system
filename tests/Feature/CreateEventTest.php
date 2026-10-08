@@ -1,8 +1,11 @@
 <?php
 
+use App\Actions\CreateEvent\CreateEvent;
 use App\Enums\EventStatus;
+use App\Exceptions\Domain\AccountDeleted;
 use App\Models\Event;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -89,3 +92,19 @@ test('the form rejects invalid data', function (array $override, string $field) 
     'capacity not a number' => [['capacity' => 'ten'], 'capacity'],
     'capacity too large' => [['capacity' => 10001], 'capacity'],
 ]);
+
+test('a user who was deleted during the request cannot create an event', function () {
+    $user = User::factory()->create();
+    $loaded = User::find($user->id);
+    $user->anonymize();
+    $user->save();
+
+    expect(fn () => app(CreateEvent::class)->handle($loaded, [
+        'title' => 'Laravel Meetup',
+        'description' => 'Talks.',
+        'venue' => 'Main Hall',
+        'starts_at' => CarbonImmutable::now()->addWeek(),
+        'capacity' => 10,
+    ]))->toThrow(AccountDeleted::class);
+    expect(Event::count())->toBe(0);
+});

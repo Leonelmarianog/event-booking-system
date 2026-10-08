@@ -1,6 +1,8 @@
 <?php
 
+use App\Actions\PublishEvent\PublishEvent;
 use App\Enums\EventStatus;
+use App\Exceptions\Domain\AccountDeleted;
 use App\Models\Event;
 use App\Models\User;
 
@@ -104,4 +106,15 @@ test('BR-E10: a draft that has started cannot be published', function () {
         ]);
 
     expect($event->fresh()->status)->toBe(EventStatus::Draft);
+});
+
+test('an organizer who was deleted during the request cannot publish', function () {
+    $organizer = User::factory()->create();
+    $draft = Event::factory()->for($organizer, 'organizer')->create(['starts_at' => now()->addWeek()]);
+    $organizer->anonymize();
+    $organizer->save();
+
+    expect(fn () => app(PublishEvent::class)->handle($draft))
+        ->toThrow(AccountDeleted::class);
+    expect($draft->fresh()->isDraft())->toBeTrue();
 });
