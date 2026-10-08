@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\BookingStatus;
+use App\Exceptions\Domain\AccountCannotBeDeleted;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -32,6 +35,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, Booking> $bookings
+ * @property-read Collection<int, Event> $organizedEvents
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -64,6 +68,39 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * The events that the user organizes, in all statuses.
+     *
+     * @return HasMany<Event, $this>
+     */
+    public function organizedEvents(): HasMany
+    {
+        return $this->hasMany(Event::class, 'organizer_id');
+    }
+
+    /**
+     * Check that the user can delete the account: the user organizes no published event
+     * that has not started (BR-U1), and has no confirmed booking for an event that has
+     * not started (BR-U2).
+     *
+     * @throws AccountCannotBeDeleted
+     */
+    public function ensureCanBeDeleted(): void
+    {
+        if ($this->organizedEvents()->published()->upcoming()->exists()) {
+            throw AccountCannotBeDeleted::organizesUpcomingEvent();
+        }
+
+        $holdsUpcomingBooking = $this->bookings()
+            ->where('status', BookingStatus::Confirmed)
+            ->whereHas('event', fn (Builder $query) => $query->upcoming())
+            ->exists();
+
+        if ($holdsUpcomingBooking) {
+            throw AccountCannotBeDeleted::holdsUpcomingBooking();
+        }
     }
 
     /**
