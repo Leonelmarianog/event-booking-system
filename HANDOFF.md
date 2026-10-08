@@ -20,7 +20,8 @@ M4 is split into seven PRs, in this order:
    confirmed bookings. The email of BR-E13 comes in M5.
 
 PRs 1 to 3 are merged. The current PR (`feat/get-bookings`) is PR 4. Its plan is
-`docs/superpowers/plans/2026-10-08-m4-get-bookings.md`. It waits for the owner's review.
+`docs/superpowers/plans/2026-10-08-m4-get-bookings.md`. It is open as PR #33 and
+waits for the merge. The next step is the plan of PR 5 (`CancelBooking`).
 
 - The route is `GET /bookings` (`bookings.index`, `BookingController@index`). It has
   only `auth`, not `verified`, and no policy check: the `GetBookings` Action reads only
