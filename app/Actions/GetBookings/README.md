@@ -3,8 +3,8 @@
 Gets the bookings of the logged-in user for the "My bookings" page (`GET /bookings`).
 
 The page shows only the bookings of the user, confirmed and cancelled. Admins and
-organizers also see only their own bookings on this page. The organizer of an event sees
-the attendees of the event on another page (`GetEventAttendees`).
+organizers also see only their own bookings on this page. A later PR adds a page where
+the organizer of an event sees its attendees (`GetEventAttendees`).
 
 The route has only the `auth` middleware. It needs no policy check, because the query
 reads only the bookings with the `user_id` of the user (BR-B13).
@@ -19,6 +19,9 @@ bookings:
 
 For each booking, the page shows the event title (a link to the event page), the start
 time, the venue, the number of seats, the booking reference and the status.
+Each row also tells if the booking can be cancelled (`Booking::canBeCancelled()`: the
+booking is confirmed and the event has not started), so that the page shows a "Cancel"
+button (see `CancelBooking`).
 
 ## The bookings are shown
 

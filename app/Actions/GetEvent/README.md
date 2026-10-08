@@ -27,6 +27,10 @@ The page also shows a booking box. What it shows depends on the person:
 | `sold_out`  | The event is published, has not started and has no seats left            | BR-B2        |
 | No box      | Drafts, cancelled and started events, and the organizer of the event     | BR-B2, BR-B3 |
 
+The `booked` state comes first, also for a started event. It has `can_cancel`
+(`Booking::canBeCancelled()`: the booking is confirmed and the event has not started).
+When it is true, the box shows a "Cancel booking" button (BR-B10, see `CancelBooking`).
+
 The edit page uses the same Action with no user, and uses only the event data.
 
 ## The event is shown
