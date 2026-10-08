@@ -7,6 +7,7 @@ use App\Notifications\BookingConfirmed;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\SendQueuedNotifications;
+use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     $this->attendee = User::factory()->create(['name' => 'Ada Lovelace']);
@@ -50,4 +51,12 @@ test('the queued email is tried 3 times with a backoff', function () {
 
     expect($job->tries)->toBe(3)
         ->and($job->backoff())->toBe([10, 60]);
+});
+
+test('BR-N1: the start time is in UTC when the database session uses another time zone', function () {
+    DB::statement("SET LOCAL TIME ZONE 'America/New_York'");
+
+    $mail = (new BookingConfirmed($this->booking->fresh()))->toMail($this->attendee);
+
+    expect($mail->introLines)->toContain('Starts: Mon 12 Oct 2026, 18:00 UTC');
 });

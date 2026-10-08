@@ -50,7 +50,7 @@ class BookingConfirmed extends Notification implements ShouldQueue
             ->line("Your booking for {$event->title} is confirmed.")
             ->line("Reference: {$this->booking->reference}")
             ->line("Seats: {$this->booking->quantity}")
-            ->line('Starts: '.$event->starts_at->format('D j M Y, H:i').' UTC')
+            ->line('Starts: '.$event->starts_at->utc()->format('D j M Y, H:i').' UTC')
             ->line("Venue: {$event->venue}")
             ->action('View event', route('events.show', $event));
     }
