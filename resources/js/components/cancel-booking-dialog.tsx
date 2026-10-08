@@ -55,7 +55,7 @@ export function CancelBookingDialog({
                     {({ processing }) => (
                         <DialogFooter className="gap-2">
                             <DialogClose asChild>
-                                <Button variant="secondary">
+                                <Button type="button" variant="secondary">
                                     Keep booking
                                 </Button>
                             </DialogClose>
