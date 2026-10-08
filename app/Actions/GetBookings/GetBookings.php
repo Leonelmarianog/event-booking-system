@@ -11,7 +11,7 @@ class GetBookings
      * Get the bookings of the user, split into upcoming bookings (earliest event first)
      * and past bookings (most recent event first).
      *
-     * @return array{upcoming: array<int, array{reference: string, quantity: int, status: string, can_cancel: bool, event: array{id: int, title: string, venue: string, starts_at: string}}>, past: array<int, array{reference: string, quantity: int, status: string, can_cancel: bool, event: array{id: int, title: string, venue: string, starts_at: string}}>}
+     * @return array{upcoming: array<int, array{reference: string, quantity: int, status: string, can_cancel: bool, event_cancelled: bool, event: array{id: int, title: string, venue: string, starts_at: string}}>, past: array<int, array{reference: string, quantity: int, status: string, can_cancel: bool, event_cancelled: bool, event: array{id: int, title: string, venue: string, starts_at: string}}>}
      */
     public function handle(User $user): array
     {
@@ -21,7 +21,7 @@ class GetBookings
             ->whereBelongsTo($user, 'attendee')
             ->orderBy('events.starts_at')
             ->orderBy('bookings.id')
-            ->with('event:id,title,venue,starts_at')
+            ->with('event:id,title,venue,starts_at,status,cancelled_at')
             ->get();
 
         [$past, $upcoming] = $bookings->partition(fn (Booking $booking): bool => $booking->event->hasStarted());
@@ -35,7 +35,7 @@ class GetBookings
     /**
      * Get the data of one row of the table.
      *
-     * @return array{reference: string, quantity: int, status: string, can_cancel: bool, event: array{id: int, title: string, venue: string, starts_at: string}}
+     * @return array{reference: string, quantity: int, status: string, can_cancel: bool, event_cancelled: bool, event: array{id: int, title: string, venue: string, starts_at: string}}
      */
     private function row(Booking $booking): array
     {
@@ -44,6 +44,7 @@ class GetBookings
             'quantity' => $booking->quantity,
             'status' => $booking->status->value,
             'can_cancel' => $booking->canBeCancelled(),
+            'event_cancelled' => $booking->wasCancelledWithEvent(),
             'event' => [
                 'id' => $booking->event->id,
                 'title' => $booking->event->title,

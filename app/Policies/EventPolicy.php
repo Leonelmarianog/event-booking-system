@@ -64,11 +64,16 @@ class EventPolicy
     }
 
     /**
-     * BR-E11 and BR-A1. The model checks the state of the event (BR-E12).
+     * BR-E11 and BR-A1. The model checks the state of the event (BR-E12). A person who
+     * cannot see the event gets a 404, so that hidden events stay unknown.
      */
-    public function cancel(User $user, Event $event): bool
+    public function cancel(User $user, Event $event): Response
     {
-        return $user->is_admin || $event->isOrganizedBy($user);
+        if ($this->view($user, $event)->denied()) {
+            return Response::denyAsNotFound();
+        }
+
+        return $user->is_admin || $event->isOrganizedBy($user) ? Response::allow() : Response::deny();
     }
 
     /**

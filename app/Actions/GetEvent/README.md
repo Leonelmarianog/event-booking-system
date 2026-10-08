@@ -33,7 +33,9 @@ When it is true, the box shows a "Cancel booking" button (BR-B10, see `CancelBoo
 
 The controller also sends `can` flags for the buttons of the page. `can.viewAttendees`
 (`EventPolicy::viewAttendees`, BR-A2) shows the "Attendees" link to the organizer and
-admins (see `GetEventAttendees`).
+admins (see `GetEventAttendees`). `can.cancel` (`EventPolicy::cancel` and
+`Event::canBeCancelled()`) shows the "Cancel event" button to the organizer and admins,
+only on draft and published events that have not started (see `CancelEvent`).
 
 The edit page uses the same Action with no user, and uses only the event data.
 

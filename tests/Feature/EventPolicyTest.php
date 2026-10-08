@@ -192,6 +192,17 @@ test('BR-E11: an admin can cancel any event', function () {
     expect($this->admin->can('cancel', $event))->toBeTrue();
 });
 
+test('BR-E11: another user gets a 403 for a published event and a 404 for a draft', function () {
+    $published = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+    $draft = Event::factory()->for($this->organizer, 'organizer')->create();
+
+    $response = Gate::forUser($this->otherUser)->inspect('cancel', $published);
+
+    expect($response->denied())->toBeTrue()
+        ->and($response->status())->toBeNull()
+        ->and(Gate::forUser($this->otherUser)->inspect('cancel', $draft)->status())->toBe(404);
+});
+
 // Delete: BR-E17
 
 test('BR-E17: the organizer can delete a draft event', function () {

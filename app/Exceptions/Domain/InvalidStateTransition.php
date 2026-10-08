@@ -22,6 +22,16 @@ class InvalidStateTransition extends DomainException
     }
 
     /**
+     * BR-E12: only a draft or published event can be cancelled.
+     */
+    public static function cannotCancel(EventStatus $status): self
+    {
+        return new self(__('Only a draft or published event can be cancelled. This event is :status.', [
+            'status' => $status->value,
+        ]));
+    }
+
+    /**
      * BR-E17: only a draft event can be deleted.
      */
     public static function cannotDelete(EventStatus $status): self

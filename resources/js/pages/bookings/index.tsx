@@ -73,6 +73,9 @@ function BookingTable({
                                     <td className="px-3 py-2">
                                         <BookingStatusBadge
                                             status={booking.status}
+                                            eventCancelled={
+                                                booking.event_cancelled
+                                            }
                                         />
                                     </td>
                                     <td className="px-3 py-2 text-right">
