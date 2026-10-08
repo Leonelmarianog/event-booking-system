@@ -144,17 +144,17 @@ model methods call it before changing state and throw `InvalidStateTransition` o
 
 ## 5. Use cases
 
-| Use case                          | Action                                                           | Transaction and locking                                                    | Side effects (queued, after commit)                                  |
-| --------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Create event (as draft)           | `CreateEvent`                                                    | Single insert                                                              | None                                                                 |
-| Update event                      | `UpdateEvent`                                                    | Transaction; `lockForUpdate` on the event row, needed for capacity changes | None                                                                 |
-| Publish event                     | `PublishEvent`                                                   | Single update                                                              | None                                                                 |
-| Cancel event                      | `CancelEvent`                                                    | Transaction; lock the event row, cancel every confirmed booking            | `EventCancelled` to each attendee                                    |
-| Reserve seats                     | `ReserveSeats`                                                   | Transaction; lock the event row, `Event::reserve()`                        | `BookingConfirmed` to the attendee                                   |
-| Cancel booking                    | `CancelBooking`                                                  | Transaction; lock the event row, then the booking row, `Booking::cancel()` | `BookingCancelled` to the attendee                                   |
-| Delete draft event                | `DeleteEvent`                                                    | Single delete                                                              | None                                                                 |
-| Delete account                    | `DeleteAccount`                                                  | Transaction; delete drafts, anonymize the user row                         | None                                                                 |
-| Send reminders (daily, scheduler) | `SendEventReminders`, called by the `SendEventReminders` command | Transaction per event; set `reminder_sent_at`                              | `EventReminder` to attendees of events starting in the next 24 hours |
+| Use case                           | Action                                                           | Transaction and locking                                                    | Side effects (queued, after commit)                                  |
+| ---------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Create event (as draft)            | `CreateEvent`                                                    | Single insert                                                              | None                                                                 |
+| Update event                       | `UpdateEvent`                                                    | Transaction; `lockForUpdate` on the event row, needed for capacity changes | None                                                                 |
+| Publish event                      | `PublishEvent`                                                   | Single update                                                              | None                                                                 |
+| Cancel event                       | `CancelEvent`                                                    | Transaction; lock the event row, cancel every confirmed booking            | `EventCancelled` to each attendee                                    |
+| Reserve seats                      | `ReserveSeats`                                                   | Transaction; lock the event row, `Event::reserve()`                        | `BookingConfirmed` to the attendee                                   |
+| Cancel booking                     | `CancelBooking`                                                  | Transaction; lock the event row, then the booking row, `Booking::cancel()` | `BookingCancelled` to the attendee                                   |
+| Delete draft event                 | `DeleteEvent`                                                    | Single delete                                                              | None                                                                 |
+| Delete account                     | `DeleteAccount`                                                  | Transaction; delete drafts, anonymize the user row                         | None                                                                 |
+| Send reminders (hourly, scheduler) | `SendEventReminders`, called by the `SendEventReminders` command | Transaction per event; set `reminder_sent_at`                              | `EventReminder` to attendees of events starting in the next 24 hours |
 
 Read use cases. Each one is an Action that the controller calls:
 

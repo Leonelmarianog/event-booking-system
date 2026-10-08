@@ -67,6 +67,9 @@ reminder emails for the events that start in the next 24 hours`. It prints
   `--dirty` does not work in the container (no git); pass the file paths. `vp check
 --fix` also formats the code blocks of this plan.
 
+- Change after the final review (owner decision): the command runs each hour with
+  `->hourly()->withoutOverlapping(60)`, not daily at 08:00 UTC. BR-N4 says "each hour".
+
 ## Review Focus
 
 1. **A run at the same time as another run, or a second run on the same day.** The

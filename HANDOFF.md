@@ -15,7 +15,7 @@ M5 (Notifications) is split into four PRs, in this order:
 3. `EventCancelled`: `CancelEvent` sends it to each attendee with a confirmed booking
    (BR-N3, the email part of BR-E13). These attendees get no `BookingCancelled` email.
 4. Reminders: `events.reminder_sent_at`, the `SendEventReminders` Action and command,
-   scheduled daily at 08:00 UTC, and `EventReminder` (BR-N4, BR-N5).
+   scheduled each hour, and `EventReminder` (BR-N4, BR-N5).
 
 PRs 1 to 3 are merged (#37, #38, #39). BR-E13 is complete (also the email part). The
 current PR (`feat/event-reminders`) is PR 4, the last PR of M5. Its plan is
@@ -36,9 +36,12 @@ for the merge. With this PR, M5 is complete: every rule BR-N1 to BR-N7 has a tes
   `EventReminder` to the attendee of each confirmed booking. Each event is wrapped in
   `rescue()`, so an error is logged and the run goes on. A due event with no confirmed
   bookings is also marked (owner decision).
-- The command `events:send-reminders` runs daily at 08:00 UTC with
-  `withoutOverlapping()` (`routes/console.php`). It prints "Reminders sent for N
-  events.".
+- The command `events:send-reminders` runs each hour with `withoutOverlapping(60)`
+  (`routes/console.php`). It prints "Reminders sent for N events.". The owner chose
+  hourly over daily at 08:00 after the review: with one run each day, some reminders
+  came minutes before the start, and an event published after 08:00 that started
+  before the next 08:00 got none. Hourly runs send the reminder about 23 to 24 hours
+  ahead. The 60-minute lock stops a killed run from blocking the next runs.
 - A start time change after the reminder sends no second reminder and no other email
   (BR-N5, BR-N7; owner decision). An "event changed" email stays a future feature.
 

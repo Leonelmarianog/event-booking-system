@@ -78,7 +78,7 @@ The column "Enforced by" tells which part of the code makes the rule true:
 | BR-N1 | When a booking is confirmed, the attendee gets a "booking confirmed" email.                                                           | Action                   |
 | BR-N2 | When an attendee cancels a booking, the attendee gets a "booking cancelled" email.                                                    | Action                   |
 | BR-N3 | When an event is cancelled, each attendee with a confirmed booking gets an "event cancelled" email.                                   | Action                   |
-| BR-N4 | Each day, attendees of events that start in the next 24 hours get a reminder email.                                                   | Scheduled command        |
+| BR-N4 | Each hour, attendees of events that start in the next 24 hours get a reminder email.                                                  | Scheduled command        |
 | BR-N5 | The system sends the reminder for an event only one time. The event stores the send time in `reminder_sent_at`.                       | Scheduled command, Model |
 | BR-N6 | The system sends a notification only after the database commits the transaction. If the transaction fails, the system sends no email. | Action                   |
 | BR-N7 | When the organizer changes the start time of a published event, attendees get no notification in v1.                                  | —                        |

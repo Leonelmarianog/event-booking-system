@@ -6,13 +6,16 @@ Sends a reminder email to the attendees of the events that start in the next 24 
 ## When it runs
 
 The `scheduler` service runs `php artisan schedule:work`. The schedule in
-`routes/console.php` starts the command `events:send-reminders` each day at 08:00 UTC.
-`withoutOverlapping()` makes sure that two runs never go at the same time. The command
+`routes/console.php` starts the command `events:send-reminders` each hour, at minute 0.
+`withoutOverlapping(60)` makes sure that two runs never go at the same time. Its lock
+ends after 60 minutes at the latest, so a run that was killed cannot block the next
+runs for longer. The command
 calls the Action and prints the number of events, for example "Reminders sent for 2
 events.". You can also start the command by hand.
 
-The command runs one time each day, and each run looks 24 hours ahead. Thus, the reminder
-arrives between 0 and 24 hours before the event starts.
+Each run looks 24 hours ahead, and the command runs each hour. Thus, the reminder
+arrives about 23 to 24 hours before the event starts. An event that is published less
+than 24 hours before its start gets the reminder at the next run, within one hour.
 
 ## Which events get a reminder
 
@@ -77,7 +80,7 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant Queue
 
-    Scheduler->>Command: Run at 08:00 UTC
+    Scheduler->>Command: Run at minute 0 of the hour
     Command->>Action: handle()
     Action->>DB: Read the IDs of the due events
     DB-->>Action: Event IDs
@@ -125,7 +128,7 @@ sequenceDiagram
     participant Action as SendEventReminders
     participant DB as PostgreSQL
 
-    Scheduler->>Command: Run at 08:00 UTC
+    Scheduler->>Command: Run at minute 0 of the hour
     Command->>Action: handle()
     Action->>DB: Read the IDs of the due events
     DB-->>Action: No IDs
