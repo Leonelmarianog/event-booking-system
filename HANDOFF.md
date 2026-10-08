@@ -29,7 +29,8 @@ Each notification of M5 follows the same pattern (PR 1 sets it):
   values win over `--tries` of the worker.
 - `via()` returns `['mail']`. `toMail()` uses the default `MailMessage` (a subject, a
   greeting, lines, one action button). No custom mail templates.
-- Times in the email use `D j M Y, H:i` and the suffix ` UTC`.
+- Times in the email use `->utc()->format('D j M Y, H:i')` and the suffix ` UTC`. The
+  `utc()` call keeps the text correct when the database session uses another time zone.
 - The Action calls `notify()` inside its transaction, after the saves. The queue holds
   the job until the commit and drops it on a rollback.
 - Tests: `Notification::fake()` for "who gets which email" (BR-N1 to BR-N3).

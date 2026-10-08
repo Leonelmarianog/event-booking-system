@@ -37,6 +37,11 @@ job until the transaction commits. On a rollback, the queue drops the job and no
 goes out (BR-N6). The worker sends the email. It tries 3 times, with a wait of 10 and
 then 60 seconds between the tries.
 
+The queue puts the job on Redis right after the database commit. If Redis fails at that
+moment, the booking is saved, but the request ends with an error and no email goes out.
+The attendee then sees the booking on "My bookings". A full Redis outage stops the
+request earlier, because sessions and rate limits also use Redis.
+
 ## The seats are booked
 
 ```mermaid
