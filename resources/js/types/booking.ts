@@ -12,3 +12,11 @@ export type BookingRow = {
         starts_at: string;
     };
 };
+
+export type AttendeeRow = {
+    reference: string;
+    name: string;
+    email: string;
+    quantity: number;
+    booked_at: string;
+};

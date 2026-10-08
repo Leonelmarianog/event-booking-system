@@ -1,26 +1,10 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { CalendarDays, MapPin } from 'lucide-react';
 import { LocalDateTime } from '@/components/local-date-time';
+import { PaginationNav } from '@/components/pagination-nav';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { index, show } from '@/routes/events';
 import type { BreadcrumbItem, Paginated, UpcomingEvent } from '@/types';
-
-function PageLink({ href, label }: { href: string | null; label: string }) {
-    if (href === null) {
-        return (
-            <Button variant="outline" size="sm" disabled>
-                {label}
-            </Button>
-        );
-    }
-
-    return (
-        <Button asChild variant="outline" size="sm">
-            <Link href={href}>{label}</Link>
-        </Button>
-    );
-}
 
 export default function UpcomingEvents({
     events,
@@ -39,7 +23,9 @@ export default function UpcomingEvents({
 
                 {events.data.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                        No upcoming events.
+                        {events.total === 0
+                            ? 'No upcoming events.'
+                            : 'No upcoming events on this page.'}
                     </p>
                 ) : (
                     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -84,21 +70,7 @@ export default function UpcomingEvents({
                     </ul>
                 )}
 
-                {events.last_page > 1 && (
-                    <nav
-                        aria-label="Pages"
-                        className="flex items-center justify-between gap-4"
-                    >
-                        <PageLink
-                            href={events.prev_page_url}
-                            label="Previous"
-                        />
-                        <span className="text-sm text-muted-foreground">
-                            Page {events.current_page} of {events.last_page}
-                        </span>
-                        <PageLink href={events.next_page_url} label="Next" />
-                    </nav>
-                )}
+                <PaginationNav paginator={events} />
             </div>
         </>
     );

@@ -3,8 +3,8 @@
 Gets the bookings of the logged-in user for the "My bookings" page (`GET /bookings`).
 
 The page shows only the bookings of the user, confirmed and cancelled. Admins and
-organizers also see only their own bookings on this page. A later PR adds a page where
-the organizer of an event sees its attendees (`GetEventAttendees`).
+organizers also see only their own bookings on this page. The organizer of an event sees
+its attendees on the attendee page (`GetEventAttendees`).
 
 The route has only the `auth` middleware. It needs no policy check, because the query
 reads only the bookings with the `user_id` of the user (BR-B13).
