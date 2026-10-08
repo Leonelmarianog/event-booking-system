@@ -80,6 +80,7 @@ test('the list has only confirmed bookings, first booked first', function () {
         ->get(route('events.attendees.index', $this->event))
         ->assertInertia(fn (Assert $page) => $page
             ->where('attendees.total', 3)
+            ->where('event.seats_booked', 3)
             ->where('attendees.data', fn ($rows) => collect($rows)->pluck('name')->all()
                 === ['First', 'Second', 'Third'])
         );
@@ -87,7 +88,7 @@ test('the list has only confirmed bookings, first booked first', function () {
 
 test('the list has 50 attendees on each page', function () {
     foreach (range(1, 51) as $number) {
-        Booking::factory()->for($this->event)->create(['created_at' => now()->subMinutes(100 - $number)]);
+        $newest = Booking::factory()->for($this->event)->create(['created_at' => now()->subMinutes(100 - $number)]);
     }
 
     $this->actingAs($this->organizer)
@@ -102,6 +103,7 @@ test('the list has 50 attendees on each page', function () {
         ->get(route('events.attendees.index', ['event' => $this->event, 'page' => 2]))
         ->assertInertia(fn (Assert $page) => $page
             ->has('attendees.data', 1)
+            ->where('attendees.data.0.reference', $newest->reference)
             ->where('attendees.total', 51)
             ->where('attendees.current_page', 2)
         );
