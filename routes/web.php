@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:bookings')
         ->name('events.bookings.store')
         ->can('view', 'event');
+    Route::get('bookings', [BookingController::class, 'index'])->name('bookings.index');
     Route::get('organizer/events', [OrganizerEventController::class, 'index'])
         ->name('organizer.events.index');
 });
