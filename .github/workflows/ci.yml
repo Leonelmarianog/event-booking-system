@@ -233,3 +233,44 @@ jobs:
           format: table
           exit-code: '1'
           skip-setup-trivy: true
+
+  # 20 parallel booking requests for 1 seat must give exactly 1 booking (BR-B14).
+  concurrency:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # Reads the cache that the image job writes. It does not write the cache.
+      - name: Build the runtime image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: runtime
+          tags: event-booking:runtime
+          load: true
+          push: false
+          cache-from: type=gha
+
+      # One key for all steps: the later steps read APP_KEY from the job environment.
+      - name: Start the stack
+        run: |
+          app_key="base64:$(openssl rand -base64 32)"
+          echo "::add-mask::$app_key"
+          echo "APP_KEY=$app_key" >> "$GITHUB_ENV"
+          APP_KEY="$app_key" docker compose -f compose.concurrency.yaml up -d --wait
+
+      - name: Run the concurrency check
+        env:
+          ARTISAN: docker compose -f compose.concurrency.yaml exec -T web php artisan
+        run: scripts/check-concurrency.sh http://localhost:8080
+
+      - name: Logs of the web role
+        if: failure()
+        run: docker compose -f compose.concurrency.yaml logs web

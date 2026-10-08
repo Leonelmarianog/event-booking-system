@@ -1,0 +1,61 @@
+# The stack of the concurrency check (scripts/check-concurrency.sh): the runtime image
+# in the web role, with PostgreSQL and Redis. CI uses it. Build the image first:
+#   docker build --target runtime -t event-booking:runtime .
+#   APP_KEY=base64:$(openssl rand -base64 32) docker compose -f compose.concurrency.yaml up -d --wait
+name: event-booking-concurrency
+
+x-app: &app
+    image: event-booking:runtime
+    environment:
+        APP_KEY: ${APP_KEY:?set APP_KEY}
+        APP_ENV: production
+        APP_URL: http://localhost:${WEB_PORT:-8080}
+        DB_CONNECTION: pgsql
+        DB_HOST: postgres
+        DB_DATABASE: event_booking
+        DB_USERNAME: event_booking
+        DB_PASSWORD: secret
+        REDIS_HOST: redis
+        SESSION_DRIVER: redis
+        CACHE_STORE: redis
+        QUEUE_CONNECTION: redis
+        MAIL_MAILER: log
+
+services:
+    migrate:
+        <<: *app
+        command: migrate
+        depends_on:
+            postgres:
+                condition: service_healthy
+
+    web:
+        <<: *app
+        command: web
+        ports:
+            - ${WEB_PORT:-8080}:8080
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+            redis:
+                condition: service_healthy
+
+    postgres:
+        image: postgres:18-alpine
+        environment:
+            POSTGRES_DB: event_booking
+            POSTGRES_USER: event_booking
+            POSTGRES_PASSWORD: secret
+        healthcheck:
+            test: [CMD, pg_isready, -U, event_booking, -d, event_booking]
+            interval: 5s
+            timeout: 3s
+            retries: 20
+
+    redis:
+        image: redis:8-alpine
+        healthcheck:
+            test: [CMD, redis-cli, ping]
+            interval: 5s
+            timeout: 3s
+            retries: 20
