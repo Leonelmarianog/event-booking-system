@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property EventStatus $status
  * @property CarbonImmutable|null $published_at
  * @property CarbonImmutable|null $cancelled_at
+ * @property CarbonImmutable|null $reminder_sent_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read User $organizer
@@ -54,6 +55,7 @@ class Event extends Model
             'starts_at' => 'datetime',
             'published_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'reminder_sent_at' => 'datetime',
             'status' => EventStatus::class,
         ];
     }
@@ -98,6 +100,21 @@ class Event extends Model
     protected function upcoming(Builder $query): void
     {
         $query->where('starts_at', '>', now());
+    }
+
+    /**
+     * Published events that start in the next 24 hours and have no reminder yet
+     * (BR-N4, BR-N5).
+     *
+     * @param  Builder<Event>  $query
+     */
+    #[Scope]
+    protected function dueForReminder(Builder $query): void
+    {
+        $query->published()
+            ->upcoming()
+            ->where('starts_at', '<=', now()->addDay())
+            ->whereNull('reminder_sent_at');
     }
 
     /**
@@ -318,6 +335,26 @@ class Event extends Model
 
         $this->status = EventStatus::Cancelled;
         $this->cancelled_at = now();
+    }
+
+    /**
+     * Whether the event needs its reminder now: published, not started, starts in the
+     * next 24 hours, and no reminder was sent (BR-N4, BR-N5).
+     */
+    public function needsReminder(): bool
+    {
+        return $this->isPublished()
+            && ! $this->hasStarted()
+            && $this->starts_at->lessThanOrEqualTo(now()->addDay())
+            && $this->reminder_sent_at === null;
+    }
+
+    /**
+     * Store the send time of the reminder (BR-N5).
+     */
+    public function markReminderSent(): void
+    {
+        $this->reminder_sent_at = now();
     }
 
     /**

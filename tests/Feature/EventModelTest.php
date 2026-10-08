@@ -230,3 +230,43 @@ test('BR-E12: only a draft or published event that has not started can be cancel
 test('the cancelled factory state sets the cancel time', function () {
     expect(Event::factory()->cancelled()->create()->fresh()->cancelled_at)->not->toBeNull();
 });
+
+test('BR-N4: a published event that starts in the next 24 hours is due for a reminder', function () {
+    $this->freezeSecond();
+
+    $inOneHour = Event::factory()->published()->create(['starts_at' => now()->addHour()]);
+    $inExactly24Hours = Event::factory()->published()->create(['starts_at' => now()->addDay()]);
+    $inMoreThan24Hours = Event::factory()->published()->create(['starts_at' => now()->addDay()->addSecond()]);
+    $started = Event::factory()->published()->create(['starts_at' => now()->subMinute()]);
+    $draft = Event::factory()->create(['starts_at' => now()->addHour()]);
+    $cancelled = Event::factory()->cancelled()->create(['starts_at' => now()->addHour()]);
+    $alreadySent = Event::factory()->published()->reminderSent()->create(['starts_at' => now()->addHour()]);
+
+    expect(Event::query()->dueForReminder()->pluck('id')->sort()->values()->all())
+        ->toBe(collect([$inOneHour->id, $inExactly24Hours->id])->sort()->values()->all())
+        ->and($inOneHour->needsReminder())->toBeTrue()
+        ->and($inExactly24Hours->needsReminder())->toBeTrue()
+        ->and($inMoreThan24Hours->needsReminder())->toBeFalse()
+        ->and($started->needsReminder())->toBeFalse()
+        ->and($draft->needsReminder())->toBeFalse()
+        ->and($cancelled->needsReminder())->toBeFalse()
+        ->and($alreadySent->needsReminder())->toBeFalse();
+});
+
+test('BR-N5: marking the reminder as sent stores the time and ends the need', function () {
+    $this->freezeSecond();
+    $event = Event::factory()->published()->create(['starts_at' => now()->addHour()]);
+
+    $event->markReminderSent();
+
+    expect($event->reminder_sent_at->equalTo(now()))->toBeTrue()
+        ->and($event->needsReminder())->toBeFalse()
+        ->and($event->isDirty('reminder_sent_at'))->toBeTrue();
+});
+
+test('BR-N5: the reminder_sent_at column stores the time', function () {
+    $event = Event::factory()->reminderSent()->create();
+
+    expect($event->fresh()->reminder_sent_at)->not->toBeNull()
+        ->and(Event::factory()->create()->fresh()->reminder_sent_at)->toBeNull();
+});

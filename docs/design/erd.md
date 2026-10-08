@@ -162,7 +162,7 @@ for payment (BR-P10).
 
 | Table           | Index                    | Used by                                                                   |
 | --------------- | ------------------------ | ------------------------------------------------------------------------- |
-| `events`        | `(status, starts_at)`    | The list of upcoming published events. The daily reminders.               |
+| `events`        | `(status, starts_at)`    | The list of upcoming published events. The hourly reminders.              |
 | `events`        | `(organizer_id)`         | The "My events" page.                                                     |
 | `bookings`      | `(user_id)`              | The "My bookings" page.                                                   |
 | `bookings`      | `(event_id, status)`     | The attendee list. The cancellation of all bookings of an event.          |

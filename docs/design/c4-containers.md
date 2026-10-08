@@ -19,7 +19,7 @@ flowchart TB
         frontend["<b>Web Frontend</b><br/>[Container: React, TypeScript, Inertia]<br/>Shows the pages in the browser."]
         web["<b>Web App</b><br/>[Container: Laravel, Nginx, PHP-FPM, Node]<br/>Handles HTTP requests.<br/>Runs the Actions.<br/>Renders the first page load."]
         worker["<b>Worker</b><br/>[Container: Laravel queue worker]<br/>Runs queued jobs.<br/>Sends notifications."]
-        scheduler["<b>Scheduler</b><br/>[Container: Laravel scheduler]<br/>Starts the daily reminders."]
+        scheduler["<b>Scheduler</b><br/>[Container: Laravel scheduler]<br/>Starts the hourly reminders."]
         migrate["<b>Migrate</b><br/>[Container: one-off task]<br/>Changes the database schema<br/>before each deploy."]
         db[("<b>Database</b><br/>[Container: PostgreSQL]<br/>Users, events, bookings,<br/>failed jobs.")]
         redis[("<b>Redis</b><br/>[Container: Redis]<br/>Queue, cache, sessions,<br/>rate limits.")]
@@ -70,7 +70,7 @@ flowchart TB
 | Web Frontend | React, TypeScript, Inertia, shadcn/ui | Shows the pages in the browser. Sends the forms to the Web App. The Web App serves its files.                                                                                                          |
 | Web App      | Laravel, Nginx, PHP-FPM, Node         | Handles all HTTP requests. Does authentication, authorization, validation and rate limits. Runs the Actions. Puts notifications on the queue. Renders the first page load on the server (Inertia SSR). |
 | Worker       | Laravel queue worker                  | Takes jobs from the queue and runs them. In v1, all jobs send notifications. If a job fails three times, the Worker writes it to the `failed_jobs` table.                                              |
-| Scheduler    | Laravel scheduler                     | Each day, finds the events that start in the next 24 hours. Puts a reminder job on the queue for each attendee (BR-N4, BR-N5).                                                                         |
+| Scheduler    | Laravel scheduler                     | Each hour, finds the events that start in the next 24 hours. Puts a reminder job on the queue for each attendee (BR-N4, BR-N5).                                                                        |
 | Migrate      | Laravel migrations                    | Runs one time before each deploy. Changes the database schema. Stops when the migrations are complete.                                                                                                 |
 | Database     | PostgreSQL                            | Keeps all business data. It is the only source of truth. Its constraints enforce some rules (BR-E8, BR-B4, BR-B5).                                                                                     |
 | Redis        | Redis                                 | Keeps the queue, the cache, the sessions and the rate-limit counters. The data in Redis is temporary.                                                                                                  |

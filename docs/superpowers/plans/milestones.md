@@ -97,7 +97,7 @@ scan.
 
 - The notifications `BookingConfirmed`, `BookingCancelled`, `EventCancelled` and
   `EventReminder`.
-- The Action `SendEventReminders` and its daily schedule.
+- The Action `SendEventReminders` and its hourly schedule.
 
 **Rules:** BR-N1 to BR-N7.
 

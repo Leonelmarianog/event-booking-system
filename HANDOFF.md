@@ -5,7 +5,8 @@ Last updated: 2026-10-08
 ## Where we are
 
 Milestones M1 (Foundation), M2 (CI and production image), M3 (Events) and M4
-(Bookings) are complete. Each M3 and M4 rule has at least one test.
+(Bookings) are complete. Each M3 and M4 rule has at least one test. M5 (Notifications)
+is complete when its last PR (PR 4, below) is merged.
 
 M5 (Notifications) is split into four PRs, in this order:
 
@@ -14,17 +15,35 @@ M5 (Notifications) is split into four PRs, in this order:
 3. `EventCancelled`: `CancelEvent` sends it to each attendee with a confirmed booking
    (BR-N3, the email part of BR-E13). These attendees get no `BookingCancelled` email.
 4. Reminders: `events.reminder_sent_at`, the `SendEventReminders` Action and command,
-   scheduled daily at 08:00 UTC, and `EventReminder` (BR-N4, BR-N5).
+   scheduled each hour, and `EventReminder` (BR-N4, BR-N5).
 
-PRs 1 and 2 are merged (#37, #38). The current PR (`feat/event-cancelled-email`) is
-PR 3. Its plan is `docs/superpowers/plans/2026-10-08-m5-event-cancelled.md`. It is open
-as a PR and waits for the merge. With this PR, BR-E13 is complete (also the email part).
+PRs 1 to 3 are merged (#37, #38, #39). BR-E13 is complete (also the email part). The
+current PR (`feat/event-reminders`) is PR 4, the last PR of M5. Its plan is
+`docs/superpowers/plans/2026-10-08-m5-event-reminders.md`. It is open as a PR and waits
+for the merge. With this PR, M5 is complete: every rule BR-N1 to BR-N7 has a test.
 
-- `CancelBooking` sends `BookingCancelled` (BR-N2).
-- `CancelEvent` loads the confirmed bookings with their attendees and sends
-  `EventCancelled` to the attendee of each booking that it cancels (BR-N3). It does not
-  use `CancelBooking`, so a cancelled event sends no `BookingCancelled`. A test in
-  `CancelEventTest` guards this.
+- `CancelBooking` sends `BookingCancelled` (BR-N2). `CancelEvent` sends
+  `EventCancelled` to the attendee of each booking that it cancels, and no
+  `BookingCancelled` (BR-N3).
+- A migration `add_reminder_sent_at_to_events_table` adds `events.reminder_sent_at`
+  (`timestampTz`, nullable). The factory state `reminderSent()` sets it.
+- An event is due for a reminder when it is published, has not started, starts in the
+  next 24 hours (24 hours included) and has no `reminder_sent_at`: the scope
+  `Event::dueForReminder()` and `Event::needsReminder()`. `Event::markReminderSent()`
+  sets the time and saves nothing.
+- `SendEventReminders` reads the due event IDs, then handles each event in its own
+  transaction: lock the event row, check `needsReminder()` again, mark, save, and send
+  `EventReminder` to the attendee of each confirmed booking. Each event is wrapped in
+  `rescue()`, so an error is logged and the run goes on. A due event with no confirmed
+  bookings is also marked (owner decision).
+- The command `events:send-reminders` runs each hour with `withoutOverlapping(60)`
+  (`routes/console.php`). It prints "Reminders sent for N events.". The owner chose
+  hourly over daily at 08:00 after the review: with one run each day, some reminders
+  came minutes before the start, and an event published after 08:00 that started
+  before the next 08:00 got none. Hourly runs send the reminder about 23 to 24 hours
+  ahead. The 60-minute lock stops a killed run from blocking the next runs.
+- A start time change after the reminder sends no second reminder and no other email
+  (BR-N5, BR-N7; owner decision). An "event changed" email stays a future feature.
 
 Each notification of M5 follows the same pattern (PR 1 sets it):
 
@@ -383,10 +402,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/event-cancelled-email` PR, merges it, and asks for a
-   sync.
-2. After the merge, M5 PR 4: the reminders (`events.reminder_sent_at`,
-   `SendEventReminders` Action and command, daily at 08:00 UTC, `EventReminder`).
+1. The owner reviews the `feat/event-reminders` PR, merges it, and asks for a sync.
+2. After the merge, M5 is complete. Split M6 (user accounts) into PRs with the owner.
 3. Email verification: the v1 scope says that it is off, but the dashboard of the
    starter kit sends a new user to `/email/verify`. The owner decides later when to
    change it.
