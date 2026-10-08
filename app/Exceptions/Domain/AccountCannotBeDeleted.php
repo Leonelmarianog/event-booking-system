@@ -23,4 +23,12 @@ class AccountCannotBeDeleted extends DomainException
     {
         return new self(__('You have a booking for an event that has not started. Cancel the booking before you delete your account.'));
     }
+
+    /**
+     * The error shows in the delete dialog, under the password field.
+     */
+    public function field(): ?string
+    {
+        return 'password';
+    }
 }
