@@ -23,7 +23,9 @@ export default function UpcomingEvents({
 
                 {events.data.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                        No upcoming events.
+                        {events.total === 0
+                            ? 'No upcoming events.'
+                            : 'No upcoming events on this page.'}
                     </p>
                 ) : (
                     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

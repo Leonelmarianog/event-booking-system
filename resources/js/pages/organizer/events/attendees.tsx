@@ -54,7 +54,9 @@ export default function EventAttendees({
 
                 {attendees.data.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
-                        No attendees yet.
+                        {attendees.total === 0
+                            ? 'No attendees yet.'
+                            : 'No attendees on this page.'}
                     </p>
                 ) : (
                     <div className="overflow-x-auto rounded-md border">
