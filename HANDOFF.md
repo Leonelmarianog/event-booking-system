@@ -4,70 +4,63 @@ Last updated: 2026-10-08
 
 ## Where we are
 
-Milestones M1 (Foundation), M2 (CI and production image), M3 (Events), M4 (Bookings) and
-M5 (Notifications) are complete. Each rule of M3, M4 and M5 has at least one test. M6
-(User accounts) is complete when its last PR (PR 3, below) is merged.
+Milestones M1 (Foundation), M2 (CI and production image), M3 (Events), M4 (Bookings),
+M5 (Notifications) and M6 (User accounts) are complete. Each rule of M3 to M6 has at
+least one test.
 
-M6 (User accounts) is split into three PRs, in this order:
+M7 (Demo ready) is split into three PRs, in this order:
 
-1. The account rules on the `User` model: `users.anonymized_at`, a nullable
-   `users.password`, `User::ensureCanBeDeleted()` (BR-U1, BR-U2) and
-   `User::anonymize()` (BR-U4). No route and no page.
-2. The `DeleteAccount` Action on the existing "Delete account" page
-   (`profile.destroy`): one transaction that checks the rules, deletes the drafts of the
-   user (BR-U3), deletes the `password_reset_tokens` row of the old email, anonymizes the
-   user and deletes the passkeys; then log out. A blocked delete shows the message under
-   the password field and as an error toast.
-3. BR-U5 on every login path (password, passkey, password reset) and a middleware that
-   ends the open sessions of an anonymized user (sessions are in Redis).
+1. A CSRF test (spec section 6): a forged request without the token is rejected.
+2. The demo seed data.
+3. The `README.md` and a run-through by a new person.
 
-Owner decisions for M6:
+Owner decisions for M7:
 
-- The placeholder email is `deleted-user-{id}@deleted.invalid` (`.invalid` never
-  resolves; the ID keeps it unique).
-- `DeleteAccount`, `ReserveSeats`, `CreateEvent` and `PublishEvent` lock the user row
-  first (PR 2), so a booking or a publish cannot slip in during a delete.
-- Only drafts are deleted (BR-U3). Cancelled and past events stay, with "Deleted user"
-  as the organizer.
+- The demo seed data has more accounts, to look more real: about 30 generated
+  attendees, plus named accounts (`organizer@`, `attendee@`, `admin@`, `other@`).
+- The seeder gets no production guard. The production `migrate` role runs
+  `migrate --force` only, never the seeder. PR 2 updates `milestones.md` for this.
+- The CSRF test has two tests only: it pins that the write routes of this app are
+  protected, and does not test again how Laravel decides which requests pass.
 
-PRs 1 and 2 are merged (#41, #42). The current PR (`feat/deleted-user-access`) is PR 3,
-the last PR of M6. Its plan is `docs/superpowers/plans/2026-10-08-m6-deleted-user-access.md`.
-It is open as a PR and waits for the merge. With this PR, M6 is complete: every rule
-BR-U1 to BR-U5 has a test.
+Rate-limit coverage is complete already (no new tests in M7):
 
-- `User::routeNotificationForMail()` returns null for an anonymized user, so the mail
-  channel sends nothing: no queued email and no password reset link reach the
-  placeholder address.
-- The middleware `LogOutDeletedUser` (first in the web group) ends the session of an
-  anonymized user, for example a session still open on another device, and redirects to
-  the login page with no message (owner decision: log out silently).
-- Password login, "remember me" and passkey login are closed by PR 1 and PR 2 (null
-  password, null remember token, deleted passkeys); `DeletedUserAccessTest` pins them.
-- A JSON request from such a session gets 401, like the `auth` middleware gives.
-- BR-U5 is enforced by "Model, Middleware" in `docs/design/business-rules.md`.
-- Known and accepted (owner decision): if a user passes the password step of a
-  two-factor login on one device and deletes the account on another device before
-  entering the code, the code step gives a 500 (Fortify decrypts the empty two-factor
-  secret). Nobody gets in.
+- `login`: starter-kit `AuthenticationTest::test_users_are_rate_limited`.
+- `bookings`: reserve in `BookingsRateLimitTest`, cancel in `CancelBookingTest`.
+- `event-writes`: create, update, publish and delete in `EventWritesRateLimitTest`,
+  cancel in `CancelEventTest`.
 
-M6 PR 2 notes:
+The current PR (`test/csrf-and-rate-limits`) is M7 PR 1. Its plan is
+`docs/superpowers/plans/2026-10-08-m7-csrf-test.md`. It is open as a PR and waits for
+the merge.
 
-- `DeleteAccount` (one transaction): lock the user row, check BR-U1 and BR-U2, delete the
-  drafts, the reset token of the old email and the passkeys, anonymize, save.
-  `ProfileController@destroy` logs out with `logoutCurrentDevice()` and redirects to
-  `home` with "Your account is deleted.". A blocked delete shows the message under the
-  password field and as a toast.
-- `ReserveSeats`, `CreateEvent` and `PublishEvent` lock the user row first and refuse
-  with `AccountDeleted`; `tests/Concurrency/UserRowLockTest.php` pins the lock.
+- `tests/Feature/CsrfProtectionTest.php`: a POST from another site without the token
+  gets 419 and makes no booking; an Inertia request with the `X-XSRF-TOKEN` header
+  passes.
+- Laravel skips the CSRF check while tests run (`runningUnitTests()`). The test binds a
+  subclass of `PreventRequestForgery` that turns the skip off, so the real check runs.
 
-M6 PR 1 notes:
+M6 notes:
 
 - `users.anonymized_at`, nullable `users.password` (the migration is one-way in
   practice). `User::ensureCanBeDeleted()` (BR-U1, then BR-U2), `User::anonymize()`
-  (BR-U4), `User::isAnonymized()`, `User::organizedEvents()`, factory state
-  `anonymized()`.
-- `User::ANONYMIZED_EMAIL_DOMAIN` (`deleted.invalid`); `ProfileValidationRules` rejects
-  it on registration and profile update.
+  (BR-U4), `User::isAnonymized()`, factory state `anonymized()`.
+- The placeholder email is `deleted-user-{id}@deleted.invalid`
+  (`User::ANONYMIZED_EMAIL_DOMAIN`); `ProfileValidationRules` rejects that domain.
+- `DeleteAccount` (one transaction): lock the user row, check BR-U1 and BR-U2, delete the
+  drafts (BR-U3), the reset token of the old email and the passkeys, anonymize, save.
+  Cancelled and past events stay, with "Deleted user" as the organizer. A blocked delete
+  shows the message under the password field and as a toast.
+- `ReserveSeats`, `CreateEvent` and `PublishEvent` lock the user row first and refuse
+  with `AccountDeleted`; `tests/Concurrency/UserRowLockTest.php` pins the lock.
+- `User::routeNotificationForMail()` returns null for an anonymized user, so no email
+  reaches the placeholder address.
+- The middleware `LogOutDeletedUser` (first in the web group) ends the session of an
+  anonymized user silently (owner decision); a JSON request gets 401.
+  `DeletedUserAccessTest` pins the closed login paths (BR-U5).
+- Known and accepted (owner decision): if a user passes the password step of a
+  two-factor login on one device and deletes the account on another device before
+  entering the code, the code step gives a 500. Nobody gets in.
 
 M5 notes:
 
@@ -439,8 +432,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/deleted-user-access` PR, merges it, and asks for a sync.
-2. After the merge, M6 is complete. Split M7 (Demo ready) into PRs with the owner.
+1. The owner reviews the `test/csrf-and-rate-limits` PR, merges it, and asks for a sync.
+2. After the merge, plan M7 PR 2 (demo seed data) with the owner.
 3. Email verification: the owner wants email verification at some point. Until then,
    the starter kit's `verified` middleware stays: a user must verify the email (link in
    Mailpit locally) before deleting the account or using the security, password and
