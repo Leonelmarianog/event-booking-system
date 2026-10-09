@@ -123,3 +123,13 @@ test('the seeder sends no email and leaves no reminder due', function () {
 
     expect(Event::query()->dueForReminder()->count())->toBe(0);
 });
+
+test('the start times are the times of day in Lisbon, where the events take place', function () {
+    $startsAt = fn (string $title) => Event::where('title', $title)->firstOrFail()
+        ->starts_at->setTimezone('Europe/Lisbon')->format('H:i');
+
+    expect($startsAt('Jazz Night at the Harbour'))->toBe('21:00')
+        ->and($startsAt('Yoga in the Park'))->toBe('08:30')
+        ->and($startsAt('JavaScript Meetup Lisbon'))->toBe('18:30')
+        ->and($startsAt('Street Food Market'))->toBe('12:00');
+});

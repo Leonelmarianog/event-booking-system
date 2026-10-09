@@ -6,6 +6,7 @@ use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
@@ -24,6 +25,11 @@ class DatabaseSeeder extends Seeder
      * The seats of each generated booking, in turn.
      */
     private const QUANTITIES = [1, 2, 1, 1, 2, 1, 3, 1];
+
+    /**
+     * The time zone of the venues. Start times are times of day there.
+     */
+    private const TIME_ZONE = 'Europe/Lisbon';
 
     private User $organizer;
 
@@ -108,7 +114,7 @@ class DatabaseSeeder extends Seeder
         $this->bookCrowd($event, 11);
         $this->book($event, $this->attendee, 1);
 
-        $event->starts_at = now()->subDays(20)->setTimeFromTimeString('18:30');
+        $event->starts_at = $this->startsAt(-20, '18:30');
         $event->published_at = now()->subDays(45);
         $event->reminder_sent_at = $event->starts_at->subDay();
         $event->save();
@@ -141,7 +147,7 @@ class DatabaseSeeder extends Seeder
             'title' => 'Data Visualisation Workshop',
             'venue' => 'LX Factory, Lisbon',
             'description' => 'Turn a spreadsheet into clear charts. Details to follow.',
-            'starts_at' => now()->addDays(35)->setTimeFromTimeString('14:00'),
+            'starts_at' => $this->startsAt(35, '14:00'),
             'capacity' => 30,
         ]);
 
@@ -149,14 +155,14 @@ class DatabaseSeeder extends Seeder
             'title' => 'Street Food Market',
             'venue' => 'Ribeira, Porto',
             'description' => 'Local cooks, live music and long tables. The program is not final yet.',
-            'starts_at' => now()->addDays(40)->setTimeFromTimeString('12:00'),
+            'starts_at' => $this->startsAt(40, '12:00'),
             'capacity' => 300,
         ]);
     }
 
     /**
      * Create a published event of the organizer that starts the given number of days
-     * from now, at the given time.
+     * from now, at the given time of day in Lisbon.
      */
     private function publishedEvent(User $organizer, string $title, string $venue, string $description, int $days, string $time, int $capacity): Event
     {
@@ -164,9 +170,18 @@ class DatabaseSeeder extends Seeder
             'title' => $title,
             'venue' => $venue,
             'description' => $description,
-            'starts_at' => now()->addDays($days)->setTimeFromTimeString($time),
+            'starts_at' => $this->startsAt($days, $time),
             'capacity' => $capacity,
         ]);
+    }
+
+    /**
+     * The moment, in UTC, of the given time of day in Lisbon, the given number of days
+     * from today.
+     */
+    private function startsAt(int $days, string $time): CarbonImmutable
+    {
+        return now(self::TIME_ZONE)->addDays($days)->setTimeFromTimeString($time)->utc();
     }
 
     /**

@@ -37,8 +37,9 @@ for the merge.
   (`Event::reserve()`, `Booking::cancel()`, `Event::cancel()`), not with the Actions.
   So the available seats match the bookings and no email is sent. The past event is
   booked while it is upcoming, then moved to the past.
-- All times are relative to now. The first upcoming event starts in 3 days, so no
-  reminder is due right after `make fresh`.
+- All times are relative to now. Start times are times of day in Lisbon, where the
+  venues are, stored in UTC. The first upcoming event starts in 3 days, so no reminder
+  is due right after `make fresh`.
 - `tests/Feature/DemoSeederTest.php` pins the accounts, the event states, the seats, the
   pages and that no email is sent.
 
