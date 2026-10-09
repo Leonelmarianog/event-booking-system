@@ -20,9 +20,9 @@ Owner decisions for M7:
   `migrate --force` only, never the seeder, and Faker is a dev dependency.
 - The demo seed data (PR 2) looks real: 3 named accounts, 3 generated organizers and
   180 generated attendees (186 users); 17 events with hand-written titles, venues and
-  descriptions, at different times of the day. Both paginated pages have more than one
-  page: `/events` (two pages) and the attendee list of "Jazz Night at the Harbour"
-  (175 attendees, four pages).
+  descriptions, at different times of the day. Both paginated lists have more than one
+  page: `/events` (two pages) and the attendee list of "Jazz Night at the Harbour", an
+  event of `organizer@` (175 attendees, four pages).
 - Only one named organizer. The events of the generated organizers show the "not your
   event" case.
 
@@ -37,6 +37,8 @@ for the merge.
   (`Event::reserve()`, `Booking::cancel()`, `Event::cancel()`), not with the Actions.
   So the available seats match the bookings and no email is sent. The past event is
   booked while it is upcoming, then moved to the past.
+- The seeder runs in one transaction, so a failure leaves no partial data. The bookings
+  of the past event get dates between its publish and its start.
 - All times are relative to now. Start times are times of day in Lisbon, where the
   venues are, stored in UTC. The first upcoming event starts in 3 days, so no reminder
   is due right after `make fresh`.
@@ -453,6 +455,8 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
    migrates but does not seed, and spec success criterion 1 says the local stack has
    seeded demo data: the run-through must include `make fresh`, or `make setup` must
    seed.
+   The seed data ages: after about 3 days the first event starts and `/events` loses
+   its second page, so the README must say to run `make fresh` again.
 3. Email verification: the owner wants email verification at some point. Until then,
    the starter kit's `verified` middleware stays: a user must verify the email (link in
    Mailpit locally) before deleting the account or using the security, password and

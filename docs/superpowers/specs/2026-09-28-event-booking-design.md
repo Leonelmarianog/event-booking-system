@@ -278,10 +278,11 @@ commands: `up`, `down`, `test`, `lint`, `fresh` (migrate + seed), `concurrency-t
 ### Seed data
 
 Demo users, all with password `password`: `organizer@example.com`,
-`attendee@example.com` and `admin@example.com` (admin), plus 3 generated organizers and 180 generated attendees. 17 events in mixed
-states (upcoming, sold out, past, cancelled, draft) with bookings, at different times of
-the day. `/events` has two pages and the attendee list of the biggest event has four. The seeder makes the
-bookings with the model methods, so no email is sent. Only `make fresh` runs the
+`attendee@example.com` and `admin@example.com` (admin), plus 3 generated organizers and
+180 generated attendees. 17 events in mixed states (upcoming, sold out, past, cancelled,
+draft) with bookings, at different times of the day in Lisbon. `/events` has two pages,
+and the attendee list of the biggest event of `organizer@` has four. The seeder makes
+the bookings with the model methods, so no email is sent. Only `make fresh` runs the
 seeder; the production `migrate` role never does.
 
 ## 11. CI (GitHub Actions)

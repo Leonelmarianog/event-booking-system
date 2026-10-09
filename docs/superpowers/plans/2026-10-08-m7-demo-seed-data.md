@@ -26,7 +26,7 @@ data"), `docs/superpowers/plans/milestones.md` (M7).
       attendees (186 users). 17 events: 13 upcoming published (so `/events` has a second
       page at 12 for each page), 2 drafts, 1 past, 1 cancelled. One upcoming event is
       sold out.
-    - Both paginated pages have more than one page: `/events` (12 for each page, two
+    - Both paginated lists have more than one page: `/events` (12 for each page, two
       pages) and the attendee list of "Jazz Night at the Harbour" (175 attendees, 50 for
       each page, four pages: 50, 50, 50 and 25).
     - Start times vary (morning, afternoon, evening), not all at the same hour.
@@ -54,8 +54,9 @@ data"), `docs/superpowers/plans/milestones.md` (M7).
 3. **No reminder due after seeding.** No event is in `dueForReminder()`. Pinned in
    Task 1.
 4. **Every page has something to show** for the named accounts: `/events` and the
-   attendee list of "Jazz Night at the Harbour" have more than one page, "My events" of `organizer@` has upcoming, past and draft events, and "My bookings" of
-   `attendee@` has confirmed, cancelled and "Event cancelled" bookings. Pinned in Task 1.
+   attendee list of "Jazz Night at the Harbour" have more than one page, "My events"
+   of `organizer@` has upcoming, past and draft events, and "My bookings" of `attendee@`
+   has confirmed, cancelled and "Event cancelled" bookings. Pinned in Task 1.
 5. **The seeder is the same on every run** except the generated names and emails, so
    the tests are stable. The structure (events, bookings, quantities) has no
    randomness.
@@ -292,13 +293,13 @@ class DatabaseSeeder extends Seeder
         $this->book($trailRun, $this->attendee, 1);
 
         $this->bookCrowd($this->publishedEvent($this->organizer, 'Product Design Workshop', 'LX Factory, Lisbon', 'Learn to sketch, test and improve a product idea in one afternoon.', 8, '14:00', 25), 6);
-        $this->bookCrowd($this->publishedEvent($james, 'Jazz Night at the Harbour', 'Armazém 16, Lisbon', 'A local quartet plays standards and new pieces in a riverside warehouse. Doors open at 20:30.', 10, '21:00', 300), 175);
+        $this->bookCrowd($this->publishedEvent($this->organizer, 'Jazz Night at the Harbour', 'Armazém 16, Lisbon', 'A local quartet plays standards and new pieces in a riverside warehouse. Doors open at 20:30.', 10, '21:00', 300), 175);
 
         $photoWalk = $this->publishedEvent($marta, 'Photography Walk: Old Town', 'Alfama, Lisbon', 'A guided walk for photographers of all levels. Bring any camera.', 12, '10:30', 15);
         $this->bookCrowd($photoWalk, 5);
         $this->book($photoWalk, $this->attendee, 1);
 
-        $this->bookCrowd($this->publishedEvent($this->organizer, 'Startup Pitch Evening', 'Startup Lisboa', 'Ten early-stage teams pitch to a panel of investors and the audience.', 14, '18:00', 80), 10);
+        $this->bookCrowd($this->publishedEvent($james, 'Startup Pitch Evening', 'Startup Lisboa', 'Ten early-stage teams pitch to a panel of investors and the audience.', 14, '18:00', 80), 10);
 
         $boardGames = $this->publishedEvent($priya, 'Board Game Social', 'Café Gato, Porto', 'Meet new people over classic and modern board games.', 16, '19:30', 30);
         $this->bookCrowd($boardGames, 7);
@@ -496,5 +497,5 @@ git commit -m "docs: describe the demo seed data and update handoff"
 
 The owner runs `make fresh` (it deletes the local data), then logs in as each named
 account and checks `/events` (two pages), "My events", "My bookings", the attendee list
-of "Laravel Meetup Lisbon", the attendee list of "Jazz Night at the Harbour" as
-`admin@` (four pages), and that Mailpit has no new email.
+of "Laravel Meetup Lisbon", the attendee list of "Jazz Night at the Harbour" (four
+pages), and that Mailpit has no new email.
