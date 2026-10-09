@@ -129,8 +129,7 @@ scan.
 - The rate limits `bookings` and `event-writes`, with the flash message for Inertia
   requests.
 - Tests for CSRF rejection and for each rate limit.
-- The seed data: the demo users and about 10 events in different states. The seeder
-  stops when `APP_ENV=production`.
+- The seed data: the demo users and about 17 events in different states.
 - The `README.md`: what the demo shows, how to run it, and the environment variables.
 
 **Complete when:**

@@ -16,31 +16,47 @@ M7 (Demo ready) is split into three PRs, in this order:
 
 Owner decisions for M7:
 
-- The demo seed data has more accounts, to look more real: about 30 generated
-  attendees, plus named accounts (`organizer@`, `attendee@`, `admin@`, `other@`).
 - The seeder gets no production guard. The production `migrate` role runs
-  `migrate --force` only, never the seeder. PR 2 updates `milestones.md` for this.
-- The CSRF test has two tests only. It uses the booking route to pin that the CSRF check
-  of the web group is active, and does not test again how Laravel decides which requests
-  pass. It does not catch a route that moves out of the web group or into the CSRF
-  `except` list.
+  `migrate --force` only, never the seeder, and Faker is a dev dependency.
+- The demo seed data (PR 2) looks real: 3 named accounts, 3 generated organizers and
+  180 generated attendees (186 users); 17 events with hand-written titles, venues and
+  descriptions, at different times of the day. Both paginated lists have more than one
+  page: `/events` (two pages) and the attendee list of "Jazz Night at the Harbour", an
+  event of `organizer@` (175 attendees, four pages).
+- Only one named organizer. The events of the generated organizers show the "not your
+  event" case.
 
-Rate-limit coverage is complete already (no new tests in M7):
+PR 1 is merged (#44). The current PR (`feat/demo-seed-data`) is M7 PR 2. Its plan is
+`docs/superpowers/plans/2026-10-08-m7-demo-seed-data.md`. It is open as a PR and waits
+for the merge.
 
-- `login`: starter-kit `AuthenticationTest::test_users_are_rate_limited`.
-- `bookings`: reserve in `BookingsRateLimitTest`, cancel in `CancelBookingTest`.
-- `event-writes`: create, update, publish and delete in `EventWritesRateLimitTest`,
-  cancel in `CancelEventTest`.
+- Named accounts, all with password `password`: `organizer@example.com` (Olivia
+  Bennett, 9 events: 5 upcoming, 1 past, 1 cancelled, 2 drafts), `attendee@example.com`
+  (Alex Carter, bookings in every state) and `admin@example.com` (Sam Rivera, admin).
+- `DatabaseSeeder` makes and cancels the bookings with the model methods
+  (`Event::reserve()`, `Booking::cancel()`, `Event::cancel()`), not with the Actions.
+  So the available seats match the bookings and no email is sent. The past event is
+  booked while it is upcoming, then moved to the past.
+- The seeder runs in one transaction, so a failure leaves no partial data. The bookings
+  of the past event get dates between its publish and its start.
+- All times are relative to now. Start times are times of day in Lisbon, where the
+  venues are, stored in UTC. The first upcoming event starts in 3 days, so no reminder
+  is due right after `make fresh`.
+- `tests/Feature/DemoSeederTest.php` pins the accounts, the event states, the seats, the
+  pages and that no email is sent.
 
-The current PR (`test/csrf-and-rate-limits`) is M7 PR 1. Its plan is
-`docs/superpowers/plans/2026-10-08-m7-csrf-test.md`. It is open as a PR and waits for
-the merge.
+M7 PR 1 notes:
 
 - `tests/Feature/CsrfProtectionTest.php`: a POST from another site without the token
   gets 419 and makes no booking; an Inertia request with the `X-XSRF-TOKEN` header
-  passes.
-- Laravel skips the CSRF check while tests run (`runningUnitTests()`). The test binds a
-  subclass of `PreventRequestForgery` that turns the skip off, so the real check runs.
+  passes. Laravel skips the CSRF check while tests run; the test binds a subclass of
+  `PreventRequestForgery` that turns the skip off.
+- The test uses the booking route to pin that the CSRF check of the web group is
+  active. It does not catch a route that moves out of the web group or into the CSRF
+  `except` list.
+- Rate-limit coverage was complete already: `login` (starter-kit
+  `AuthenticationTest::test_users_are_rate_limited`), `bookings` (`BookingsRateLimitTest`,
+  `CancelBookingTest`), `event-writes` (`EventWritesRateLimitTest`, `CancelEventTest`).
 
 M6 notes:
 
@@ -434,8 +450,13 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `test/csrf-and-rate-limits` PR, merges it, and asks for a sync.
-2. After the merge, plan M7 PR 2 (demo seed data) with the owner.
+1. The owner reviews the `feat/demo-seed-data` PR, merges it, and asks for a sync.
+2. After the merge, plan M7 PR 3 (README and run-through) with the owner. `make setup`
+   migrates but does not seed, and spec success criterion 1 says the local stack has
+   seeded demo data: the run-through must include `make fresh`, or `make setup` must
+   seed.
+   The seed data ages: after about 3 days the first event starts and `/events` loses
+   its second page, so the README must say to run `make fresh` again.
 3. Email verification: the owner wants email verification at some point. Until then,
    the starter kit's `verified` middleware stays: a user must verify the email (link in
    Mailpit locally) before deleting the account or using the security, password and
