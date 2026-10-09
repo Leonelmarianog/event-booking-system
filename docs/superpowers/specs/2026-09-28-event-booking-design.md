@@ -170,7 +170,7 @@ Read use cases. Each one is an Action that the controller calls:
 
 - **Authentication:** starter kit session auth. Email verification is off, to keep
   the demo frictionless.
-- **CSRF:** Laravel's `VerifyCsrfToken` middleware plus the `XSRF-TOKEN` cookie that
+- **CSRF:** Laravel's `PreventRequestForgery` middleware plus the `XSRF-TOKEN` cookie that
   Inertia's HTTP client sends back. A test asserts that a POST without the token is rejected.
 - **Authorization:**
     - `EventPolicy`: `view` (published, or the viewer is the organizer or an admin;

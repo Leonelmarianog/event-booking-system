@@ -20,8 +20,10 @@ Owner decisions for M7:
   attendees, plus named accounts (`organizer@`, `attendee@`, `admin@`, `other@`).
 - The seeder gets no production guard. The production `migrate` role runs
   `migrate --force` only, never the seeder. PR 2 updates `milestones.md` for this.
-- The CSRF test has two tests only: it pins that the write routes of this app are
-  protected, and does not test again how Laravel decides which requests pass.
+- The CSRF test has two tests only. It uses the booking route to pin that the CSRF check
+  of the web group is active, and does not test again how Laravel decides which requests
+  pass. It does not catch a route that moves out of the web group or into the CSRF
+  `except` list.
 
 Rate-limit coverage is complete already (no new tests in M7):
 
@@ -55,8 +57,8 @@ M6 notes:
   with `AccountDeleted`; `tests/Concurrency/UserRowLockTest.php` pins the lock.
 - `User::routeNotificationForMail()` returns null for an anonymized user, so no email
   reaches the placeholder address.
-- The middleware `LogOutDeletedUser` (first in the web group) ends the session of an
-  anonymized user silently (owner decision); a JSON request gets 401.
+- The middleware `LogOutDeletedUser` (appended to the web group, after the framework
+  middleware) ends the session of an anonymized user silently (owner decision); a JSON request gets 401.
   `DeletedUserAccessTest` pins the closed login paths (BR-U5).
 - Known and accepted (owner decision): if a user passes the password step of a
   two-factor login on one device and deletes the account on another device before
