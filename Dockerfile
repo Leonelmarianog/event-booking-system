@@ -10,7 +10,11 @@ RUN install-php-extensions pdo_pgsql redis opcache intl pcntl zip \
 ARG UID=1000
 ARG GID=1000
 
-RUN addgroup -g "${GID}" app \
+# On macOS the GID is 20, which Alpine gives to the dialout group. The app group takes
+# the GID of the host user, so an Alpine group with the same GID is removed first.
+RUN existing_group="$(getent group "${GID}" | cut -d: -f1)" \
+    && if [ -n "${existing_group}" ]; then delgroup "${existing_group}"; fi \
+    && addgroup -g "${GID}" app \
     && adduser -D -u "${UID}" -G app app \
     && mkdir -p /run/nginx /var/lib/nginx/tmp /var/log/nginx \
     && chown -R app:app /run/nginx /var/lib/nginx /var/log/nginx
