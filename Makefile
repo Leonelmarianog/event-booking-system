@@ -14,13 +14,13 @@ APP := $(COMPOSE) exec app
 help: ## Show the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
 
-setup: ## First start after a clone: install, start and migrate
+setup: ## First start after a clone: install, start, migrate and seed the demo data
 	test -f .env || cp .env.example .env
 	$(COMPOSE) build
 	$(COMPOSE) run --rm app composer install
 	grep -q '^APP_KEY=base64:' .env || $(COMPOSE) run --rm app php artisan key:generate
 	$(MAKE) up
-	$(APP) php artisan migrate --force
+	$(APP) php artisan migrate --force --seed
 
 up: ## Build the image if necessary, start the stack and wait until it is ready
 	$(COMPOSE) up -d --build --remove-orphans --wait

@@ -142,3 +142,10 @@ test('the bookings of the past event were made before it started', function () {
             ->and($booking->created_at->isBefore($event->starts_at))->toBeTrue();
     }
 });
+
+test('the seeder does nothing when the database already has users', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    expect(User::count())->toBe(186)
+        ->and(Event::count())->toBe(17);
+});
