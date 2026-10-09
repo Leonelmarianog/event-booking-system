@@ -52,6 +52,9 @@ If one of these ports is in use, stop the program that uses it.
     This command builds the image, installs the packages and starts the stack. Then it
     creates the tables and seeds the demo data.
 
+    The first run builds the image from nothing and can take several minutes. If you
+    run `make setup` again, it keeps your data.
+
 3. Open <http://localhost:8080>.
 4. Open <http://localhost:8025> to see the emails that the app sends.
 
