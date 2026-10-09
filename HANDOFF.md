@@ -6,7 +6,8 @@ Last updated: 2026-10-08
 
 Milestones M1 (Foundation), M2 (CI and production image), M3 (Events), M4 (Bookings),
 M5 (Notifications) and M6 (User accounts) are complete. Each rule of M3 to M6 has at
-least one test.
+least one test. M7 (Demo ready) and v1 are complete when its last PR (PR 3, below) is
+merged.
 
 M7 (Demo ready) is split into three PRs, in this order:
 
@@ -25,10 +26,34 @@ Owner decisions for M7:
   event of `organizer@` (175 attendees, four pages).
 - Only one named organizer. The events of the generated organizers show the "not your
   event" case.
+- `make setup` seeds the demo data when the database has no users (PR 3). One command
+  after a clone gives the full demo.
+- Claude does the run-through on a fresh clone; the owner reads the README (PR 3).
+- The README has no license section. The repository has no `LICENSE` file.
 
-PR 1 is merged (#44). The current PR (`feat/demo-seed-data`) is M7 PR 2. Its plan is
-`docs/superpowers/plans/2026-10-08-m7-demo-seed-data.md`. It is open as a PR and waits
-for the merge.
+PRs 1 and 2 are merged (#44, #45). The current PR (`docs/readme`) is M7 PR 3, the last
+PR of v1. Its plan is `docs/superpowers/plans/2026-10-08-m7-readme.md`. It is open as a
+PR and waits for the merge.
+
+- `README.md` replaces the starter-kit README: what the demo shows (with the files to
+  read), how to run it, the demo accounts, things to try, the Make commands, the
+  production image with its roles and environment variables, and the design documents.
+- `DatabaseSeeder` does nothing when the database has users, and `make setup` runs
+  `migrate --force --seed`. A second `make setup` keeps the data. `make fresh` still
+  erases and seeds again.
+- The run-through: a clone of this branch, `make setup` under its own Compose project
+  name (`COMPOSE_PROJECT_NAME=event-booking-run-through`, so its volumes are new). The
+  pages, the three logins, the four attendee pages of "Jazz Night at the Harbour", a
+  booking email in Mailpit, a second `make setup` and `make test` (441 tests) work.
+  One gap: the README gave no time for the first build. It now says that the first run
+  can take several minutes. The build cache was warm, so a cold build was not timed.
+- The image build works with the IDs of a macOS user (GID 20 is the Alpine `dialout`
+  group): the `Dockerfile` removes an Alpine group with the same GID first.
+- The README says that the image serves HTTP and does not trust proxy headers yet.
+- Spec success criterion 1 now says `make setup` (not `docker compose up`), and the M7
+  "Complete when" says "clone, run `make setup`, use the demo".
+
+M7 PR 2 notes:
 
 - Named accounts, all with password `password`: `organizer@example.com` (Olivia
   Bennett, 9 events: 5 upcoming, 1 past, 1 cancelled, 2 drafts), `attendee@example.com`
@@ -450,13 +475,12 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 ## Next steps
 
-1. The owner reviews the `feat/demo-seed-data` PR, merges it, and asks for a sync.
-2. After the merge, plan M7 PR 3 (README and run-through) with the owner. `make setup`
-   migrates but does not seed, and spec success criterion 1 says the local stack has
-   seeded demo data: the run-through must include `make fresh`, or `make setup` must
-   seed.
-   The seed data ages: after about 3 days the first event starts and `/events` loses
-   its second page, so the README must say to run `make fresh` again.
+1. The owner reviews the `docs/readme` PR, merges it, and asks for a sync. After the
+   merge, v1 is complete.
+2. For the owner to decide: trusted proxies. HTTPS behind a proxy that ends TLS needs
+   `trustProxies()` in `bootstrap/app.php`. Trusting all proxies lets a client fake its
+   IP and get around the per-IP login rate limit, so the list of proxies must come
+   from an environment variable (for example `TRUSTED_PROXIES`).
 3. Email verification: the owner wants email verification at some point. Until then,
    the starter kit's `verified` middleware stays: a user must verify the email (link in
    Mailpit locally) before deleting the account or using the security, password and

@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * The demo data of `make fresh`: named accounts, generated organizers and attendees,
- * and events in every state with bookings. The bookings go through the model methods,
+ * and events in every state with bookings. `make setup` also runs it, for a database
+ * with no users. The bookings go through the model methods,
  * so the available seats match the bookings and no email is sent. All times are
  * relative to now. The first upcoming event starts in 3 days, so no reminder is due.
  */
@@ -48,10 +49,17 @@ class DatabaseSeeder extends Seeder
     private int $crowdOffset = 0;
 
     /**
-     * Seed the application's database.
+     * Seed the application's database. It does nothing when the database has users
+     * already, so that `make setup` can run again without errors.
      */
     public function run(): void
     {
+        if (User::query()->exists()) {
+            $this->command->info('The database has users already. The demo data is not seeded again.');
+
+            return;
+        }
+
         DB::transaction(function (): void {
             $this->organizer = User::factory()->create(['name' => 'Olivia Bennett', 'email' => 'organizer@example.com']);
             $this->attendee = User::factory()->create(['name' => 'Alex Carter', 'email' => 'attendee@example.com']);

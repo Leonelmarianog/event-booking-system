@@ -134,6 +134,5 @@ scan.
 
 **Complete when:**
 
-- A new person can clone the repository, run `make up` and `make fresh`, and use the
-  demo.
+- A new person can clone the repository, run `make setup`, and use the demo.
 - All the success criteria in section 1 of the spec are true.
