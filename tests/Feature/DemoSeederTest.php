@@ -97,16 +97,16 @@ test('the events page has a second page', function () {
         ->assertInertia(fn (Assert $page) => $page->has('events.data', 1));
 });
 
-test('the attendee list of the biggest event has four pages', function () {
-    $admin = User::where('email', 'admin@example.com')->firstOrFail();
+test('the organizer account sees the attendee list of the biggest event on four pages', function () {
+    $organizer = User::where('email', 'organizer@example.com')->firstOrFail();
     $event = Event::where('title', 'Jazz Night at the Harbour')->firstOrFail();
 
-    $this->actingAs($admin)
+    $this->actingAs($organizer)
         ->get(route('events.attendees.index', ['event' => $event, 'page' => 3]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page->has('attendees.data', 50));
 
-    $this->actingAs($admin)
+    $this->actingAs($organizer)
         ->get(route('events.attendees.index', ['event' => $event, 'page' => 4]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page->has('attendees.data', 25));
@@ -132,4 +132,13 @@ test('the start times are the times of day in Lisbon, where the events take plac
         ->and($startsAt('Yoga in the Park'))->toBe('08:30')
         ->and($startsAt('JavaScript Meetup Lisbon'))->toBe('18:30')
         ->and($startsAt('Street Food Market'))->toBe('12:00');
+});
+
+test('the bookings of the past event were made before it started', function () {
+    $event = Event::where('title', 'JavaScript Meetup Lisbon')->firstOrFail();
+
+    foreach ($event->bookings as $booking) {
+        expect($booking->created_at->isAfter($event->published_at))->toBeTrue()
+            ->and($booking->created_at->isBefore($event->starts_at))->toBeTrue();
+    }
 });

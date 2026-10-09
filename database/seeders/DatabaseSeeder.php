@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The demo data of `make fresh`: named accounts, generated organizers and attendees,
@@ -51,16 +52,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->organizer = User::factory()->create(['name' => 'Olivia Bennett', 'email' => 'organizer@example.com']);
-        $this->attendee = User::factory()->create(['name' => 'Alex Carter', 'email' => 'attendee@example.com']);
-        User::factory()->admin()->create(['name' => 'Sam Rivera', 'email' => 'admin@example.com']);
-        $this->guestOrganizers = User::factory(3)->create();
-        $this->crowd = User::factory(180)->create();
+        DB::transaction(function (): void {
+            $this->organizer = User::factory()->create(['name' => 'Olivia Bennett', 'email' => 'organizer@example.com']);
+            $this->attendee = User::factory()->create(['name' => 'Alex Carter', 'email' => 'attendee@example.com']);
+            User::factory()->admin()->create(['name' => 'Sam Rivera', 'email' => 'admin@example.com']);
+            $this->guestOrganizers = User::factory(3)->create();
+            $this->crowd = User::factory(180)->create();
 
-        $this->seedUpcomingEvents();
-        $this->seedPastEvent();
-        $this->seedCancelledEvent();
-        $this->seedDrafts();
+            $this->seedUpcomingEvents();
+            $this->seedPastEvent();
+            $this->seedCancelledEvent();
+            $this->seedDrafts();
+        });
     }
 
     /**
@@ -85,13 +88,13 @@ class DatabaseSeeder extends Seeder
         $this->book($trailRun, $this->attendee, 1);
 
         $this->bookCrowd($this->publishedEvent($this->organizer, 'Product Design Workshop', 'LX Factory, Lisbon', 'Learn to sketch, test and improve a product idea in one afternoon.', 8, '14:00', 25), 6);
-        $this->bookCrowd($this->publishedEvent($james, 'Jazz Night at the Harbour', 'Armazém 16, Lisbon', 'A local quartet plays standards and new pieces in a riverside warehouse. Doors open at 20:30.', 10, '21:00', 300), 175);
+        $this->bookCrowd($this->publishedEvent($this->organizer, 'Jazz Night at the Harbour', 'Armazém 16, Lisbon', 'A local quartet plays standards and new pieces in a riverside warehouse. Doors open at 20:30.', 10, '21:00', 300), 175);
 
         $photoWalk = $this->publishedEvent($marta, 'Photography Walk: Old Town', 'Alfama, Lisbon', 'A guided walk for photographers of all levels. Bring any camera.', 12, '10:30', 15);
         $this->bookCrowd($photoWalk, 5);
         $this->book($photoWalk, $this->attendee, 1);
 
-        $this->bookCrowd($this->publishedEvent($this->organizer, 'Startup Pitch Evening', 'Startup Lisboa', 'Ten early-stage teams pitch to a panel of investors and the audience.', 14, '18:00', 80), 10);
+        $this->bookCrowd($this->publishedEvent($james, 'Startup Pitch Evening', 'Startup Lisboa', 'Ten early-stage teams pitch to a panel of investors and the audience.', 14, '18:00', 80), 10);
 
         $boardGames = $this->publishedEvent($priya, 'Board Game Social', 'Café Gato, Porto', 'Meet new people over classic and modern board games.', 16, '19:30', 30);
         $this->bookCrowd($boardGames, 7);
@@ -106,7 +109,8 @@ class DatabaseSeeder extends Seeder
 
     /**
      * An event that took place 20 days ago. It is booked while it is upcoming, then
-     * moved to the past, as time would do.
+     * moved to the past, as time would do. Its bookings get dates between the publish
+     * and the start.
      */
     private function seedPastEvent(): void
     {
@@ -118,6 +122,12 @@ class DatabaseSeeder extends Seeder
         $event->published_at = now()->subDays(45);
         $event->reminder_sent_at = $event->starts_at->subDay();
         $event->save();
+
+        $event->bookings()->orderBy('id')->get()->each(function (Booking $booking, int $index): void {
+            $booking->created_at = now()->subDays(40)->addHours($index * 9);
+            $booking->updated_at = $booking->created_at;
+            $booking->save();
+        });
     }
 
     /**
