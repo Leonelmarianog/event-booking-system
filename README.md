@@ -24,7 +24,13 @@ Redis 8.
 
 ## Run the demo on your computer
 
-You need Docker with Compose v2, `make` and `git`. The stack uses these host ports:
+You need Docker with Compose v2, `make` and `git`:
+
+- On Linux, add your user to the `docker` group. Do not run `make` with `sudo`.
+- On Windows, use WSL 2 and run all commands in the WSL terminal.
+- On macOS, use Docker Desktop.
+
+The stack uses these host ports:
 
 | Port               | Service                          |
 | ------------------ | -------------------------------- |
@@ -53,7 +59,8 @@ If one of these ports is in use, stop the program that uses it.
     creates the tables and seeds the demo data.
 
     The first run builds the image from nothing and can take several minutes. If you
-    run `make setup` again, it keeps your data.
+    run `make setup` again, it keeps your data. If the database has users already, the
+    command does not seed the demo data. To get the demo data, run `make fresh`.
 
 3. Open <http://localhost:8080>.
 4. Open <http://localhost:8025> to see the emails that the app sends.
@@ -107,7 +114,7 @@ added.
 ## Production image
 
 The `runtime` target of the `Dockerfile` is the production image. The operator of the
-deployment builds it and gives PostgreSQL, Redis and an SMTP server.
+deployment builds it and supplies PostgreSQL, Redis and an SMTP server.
 
 ```bash
 docker build --target runtime -t event-booking:runtime .
@@ -121,7 +128,7 @@ The first argument of the container selects its role:
 
 | Role            | What it runs                                                    |
 | --------------- | --------------------------------------------------------------- |
-| `web` (default) | Nginx, PHP-FPM and the Inertia SSR server on port 8080          |
+| `web` (default) | Nginx on port 8080, PHP-FPM and the Inertia SSR server          |
 | `worker`        | The queue worker, which sends the emails                        |
 | `scheduler`     | The scheduler, which sends the reminders each hour              |
 | `migrate`       | `php artisan migrate --force`. Run it once before each rollout. |
@@ -131,17 +138,17 @@ The first argument of the container selects its role:
 The image sets `APP_ENV=production`, `APP_DEBUG=false` and `LOG_CHANNEL=stderr`. Give
 these variables to each role:
 
-| Variable                                                          | Value                                        |
-| ----------------------------------------------------------------- | -------------------------------------------- |
-| `APP_KEY`                                                         | A key from `php artisan key:generate --show` |
-| `APP_URL`                                                         | The public URL of the app                    |
-| `DB_CONNECTION`                                                   | `pgsql`                                      |
-| `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | The PostgreSQL server                        |
-| `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`                      | The Redis server                             |
-| `SESSION_DRIVER`, `CACHE_STORE`, `QUEUE_CONNECTION`               | `redis`                                      |
-| `MAIL_MAILER`                                                     | `smtp`                                       |
-| `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`        | The SMTP server                              |
-| `MAIL_FROM_ADDRESS`                                               | The sender address of the emails             |
+| Variable                                                          | Value                                                                                                |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `APP_KEY`                                                         | A new key. To make one, run `docker run --rm event-booking:runtime php artisan key:generate --show`. |
+| `APP_URL`                                                         | The public URL of the app                                                                            |
+| `DB_CONNECTION`                                                   | `pgsql`                                                                                              |
+| `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | The PostgreSQL server                                                                                |
+| `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`                      | The Redis server                                                                                     |
+| `SESSION_DRIVER`, `CACHE_STORE`, `QUEUE_CONNECTION`               | `redis`                                                                                              |
+| `MAIL_MAILER`                                                     | `smtp`                                                                                               |
+| `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`        | The SMTP server                                                                                      |
+| `MAIL_FROM_ADDRESS`                                               | The sender address of the emails                                                                     |
 
 `compose.concurrency.yaml` runs the image with a minimal set of these variables. CI
 uses it.
