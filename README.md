@@ -62,11 +62,11 @@ If one of these ports is in use, stop the program that uses it.
 
 All accounts use the password `password`.
 
-| Email                   | What you can do                                                                      |
-| ----------------------- | ------------------------------------------------------------------------------------ |
-| `organizer@example.com` | Manage events. "Jazz Night at the Harbour" has 175 attendees on four pages.          |
-| `attendee@example.com`  | See bookings in all states: upcoming, past, cancelled, and cancelled with the event. |
-| `admin@example.com`     | See all events, also drafts. Cancel any event and see its attendees.                 |
+| Email                   | What you can do                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------- |
+| `organizer@example.com` | Manage events. "Jazz Night at the Harbour" has 175 attendees on four pages.                         |
+| `attendee@example.com`  | See bookings in all states: upcoming, past, cancelled, and cancelled with the event.                |
+| `admin@example.com`     | Open any event by its URL, also drafts of other organizers. Cancel any event and see its attendees. |
 
 The seed data also has 3 generated organizers and 180 generated attendees.
 
@@ -113,6 +113,10 @@ deployment builds it and gives PostgreSQL, Redis and an SMTP server.
 docker build --target runtime -t event-booking:runtime .
 ```
 
+The image serves HTTP on port 8080. The app does not read the `X-Forwarded-*` headers
+of a proxy yet. For HTTPS behind a proxy that ends TLS, the app needs a trusted-proxy
+configuration first.
+
 The first argument of the container selects its role:
 
 | Role            | What it runs                                                    |
@@ -138,7 +142,6 @@ these variables to each role:
 | `MAIL_MAILER`                                                     | `smtp`                                       |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`        | The SMTP server                              |
 | `MAIL_FROM_ADDRESS`                                               | The sender address of the emails             |
-| `SESSION_SECURE_COOKIE`                                           | `true` when the app runs on HTTPS            |
 
 `compose.concurrency.yaml` runs the image with a minimal set of these variables. CI
 uses it.

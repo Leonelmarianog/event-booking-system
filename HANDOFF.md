@@ -47,6 +47,9 @@ PR and waits for the merge.
   booking email in Mailpit, a second `make setup` and `make test` (441 tests) work.
   One gap: the README gave no time for the first build. It now says that the first run
   can take several minutes. The build cache was warm, so a cold build was not timed.
+- The image build works with the IDs of a macOS user (GID 20 is the Alpine `dialout`
+  group): the `Dockerfile` removes an Alpine group with the same GID first.
+- The README says that the image serves HTTP and does not trust proxy headers yet.
 - Spec success criterion 1 now says `make setup` (not `docker compose up`), and the M7
   "Complete when" says "clone, run `make setup`, use the demo".
 
@@ -474,14 +477,18 @@ other cache method (for example `actions/cache` with a local BuildKit cache).
 
 1. The owner reviews the `docs/readme` PR, merges it, and asks for a sync. After the
    merge, v1 is complete.
-2. Email verification: the owner wants email verification at some point. Until then,
+2. For the owner to decide: trusted proxies. HTTPS behind a proxy that ends TLS needs
+   `trustProxies()` in `bootstrap/app.php`. Trusting all proxies lets a client fake its
+   IP and get around the per-IP login rate limit, so the list of proxies must come
+   from an environment variable (for example `TRUSTED_PROXIES`).
+3. Email verification: the owner wants email verification at some point. Until then,
    the starter kit's `verified` middleware stays: a user must verify the email (link in
    Mailpit locally) before deleting the account or using the security, password and
    appearance pages. When this work is planned, change the v1 scope text that says
    verification is off (spec section 6, and the "Scope of v1" decision below).
-3. Optional, for the owner to decide: `Model::shouldBeStrict()` outside production, so
+4. Optional, for the owner to decide: `Model::shouldBeStrict()` outside production, so
    that reading a column that the query did not select throws an error.
-4. Later, for the owner to decide: rewrite `scripts/check-concurrency.sh` in Python
+5. Later, for the owner to decide: rewrite `scripts/check-concurrency.sh` in Python
    (standard library only: `urllib`, `http.cookiejar`, `threading.Barrier`,
    `subprocess`), for readability. `check-image-roles.sh` can stay in bash.
 
