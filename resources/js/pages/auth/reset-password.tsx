@@ -1,9 +1,9 @@
 import { Form, Head } from '@inertiajs/react';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { update } from '@/routes/password';
 
@@ -22,68 +22,66 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                 {...update.form()}
                 transform={(data) => ({ ...data, token, email })}
                 resetOnSuccess={['password', 'password_confirmation']}
+                className="flex flex-col gap-5"
             >
                 {({ processing, errors }) => (
-                    <div className="grid gap-6">
+                    <>
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                            <FieldLabel htmlFor="email">Email</FieldLabel>
                             <Input
                                 id="email"
                                 type="email"
                                 name="email"
-                                autoComplete="email"
+                                size="lg"
+                                autoComplete="username"
                                 value={email}
-                                className="mt-1 block w-full"
                                 readOnly
                             />
-                            <InputError
-                                message={errors.email}
-                                className="mt-2"
-                            />
+                            <InputError message={errors.email} />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <FieldLabel htmlFor="password">Password</FieldLabel>
                             <PasswordInput
                                 id="password"
                                 name="password"
-                                autoComplete="new-password"
-                                className="mt-1 block w-full"
+                                size="lg"
+                                required
                                 autoFocus
-                                placeholder="Password"
+                                autoComplete="new-password"
                                 passwordrules={passwordRules}
                             />
                             <InputError message={errors.password} />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="password_confirmation">
+                            <FieldLabel htmlFor="password_confirmation">
                                 Confirm password
-                            </Label>
+                            </FieldLabel>
                             <PasswordInput
                                 id="password_confirmation"
                                 name="password_confirmation"
+                                size="lg"
+                                required
                                 autoComplete="new-password"
-                                className="mt-1 block w-full"
-                                placeholder="Confirm password"
                                 passwordrules={passwordRules}
                             />
                             <InputError
                                 message={errors.password_confirmation}
-                                className="mt-2"
                             />
                         </div>
 
                         <Button
                             type="submit"
-                            className="mt-4 w-full"
+                            size="lg"
+                            className="mt-2 w-full"
                             disabled={processing}
                             data-test="reset-password-button"
                         >
                             {processing && <Spinner />}
                             Reset password
                         </Button>
-                    </div>
+                    </>
                 )}
             </Form>
         </>
@@ -92,5 +90,9 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
 
 ResetPassword.layout = {
     title: 'Reset password',
-    description: 'Please enter your new password below',
+    description: 'Choose a new password for your account.',
+    panel: {
+        tint: 'orange',
+        headline: 'Fresh\nstart.',
+    },
 };
