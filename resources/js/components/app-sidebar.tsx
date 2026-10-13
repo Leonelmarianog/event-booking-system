@@ -4,7 +4,6 @@ import {
     CalendarDays,
     CalendarPlus,
     FolderGit2,
-    LayoutGrid,
     Ticket,
     TicketCheck,
 } from 'lucide-react';
@@ -21,7 +20,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
 import { index as bookingsIndex } from '@/routes/bookings';
 import { create, index as eventsIndex } from '@/routes/events';
 import { index as organizerEvents } from '@/routes/organizer/events';
@@ -32,11 +30,6 @@ const mainNavItems: NavItem[] = [
         title: 'Events',
         href: eventsIndex(),
         icon: Ticket,
-    },
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
     },
 ];
 
