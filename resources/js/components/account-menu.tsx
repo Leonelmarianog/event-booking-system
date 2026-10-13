@@ -23,7 +23,8 @@ const links = [
     { title: 'Settings', href: profileEdit() },
 ];
 
-const itemClass = 'min-h-11 cursor-pointer px-4.5 text-[15px] font-medium';
+const itemClass =
+    'min-h-11 cursor-pointer px-4.5 text-[15px] font-medium focus:ring-2 focus:ring-ring focus:ring-inset';
 
 export function AccountMenu({ user }: { user: User }) {
     const getInitials = useInitials();
