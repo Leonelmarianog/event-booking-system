@@ -1,20 +1,16 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { CalendarDays, MapPin } from 'lucide-react';
 import { LocalDateTime } from '@/components/local-date-time';
 import { PaginationNav } from '@/components/pagination-nav';
 import { Badge } from '@/components/ui/badge';
-import { index, show } from '@/routes/events';
-import type { BreadcrumbItem, Paginated, UpcomingEvent } from '@/types';
+import { show } from '@/routes/events';
+import type { Paginated, UpcomingEvent } from '@/types';
 
 export default function UpcomingEvents({
     events,
 }: {
     events: Paginated<UpcomingEvent>;
 }) {
-    setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
-        breadcrumbs: [{ title: 'Events', href: index() }],
-    });
-
     return (
         <>
             <Head title="Events" />

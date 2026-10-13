@@ -1,10 +1,9 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { EventStatusBadge } from '@/components/event-status-badge';
 import { LocalDateTime } from '@/components/local-date-time';
 import { create, edit, show } from '@/routes/events';
 import { index as attendees } from '@/routes/events/attendees';
-import { index } from '@/routes/organizer/events';
-import type { BreadcrumbItem, OrganizerEventRow } from '@/types';
+import type { OrganizerEventRow } from '@/types';
 
 function EventTable({
     title,
@@ -95,10 +94,6 @@ export default function OrganizerEvents({
     upcoming: OrganizerEventRow[];
     past: OrganizerEventRow[];
 }) {
-    setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
-        breadcrumbs: [{ title: 'My events', href: index() }],
-    });
-
     const hasEvents = upcoming.length > 0 || past.length > 0;
 
     return (
