@@ -1,4 +1,4 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { CalendarDays, MapPin, Pencil, User, Users } from 'lucide-react';
 import { BookingBox } from '@/components/booking-box';
 import { CancelEventDialog } from '@/components/cancel-event-dialog';
@@ -7,9 +7,9 @@ import { LocalDateTime } from '@/components/local-date-time';
 import { PublishEventDialog } from '@/components/publish-event-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { edit, show } from '@/routes/events';
+import { edit } from '@/routes/events';
 import { index as attendees } from '@/routes/events/attendees';
-import type { BreadcrumbItem, EventBookingBox, EventDetails } from '@/types';
+import type { EventBookingBox, EventDetails } from '@/types';
 
 export default function ShowEvent({
     event,
@@ -26,10 +26,6 @@ export default function ShowEvent({
         viewAttendees: boolean;
     };
 }) {
-    setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
-        breadcrumbs: [{ title: event.title, href: show(event.id) }],
-    });
-
     return (
         <>
             <Head title={event.title} />

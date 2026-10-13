@@ -1,13 +1,8 @@
-import { Head, setLayoutProps } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { EventForm } from '@/components/event-form';
-import { create, store } from '@/routes/events';
-import type { BreadcrumbItem } from '@/types';
+import { store } from '@/routes/events';
 
 export default function CreateEvent() {
-    setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
-        breadcrumbs: [{ title: 'Create event', href: create() }],
-    });
-
     return (
         <>
             <Head title="Create event" />

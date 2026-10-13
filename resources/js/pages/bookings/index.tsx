@@ -1,10 +1,9 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { BookingStatusBadge } from '@/components/booking-status-badge';
 import { CancelBookingDialog } from '@/components/cancel-booking-dialog';
 import { LocalDateTime } from '@/components/local-date-time';
-import { index } from '@/routes/bookings';
 import { index as eventsIndex, show } from '@/routes/events';
-import type { BookingRow, BreadcrumbItem } from '@/types';
+import type { BookingRow } from '@/types';
 
 function BookingTable({
     title,
@@ -104,10 +103,6 @@ export default function Bookings({
     upcoming: BookingRow[];
     past: BookingRow[];
 }) {
-    setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
-        breadcrumbs: [{ title: 'My bookings', href: index() }],
-    });
-
     const hasBookings = upcoming.length > 0 || past.length > 0;
 
     return (

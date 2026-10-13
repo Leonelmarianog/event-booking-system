@@ -1,9 +1,8 @@
-import { Head, Link, setLayoutProps } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { LocalDateTime } from '@/components/local-date-time';
 import { PaginationNav } from '@/components/pagination-nav';
-import { index } from '@/routes/events/attendees';
 import { show } from '@/routes/events';
-import type { AttendeeRow, BreadcrumbItem, Paginated } from '@/types';
+import type { AttendeeRow, Paginated } from '@/types';
 
 type AttendeeEvent = {
     id: number;
@@ -20,13 +19,6 @@ export default function EventAttendees({
     event: AttendeeEvent;
     attendees: Paginated<AttendeeRow>;
 }) {
-    setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
-        breadcrumbs: [
-            { title: event.title, href: show(event.id) },
-            { title: 'Attendees', href: index(event.id) },
-        ],
-    });
-
     return (
         <>
             <Head title={`Attendees of ${event.title}`} />

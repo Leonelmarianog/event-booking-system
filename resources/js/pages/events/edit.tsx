@@ -1,16 +1,9 @@
-import { Head, setLayoutProps } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { EventForm } from '@/components/event-form';
-import { edit, show, update } from '@/routes/events';
-import type { BreadcrumbItem, EventDetails } from '@/types';
+import { update } from '@/routes/events';
+import type { EventDetails } from '@/types';
 
 export default function EditEvent({ event }: { event: EventDetails }) {
-    setLayoutProps<{ breadcrumbs: BreadcrumbItem[] }>({
-        breadcrumbs: [
-            { title: event.title, href: show(event.id) },
-            { title: 'Edit', href: edit(event.id) },
-        ],
-    });
-
     return (
         <>
             <Head title={`Edit ${event.title}`} />
