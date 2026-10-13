@@ -1,44 +1,79 @@
-import { Link, usePage } from '@inertiajs/react';
-import AppLogoIcon from '@/components/app-logo-icon';
+import { Link } from '@inertiajs/react';
+import { cn } from '@/lib/utils';
 import { home } from '@/routes';
-import type { AuthLayoutProps } from '@/types';
+import type { AuthLayoutProps, AuthPanelTint } from '@/types';
+
+const tints: Record<AuthPanelTint, string> = {
+    lime: 'bg-lime',
+    violet: 'bg-violet',
+    orange: 'bg-orange',
+    green: 'bg-[#1f6f5c]',
+};
 
 export default function AuthSplitLayout({
     children,
     title,
     description,
+    panel,
 }: AuthLayoutProps) {
-    const { name } = usePage().props;
-
     return (
-        <div className="relative grid h-dvh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0">
-            <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
-                <div className="absolute inset-0 bg-zinc-900" />
+        <div className="grid min-h-dvh bg-background text-foreground lg:grid-cols-2">
+            <aside
+                className={cn(
+                    'relative isolate hidden flex-col justify-between gap-12 overflow-hidden px-12 py-10 text-[#f2f0eb] lg:flex',
+                    tints[panel?.tint ?? 'lime'],
+                )}
+            >
+                <img
+                    src="/images/auth-crowd.jpg"
+                    alt=""
+                    className="absolute inset-0 -z-20 size-full object-cover mix-blend-multiply brightness-125 contrast-115 grayscale"
+                />
+                <div
+                    aria-hidden="true"
+                    className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(13,13,14,0.55)_0%,rgba(13,13,14,0)_30%,rgba(13,13,14,0)_45%,rgba(13,13,14,0.85)_100%)]"
+                />
                 <Link
                     href={home()}
-                    className="relative z-20 flex items-center text-lg font-medium"
+                    aria-label="Gather, home"
+                    className="self-start font-display text-[30px] uppercase"
                 >
-                    <AppLogoIcon className="mr-2 size-8 fill-current text-white" />
-                    {name}
+                    Gather<span className="text-lime">.</span>
                 </Link>
-            </div>
-            <div className="w-full lg:p-8">
-                <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+                {panel?.headline && (
+                    <div>
+                        <p className="font-display text-[clamp(56px,7vw,112px)] leading-[0.9] whitespace-pre-line uppercase">
+                            {panel.headline}
+                        </p>
+                        {panel.tagline && (
+                            <p className="mt-5 max-w-[380px] text-lg font-medium">
+                                {panel.tagline}
+                            </p>
+                        )}
+                    </div>
+                )}
+            </aside>
+
+            <main className="flex items-center justify-center px-8 py-14">
+                <div className="w-full max-w-[420px]">
                     <Link
                         href={home()}
-                        className="relative z-20 flex items-center justify-center lg:hidden"
+                        aria-label="Gather, home"
+                        className="mb-10 inline-block font-display text-[30px] uppercase lg:hidden"
                     >
-                        <AppLogoIcon className="h-10 fill-current text-black sm:h-12" />
+                        Gather<span className="dark:text-lime">.</span>
                     </Link>
-                    <div className="flex flex-col items-start gap-2 text-left sm:items-center sm:text-center">
-                        <h1 className="text-xl font-medium">{title}</h1>
-                        <p className="text-sm text-balance text-muted-foreground">
+                    <h1 className="font-display text-[56px] leading-none font-normal uppercase">
+                        {title}
+                    </h1>
+                    {description && (
+                        <p className="mt-2 mb-8 text-muted-foreground">
                             {description}
                         </p>
-                    </div>
+                    )}
                     {children}
                 </div>
-            </div>
+            </main>
         </div>
     );
 }

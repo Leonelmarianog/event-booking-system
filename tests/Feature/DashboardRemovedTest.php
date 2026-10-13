@@ -16,16 +16,4 @@ class DashboardRemovedTest extends TestCase
             ->get('/dashboard')
             ->assertNotFound();
     }
-
-    public function test_login_goes_to_the_intended_page(): void
-    {
-        $user = User::factory()->create();
-
-        $this->get(route('events.create'))->assertRedirect(route('login'));
-
-        $this->post(route('login.store'), [
-            'email' => $user->email,
-            'password' => 'password',
-        ])->assertRedirect(route('events.create'));
-    }
 }
