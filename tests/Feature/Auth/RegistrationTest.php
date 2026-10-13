@@ -2,7 +2,10 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\URL;
 use Laravel\Fortify\Features;
 use Tests\TestCase;
 
@@ -34,6 +37,30 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('home', absolute: false));
+        $response->assertRedirect(route('verification.notice'));
+    }
+
+    public function test_the_intended_page_is_kept_through_registration_and_email_verification()
+    {
+        Notification::fake();
+
+        $this->get(route('events.create'))->assertRedirect(route('login'));
+
+        $this->post(route('register.store'), [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertRedirect(route('verification.notice'));
+
+        $user = User::where('email', 'test@example.com')->firstOrFail();
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)],
+        );
+
+        $this->get($verificationUrl)->assertRedirect(route('events.create'));
     }
 }
