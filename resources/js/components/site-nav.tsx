@@ -51,18 +51,10 @@ export function SiteNav() {
                         </>
                     ) : (
                         <>
-                            <Link
-                                href={login()}
-                                aria-current={current(login())}
-                                className={textLink}
-                            >
+                            <Link href={login()} className={textLink}>
                                 Log in
                             </Link>
-                            <Link
-                                href={register()}
-                                aria-current={current(register())}
-                                className={limeLink}
-                            >
+                            <Link href={register()} className={limeLink}>
                                 Register
                             </Link>
                         </>
