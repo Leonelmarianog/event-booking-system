@@ -35,6 +35,7 @@
     --color-destructive-foreground: var(--destructive-foreground);
     --color-border: var(--border);
     --color-input: var(--input);
+    --color-field: var(--field);
     --color-ring: var(--ring);
 
     --color-ink: #0d0d0e;
@@ -64,6 +65,7 @@
     --destructive-foreground: #b3290c;
     --border: #d9d7cf;
     --input: #d9d7cf;
+    --field: #ffffff;
     --ring: #0d0d0e;
 }
 
@@ -86,6 +88,7 @@
     --destructive-foreground: #ff7a5c;
     --border: #26262a;
     --input: #55544f;
+    --field: #141416;
     --ring: #e8ff47;
 }
 
