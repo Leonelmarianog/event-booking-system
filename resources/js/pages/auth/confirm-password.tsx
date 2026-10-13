@@ -1,15 +1,15 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
-import { store } from '@/routes/password/confirm';
 import {
     index as confirmOptions,
     store as confirmStore,
 } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyConfirmationController';
+import { FieldLabel } from '@/components/field-label';
+import InputError from '@/components/input-error';
 import PasskeyVerify from '@/components/passkey-verify';
+import PasswordInput from '@/components/password-input';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { store } from '@/routes/password/confirm';
 
 export default function ConfirmPassword() {
     return (
@@ -25,33 +25,36 @@ export default function ConfirmPassword() {
                 loadingLabel="Confirming..."
             />
 
-            <Form {...store.form()} resetOnSuccess={['password']}>
+            <Form
+                {...store.form()}
+                resetOnSuccess={['password']}
+                className="flex flex-col gap-5"
+            >
                 {({ processing, errors }) => (
-                    <div className="space-y-6">
+                    <>
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <FieldLabel htmlFor="password">Password</FieldLabel>
                             <PasswordInput
                                 id="password"
                                 name="password"
-                                placeholder="Password"
-                                autoComplete="current-password"
+                                size="lg"
+                                required
                                 autoFocus
+                                autoComplete="current-password"
                             />
-
                             <InputError message={errors.password} />
                         </div>
 
-                        <div className="flex items-center">
-                            <Button
-                                className="w-full"
-                                disabled={processing}
-                                data-test="confirm-password-button"
-                            >
-                                {processing && <Spinner />}
-                                Confirm password
-                            </Button>
-                        </div>
-                    </div>
+                        <Button
+                            size="lg"
+                            className="w-full"
+                            disabled={processing}
+                            data-test="confirm-password-button"
+                        >
+                            {processing && <Spinner />}
+                            Confirm password
+                        </Button>
+                    </>
                 )}
             </Form>
         </>
@@ -60,6 +63,9 @@ export default function ConfirmPassword() {
 
 ConfirmPassword.layout = {
     title: 'Confirm password',
-    description:
-        'This is a secure area of the application. Please confirm your password before continuing.',
+    description: "This is a secure area. Confirm it's you before you continue.",
+    panel: {
+        tint: 'violet',
+        headline: 'Just\nchecking.',
+    },
 };
