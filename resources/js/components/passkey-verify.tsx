@@ -1,10 +1,9 @@
 import type { UrlMethodPair } from '@inertiajs/core';
 import { router } from '@inertiajs/react';
 import { usePasskeyVerify } from '@laravel/passkeys/react';
-import { KeyRound } from 'lucide-react';
 import InputError from '@/components/input-error';
+import { OrDivider } from '@/components/or-divider';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 
 type Props = {
@@ -14,14 +13,12 @@ type Props = {
     };
     label?: string;
     loadingLabel?: string;
-    separator?: string;
 };
 
 export default function PasskeyVerify({
     routes,
     label,
     loadingLabel,
-    separator,
 }: Props = {}) {
     const { verify, isLoading, error, isSupported } = usePasskeyVerify({
         ...(routes && {
@@ -45,30 +42,22 @@ export default function PasskeyVerify({
                 <Button
                     type="button"
                     variant="outline"
-                    className="w-full"
+                    size="lg"
+                    className="w-full border-foreground bg-transparent"
                     onClick={verify}
                     disabled={isLoading}
                 >
-                    {isLoading ? <Spinner /> : <KeyRound className="h-4 w-4" />}
+                    {isLoading && <Spinner />}
                     {isLoading
-                        ? (loadingLabel ?? 'Authenticating...')
-                        : (label ?? 'Sign in with a passkey')}
+                        ? (loadingLabel ?? 'Logging in...')
+                        : (label ?? 'Log in with a passkey')}
                 </Button>
                 {error && (
                     <InputError message={error} className="text-center" />
                 )}
             </div>
 
-            <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                        {separator ?? 'Or continue with email'}
-                    </span>
-                </div>
-            </div>
+            <OrDivider />
         </>
     );
 }
