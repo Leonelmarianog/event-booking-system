@@ -155,7 +155,5 @@ uses it.
 
 ## Design documents
 
-- `docs/superpowers/specs/2026-09-28-event-booking-design.md`: the design spec of v1.
 - `docs/design/`: the glossary, the business rules, the C4 diagrams, the ERD and the
   future features.
-- `docs/superpowers/plans/milestones.md`: the order of the work for v1.
