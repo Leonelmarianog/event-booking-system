@@ -1,5 +1,5 @@
-import { Form, Head, setLayoutProps } from '@inertiajs/react';
-import { useState } from 'react';
+import { Form, Head, resetLayoutProps, setLayoutProps } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,9 @@ export default function TwoFactorChallenge() {
         panel: { tint: 'green', headline: 'One more\nstep.' },
     });
 
+    // The layout props are shared, so they would stay on the next page.
+    useEffect(() => () => resetLayoutProps(), []);
+
     return (
         <>
             <Head title="Two-factor authentication" />
@@ -56,6 +59,9 @@ export default function TwoFactorChallenge() {
                                     required
                                     autoFocus
                                     autoComplete="off"
+                                    autoCapitalize="none"
+                                    autoCorrect="off"
+                                    spellCheck={false}
                                     className="h-16 font-mono text-[22px] tracking-[0.1em] md:text-[22px]"
                                 />
                                 <InputError message={errors.recovery_code} />
