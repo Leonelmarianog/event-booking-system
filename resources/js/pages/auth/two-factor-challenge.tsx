@@ -1,133 +1,108 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
-import { REGEXP_ONLY_DIGITS } from 'input-otp';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-    InputOTP,
-    InputOTPGroup,
-    InputOTPSlot,
-} from '@/components/ui/input-otp';
 import { OTP_MAX_LENGTH } from '@/hooks/use-two-factor-auth';
 import { store } from '@/routes/two-factor/login';
 
+const modes = {
+    code: {
+        title: 'Authentication code',
+        description: 'Enter the 6-digit code from your authenticator app.',
+        switchHint: 'Lost your device?',
+        switchText: 'Use a recovery code',
+    },
+    recovery: {
+        title: 'Recovery code',
+        description:
+            'Enter one of the recovery codes you saved when you turned on two-factor.',
+        switchHint: 'Have your phone?',
+        switchText: 'Use an authentication code',
+    },
+};
+
 export default function TwoFactorChallenge() {
-    const [showRecoveryInput, setShowRecoveryInput] = useState<boolean>(false);
-    const [code, setCode] = useState<string>('');
-
-    const authConfigContent = useMemo<{
-        title: string;
-        description: string;
-        toggleText: string;
-    }>(() => {
-        if (showRecoveryInput) {
-            return {
-                title: 'Recovery code',
-                description:
-                    'Please confirm access to your account by entering one of your emergency recovery codes.',
-                toggleText: 'login using an authentication code',
-            };
-        }
-
-        return {
-            title: 'Authentication code',
-            description:
-                'Enter the authentication code provided by your authenticator application.',
-            toggleText: 'login using a recovery code',
-        };
-    }, [showRecoveryInput]);
+    const [recovery, setRecovery] = useState(false);
+    const mode = recovery ? modes.recovery : modes.code;
 
     setLayoutProps({
-        title: authConfigContent.title,
-        description: authConfigContent.description,
+        title: mode.title,
+        description: mode.description,
+        panel: { tint: 'green', headline: 'One more\nstep.' },
     });
-
-    const toggleRecoveryMode = (clearErrors: () => void): void => {
-        setShowRecoveryInput(!showRecoveryInput);
-        clearErrors();
-        setCode('');
-    };
 
     return (
         <>
             <Head title="Two-factor authentication" />
 
-            <div className="space-y-6">
-                <Form
-                    {...store.form()}
-                    className="space-y-4"
-                    resetOnError
-                    resetOnSuccess={!showRecoveryInput}
-                >
-                    {({ errors, processing, clearErrors }) => (
-                        <>
-                            {showRecoveryInput ? (
-                                <>
-                                    <Input
-                                        name="recovery_code"
-                                        type="text"
-                                        placeholder="Enter recovery code"
-                                        autoFocus={showRecoveryInput}
-                                        required
-                                    />
-                                    <InputError
-                                        message={errors.recovery_code}
-                                    />
-                                </>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center space-y-3 text-center">
-                                    <div className="flex w-full items-center justify-center">
-                                        <InputOTP
-                                            name="code"
-                                            maxLength={OTP_MAX_LENGTH}
-                                            value={code}
-                                            onChange={(value) => setCode(value)}
-                                            disabled={processing}
-                                            pattern={REGEXP_ONLY_DIGITS}
-                                            autoFocus
-                                        >
-                                            <InputOTPGroup>
-                                                {Array.from(
-                                                    { length: OTP_MAX_LENGTH },
-                                                    (_, index) => (
-                                                        <InputOTPSlot
-                                                            key={index}
-                                                            index={index}
-                                                        />
-                                                    ),
-                                                )}
-                                            </InputOTPGroup>
-                                        </InputOTP>
-                                    </div>
-                                    <InputError message={errors.code} />
-                                </div>
-                            )}
-
-                            <Button
-                                type="submit"
-                                className="w-full"
-                                disabled={processing}
-                            >
-                                Continue
-                            </Button>
-
-                            <div className="text-center text-sm text-muted-foreground">
-                                <span>or you can </span>
-                                <button
-                                    type="button"
-                                    className="cursor-pointer text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
-                                    onClick={() =>
-                                        toggleRecoveryMode(clearErrors)
-                                    }
-                                >
-                                    {authConfigContent.toggleText}
-                                </button>
+            <Form
+                {...store.form()}
+                resetOnError
+                className="flex flex-col gap-6"
+            >
+                {({ errors, processing, clearErrors }) => (
+                    <>
+                        {recovery ? (
+                            <div key="recovery" className="grid gap-2">
+                                <FieldLabel htmlFor="recovery_code">
+                                    Recovery code
+                                </FieldLabel>
+                                <Input
+                                    id="recovery_code"
+                                    name="recovery_code"
+                                    size="lg"
+                                    required
+                                    autoFocus
+                                    autoComplete="off"
+                                    className="h-16 font-mono text-[22px] tracking-[0.1em] md:text-[22px]"
+                                />
+                                <InputError message={errors.recovery_code} />
                             </div>
-                        </>
-                    )}
-                </Form>
-            </div>
+                        ) : (
+                            <div key="code" className="grid gap-2">
+                                <FieldLabel htmlFor="code">Code</FieldLabel>
+                                <Input
+                                    id="code"
+                                    name="code"
+                                    size="lg"
+                                    required
+                                    autoFocus
+                                    inputMode="numeric"
+                                    autoComplete="one-time-code"
+                                    maxLength={OTP_MAX_LENGTH}
+                                    className="h-16 font-mono text-[28px] tracking-[0.4em] md:text-[28px]"
+                                />
+                                <InputError message={errors.code} />
+                            </div>
+                        )}
+
+                        <Button
+                            type="submit"
+                            size="lg"
+                            className="w-full"
+                            disabled={processing}
+                        >
+                            Continue
+                        </Button>
+
+                        <p className="mt-1 text-center text-muted-foreground">
+                            {mode.switchHint}{' '}
+                            <button
+                                type="button"
+                                className="min-h-11 cursor-pointer px-1 font-semibold text-foreground underline underline-offset-4 dark:text-lime dark:decoration-lime/60"
+                                onClick={() => {
+                                    clearErrors();
+                                    setRecovery(!recovery);
+                                }}
+                            >
+                                {mode.switchText}
+                            </button>
+                        </p>
+                    </>
+                )}
+            </Form>
         </>
     );
 }
