@@ -27,7 +27,7 @@ export function CancelEventDialog({ eventId }: { eventId: number }) {
                 <Button
                     size="sm"
                     variant="outline"
-                    className="text-destructive hover:text-destructive"
+                    className="text-destructive-foreground hover:text-destructive-foreground"
                 >
                     <Ban />
                     Cancel event

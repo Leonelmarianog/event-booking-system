@@ -77,10 +77,12 @@ export function initializeTheme(): void {
 
     if (!localStorage.getItem('appearance')) {
         localStorage.setItem('appearance', 'dark');
-        setCookie('appearance', 'dark');
     }
 
     currentAppearance = getStoredAppearance();
+
+    // Write the cookie again, because it can expire before localStorage...
+    setCookie('appearance', currentAppearance);
     applyTheme(currentAppearance);
 
     // Set up system theme change listener
