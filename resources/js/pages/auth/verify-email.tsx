@@ -14,7 +14,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
 
             <p className="mt-2 mb-6 text-[#55544f] dark:text-[#b9b7ae]">
                 We sent a link to{' '}
-                <strong className="break-all text-foreground">
+                <strong className="break-words text-foreground">
                     {auth.user.email}
                 </strong>
                 . Click it to finish setting up your account.

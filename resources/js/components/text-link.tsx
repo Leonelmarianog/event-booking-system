@@ -17,7 +17,7 @@ export default function TextLink({
             className={cn(
                 'text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500',
                 variant === 'accent' &&
-                    'font-semibold dark:text-lime dark:no-underline dark:hover:text-[#f4ffa6]',
+                    'font-semibold dark:text-lime dark:decoration-lime/60 dark:hover:text-[#f4ffa6]',
                 className,
             )}
             {...props}
