@@ -19,7 +19,6 @@ export type AuthPanel = {
 
 export type AuthLayoutProps = {
     children?: ReactNode;
-    name?: string;
     title?: string;
     description?: string;
     panel?: AuthPanel;
