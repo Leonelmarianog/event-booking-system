@@ -1,9 +1,10 @@
 import { Form } from '@inertiajs/react';
 import { useRef } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import Heading from '@/components/heading';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import { SettingsSection } from '@/components/settings-section';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -14,107 +15,88 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 
 export default function DeleteUser() {
     const passwordInput = useRef<HTMLInputElement>(null);
 
     return (
-        <div className="space-y-6">
-            <Heading
-                variant="small"
-                title="Delete account"
-                description='Delete your account. Past events and bookings stay, with the name "Deleted user".'
-            />
-            <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
-                <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
-                    <p className="font-medium">Warning</p>
-                    <p className="text-sm">
-                        Please proceed with caution, this cannot be undone.
-                    </p>
-                </div>
+        <SettingsSection
+            id="delete-heading"
+            title="Delete account"
+            description='Delete your account. Past events and bookings stay, with the name "Deleted user".'
+            tone="danger"
+        >
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button
+                        variant="destructive"
+                        size="md"
+                        data-test="delete-user-button"
+                    >
+                        Delete account
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogTitle>Delete your account?</DialogTitle>
+                    <DialogDescription>
+                        Your drafts are deleted, and your name, email and
+                        password are removed. Past events and bookings stay,
+                        with the name &quot;Deleted user&quot;. You cannot undo
+                        this. Enter your password to confirm.
+                    </DialogDescription>
 
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button
-                            variant="destructive"
-                            data-test="delete-user-button"
-                        >
-                            Delete account
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogTitle>
-                            Are you sure you want to delete your account?
-                        </DialogTitle>
-                        <DialogDescription>
-                            Your drafts are deleted, and your name, email and
-                            password are removed. Past events and bookings stay,
-                            with the name &quot;Deleted user&quot;. You cannot
-                            undo this. Enter your password to confirm.
-                        </DialogDescription>
+                    <Form
+                        {...ProfileController.destroy.form()}
+                        options={{
+                            preserveScroll: true,
+                        }}
+                        onError={() => passwordInput.current?.focus()}
+                        resetOnSuccess
+                        className="mt-3 grid gap-2"
+                    >
+                        {({ resetAndClearErrors, processing, errors }) => (
+                            <>
+                                <FieldLabel htmlFor="password">
+                                    Password
+                                </FieldLabel>
+                                <PasswordInput
+                                    id="password"
+                                    name="password"
+                                    ref={passwordInput}
+                                    size="lg"
+                                    required
+                                    autoComplete="current-password"
+                                    className="bg-background"
+                                />
+                                <InputError message={errors.password} />
 
-                        <Form
-                            {...ProfileController.destroy.form()}
-                            options={{
-                                preserveScroll: true,
-                            }}
-                            onError={() => passwordInput.current?.focus()}
-                            resetOnSuccess
-                            className="space-y-6"
-                        >
-                            {({ resetAndClearErrors, processing, errors }) => (
-                                <>
-                                    <div className="grid gap-2">
-                                        <Label
-                                            htmlFor="password"
-                                            className="sr-only"
-                                        >
-                                            Password
-                                        </Label>
-
-                                        <PasswordInput
-                                            id="password"
-                                            name="password"
-                                            ref={passwordInput}
-                                            placeholder="Password"
-                                            autoComplete="current-password"
-                                        />
-
-                                        <InputError message={errors.password} />
-                                    </div>
-
-                                    <DialogFooter className="gap-2">
-                                        <DialogClose asChild>
-                                            <Button
-                                                variant="secondary"
-                                                onClick={() =>
-                                                    resetAndClearErrors()
-                                                }
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </DialogClose>
-
+                                <DialogFooter className="mt-5">
+                                    <DialogClose asChild>
                                         <Button
-                                            variant="destructive"
-                                            disabled={processing}
-                                            asChild
+                                            variant="outline"
+                                            size="md"
+                                            onClick={() =>
+                                                resetAndClearErrors()
+                                            }
                                         >
-                                            <button
-                                                type="submit"
-                                                data-test="confirm-delete-user-button"
-                                            >
-                                                Delete account
-                                            </button>
+                                            Keep account
                                         </Button>
-                                    </DialogFooter>
-                                </>
-                            )}
-                        </Form>
-                    </DialogContent>
-                </Dialog>
-            </div>
-        </div>
+                                    </DialogClose>
+                                    <Button
+                                        type="submit"
+                                        variant="destructive"
+                                        size="md"
+                                        disabled={processing}
+                                        data-test="confirm-delete-user-button"
+                                    >
+                                        Delete account
+                                    </Button>
+                                </DialogFooter>
+                            </>
+                        )}
+                    </Form>
+                </DialogContent>
+            </Dialog>
+        </SettingsSection>
     );
 }
