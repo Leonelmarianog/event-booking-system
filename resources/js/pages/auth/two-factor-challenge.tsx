@@ -1,10 +1,10 @@
 import { Form, Head, resetLayoutProps, setLayoutProps } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { CodeInput } from '@/components/code-input';
 import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { OTP_MAX_LENGTH } from '@/hooks/use-two-factor-auth';
 import { store } from '@/routes/two-factor/login';
 
 const modes = {
@@ -69,16 +69,11 @@ export default function TwoFactorChallenge() {
                         ) : (
                             <div key="code" className="grid gap-2">
                                 <FieldLabel htmlFor="code">Code</FieldLabel>
-                                <Input
+                                <CodeInput
                                     id="code"
                                     name="code"
-                                    size="lg"
                                     required
                                     autoFocus
-                                    inputMode="numeric"
-                                    autoComplete="one-time-code"
-                                    maxLength={OTP_MAX_LENGTH}
-                                    className="h-16 font-mono text-[28px] tracking-[0.4em] md:text-[28px]"
                                 />
                                 <InputError message={errors.code} />
                             </div>
