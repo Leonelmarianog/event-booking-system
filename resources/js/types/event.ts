@@ -9,6 +9,7 @@ export type EventDetails = {
     capacity: number;
     seats_available: number;
     status: EventStatus;
+    has_started: boolean;
     organizer_name: string;
 };
 
@@ -40,3 +41,11 @@ export type EventBookingBox =
     | { state: 'available'; max_quantity: number }
     | { state: 'login' }
     | { state: 'sold_out' };
+
+export type EventPermissions = {
+    update: boolean;
+    publish: boolean;
+    cancel: boolean;
+    delete: boolean;
+    viewAttendees: boolean;
+};
