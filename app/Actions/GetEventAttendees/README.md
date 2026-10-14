@@ -16,10 +16,11 @@ each user. Cancelled bookings do not show. The first booking comes first (then t
 booking ID). The list has 50 rows on each page; the page number comes from the `page`
 query parameter.
 
-The page shows a summary line: the number of attendees (all pages, not only the current
-page) and the booked seats of the event (capacity − available seats). For each booking,
-the table shows the name, the email, the seats, the reference and the time of the
-booking. An event with no confirmed bookings shows "No attendees yet."
+The page shows the event (title, start time and venue) and 3 numbers: the bookings (all
+pages, not only the current page), the booked seats of the event (capacity − available
+seats) out of the capacity, and the seats that are left. For each booking, the table shows
+the name, the email, the seats, the reference and the time of the booking. An event with no
+confirmed bookings shows "No attendees yet."
 
 The event page ("Attendees" button, `can.viewAttendees`) and each row of "My events"
 link to this page.

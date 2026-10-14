@@ -1,18 +1,43 @@
 import { Link } from '@inertiajs/react';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
 
-function PageLink({ href, label }: { href: string | null; label: string }) {
+const pageButton = 'h-12 px-6 text-sm tracking-[0.06em]';
+
+function PageLink({
+    href,
+    label,
+    primary = false,
+}: {
+    href: string | null;
+    label: ReactNode;
+    primary?: boolean;
+}) {
     if (href === null) {
         return (
-            <Button variant="outline" size="sm" disabled>
+            <Button
+                variant="outline"
+                size="md"
+                disabled
+                className={cn(
+                    pageButton,
+                    'border-border text-muted-foreground',
+                )}
+            >
                 {label}
             </Button>
         );
     }
 
     return (
-        <Button asChild variant="outline" size="sm">
+        <Button
+            asChild
+            variant={primary ? 'default' : 'outline'}
+            size="md"
+            className={pageButton}
+        >
             <Link href={href}>{label}</Link>
         </Button>
     );
@@ -24,8 +49,10 @@ function PageLink({ href, label }: { href: string | null; label: string }) {
  */
 export function PaginationNav({
     paginator,
+    className,
 }: {
     paginator: Paginated<unknown>;
+    className?: string;
 }) {
     if (paginator.last_page <= 1) {
         return null;
@@ -34,13 +61,28 @@ export function PaginationNav({
     return (
         <nav
             aria-label="Pages"
-            className="flex items-center justify-between gap-4"
+            className={cn('flex items-center justify-between gap-4', className)}
         >
-            <PageLink href={paginator.prev_page_url} label="Previous" />
-            <span className="text-sm text-muted-foreground">
+            <PageLink
+                href={paginator.prev_page_url}
+                label={
+                    <>
+                        <span aria-hidden="true">←&nbsp;</span>Previous
+                    </>
+                }
+            />
+            <span className="text-sm font-semibold tracking-[0.1em] text-muted-foreground uppercase">
                 Page {paginator.current_page} of {paginator.last_page}
             </span>
-            <PageLink href={paginator.next_page_url} label="Next" />
+            <PageLink
+                href={paginator.next_page_url}
+                label={
+                    <>
+                        Next<span aria-hidden="true">&nbsp;→</span>
+                    </>
+                }
+                primary
+            />
         </nav>
     );
 }

@@ -14,7 +14,7 @@ class GetEventAttendees
      * The page number comes from the `page` query parameter.
      *
      * @return array{
-     *     event: array{id: int, title: string, starts_at: string, capacity: int, seats_booked: int},
+     *     event: array{id: int, title: string, venue: string, starts_at: string, capacity: int, seats_booked: int},
      *     attendees: LengthAwarePaginator<int, array{reference: string, name: string, email: string, quantity: int, booked_at: string}>,
      * }
      */
@@ -39,6 +39,7 @@ class GetEventAttendees
             'event' => [
                 'id' => $event->id,
                 'title' => $event->title,
+                'venue' => $event->venue,
                 'starts_at' => $event->starts_at->toIso8601String(),
                 'capacity' => $event->capacity,
                 'seats_booked' => $event->seatsBooked(),

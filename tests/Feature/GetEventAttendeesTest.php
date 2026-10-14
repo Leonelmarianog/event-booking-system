@@ -10,7 +10,7 @@ beforeEach(function () {
 
     $this->organizer = User::factory()->create();
     $this->event = Event::factory()->published()->for($this->organizer, 'organizer')
-        ->create(['title' => 'Laravel Meetup', 'capacity' => 50, 'seats_available' => 50]);
+        ->create(['title' => 'Laravel Meetup', 'venue' => 'Startup Lisboa', 'capacity' => 50, 'seats_available' => 50]);
 });
 
 /**
@@ -55,6 +55,7 @@ test('the organizer sees the event and the data of each attendee', function () {
             ->where('event', [
                 'id' => $this->event->id,
                 'title' => 'Laravel Meetup',
+                'venue' => 'Startup Lisboa',
                 'starts_at' => $this->event->starts_at->toIso8601String(),
                 'capacity' => 50,
                 'seats_booked' => 3,
