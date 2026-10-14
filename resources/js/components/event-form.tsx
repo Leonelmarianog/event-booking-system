@@ -1,11 +1,13 @@
-import { Form } from '@inertiajs/react';
-import { useEffect, useRef } from 'react';
+import { Form, Link } from '@inertiajs/react';
+import type { FormEvent, ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { EventCardPreview } from '@/components/event-card-preview';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { RouteFormDefinition } from '@/wayfinder';
+import type { RouteDefinition, RouteFormDefinition } from '@/wayfinder';
 
 export type EventFormDefaults = {
     title: string;
@@ -38,17 +40,100 @@ function toLocalInputValue(isoDateTime: string): string {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+type ControlProps = {
+    id: string;
+    'aria-invalid': true | undefined;
+    'aria-describedby': string | undefined;
+};
+
+/**
+ * One form field: the label, the control, the hint and the error. The hint and the error are
+ * joined to the control, so that a screen reader reads them with the field.
+ */
+function Field({
+    id,
+    label,
+    hint,
+    error,
+    children,
+}: {
+    id: string;
+    label: string;
+    hint?: string;
+    error?: string;
+    children: (control: ControlProps) => ReactNode;
+}) {
+    const hintId = hint ? `${id}-help` : undefined;
+    const errorId = error ? `${id}-error` : undefined;
+    const describedBy = [hintId, errorId].filter(Boolean).join(' ');
+
+    return (
+        <div className="flex min-w-0 flex-col gap-2">
+            <FieldLabel htmlFor={id}>{label}</FieldLabel>
+            {children({
+                id,
+                'aria-invalid': error ? true : undefined,
+                'aria-describedby':
+                    describedBy === '' ? undefined : describedBy,
+            })}
+            {hint && (
+                <p id={hintId} className="text-[13px] text-muted-foreground">
+                    {hint}
+                </p>
+            )}
+            <InputError
+                id={errorId}
+                message={error}
+                className="font-semibold text-destructive-foreground dark:text-destructive-foreground"
+            />
+        </div>
+    );
+}
+
+type Preview = { title: string; venue: string; startsAt: string };
+
+/** The form fields that the card preview follows, and their key in the preview state. */
+const previewKeys: Record<string, keyof Preview> = {
+    title: 'title',
+    venue: 'venue',
+    starts_at: 'startsAt',
+};
+
 export function EventForm({
     form,
     defaults,
     submitLabel,
+    cancelHref,
+    previewNote,
 }: {
     form: RouteFormDefinition<'post'>;
     defaults?: EventFormDefaults;
     submitLabel: string;
+    cancelHref: RouteDefinition<'get'>;
+    previewNote: string;
 }) {
     const startsAtInput = useRef<HTMLInputElement>(null);
     const defaultStartsAt = defaults?.starts_at;
+    const isCreate = defaults === undefined;
+
+    /**
+     * The start time starts empty, also on Edit: the server cannot format a local time, and
+     * the effect below fills it after the page loads.
+     */
+    const [preview, setPreview] = useState<Preview>({
+        title: defaults?.title ?? '',
+        venue: defaults?.venue ?? '',
+        startsAt: '',
+    });
+
+    function followField(event: FormEvent<HTMLFormElement>) {
+        const field = event.target as HTMLInputElement;
+        const key = previewKeys[field.name];
+
+        if (key) {
+            setPreview((current) => ({ ...current, [key]: field.value }));
+        }
+    }
 
     /**
      * The server renders the page in UTC, so the start time input is empty on the first
@@ -56,91 +141,157 @@ export function EventForm({
      */
     useEffect(() => {
         if (defaultStartsAt && startsAtInput.current) {
-            startsAtInput.current.value = toLocalInputValue(defaultStartsAt);
+            const value = toLocalInputValue(defaultStartsAt);
+            startsAtInput.current.value = value;
+            setPreview((current) => ({ ...current, startsAt: value }));
         }
     }, [defaultStartsAt]);
 
     return (
-        <Form
-            {...form}
-            transform={(data) => ({
-                ...data,
-                starts_at: toUtc(String(data.starts_at ?? '')),
-            })}
-            className="space-y-6"
-        >
-            {({ processing, errors }) => (
-                <>
-                    <div className="grid gap-2">
-                        <Label htmlFor="title">Title</Label>
-                        <Input
-                            id="title"
-                            name="title"
-                            required
-                            maxLength={255}
-                            defaultValue={defaults?.title}
-                        />
-                        <InputError message={errors.title} />
-                    </div>
+        <div className="flex flex-wrap items-start gap-14">
+            <Form
+                {...form}
+                id="event-form"
+                tabIndex={-1}
+                onChange={followField}
+                transform={(data) => ({
+                    ...data,
+                    starts_at: toUtc(String(data.starts_at ?? '')),
+                })}
+                className="flex min-w-0 flex-[999_1_560px] flex-col gap-7 outline-none"
+            >
+                {({ processing, errors }) => (
+                    <>
+                        <Field id="title" label="Title" error={errors.title}>
+                            {(control) => (
+                                <Input
+                                    {...control}
+                                    name="title"
+                                    size="lg"
+                                    required
+                                    maxLength={255}
+                                    placeholder={
+                                        isCreate
+                                            ? 'Give it a name people remember'
+                                            : undefined
+                                    }
+                                    defaultValue={defaults?.title}
+                                    className="text-lg md:text-lg"
+                                />
+                            )}
+                        </Field>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
+                        <Field
                             id="description"
-                            name="description"
-                            required
-                            maxLength={5000}
-                            rows={6}
-                            defaultValue={defaults?.description}
-                        />
-                        <InputError message={errors.description} />
-                    </div>
+                            label="Description"
+                            hint="Up to 5,000 characters."
+                            error={errors.description}
+                        >
+                            {(control) => (
+                                <Textarea
+                                    {...control}
+                                    name="description"
+                                    size="lg"
+                                    required
+                                    maxLength={5000}
+                                    rows={6}
+                                    placeholder={
+                                        isCreate
+                                            ? 'What happens, who it is for, what to bring'
+                                            : undefined
+                                    }
+                                    defaultValue={defaults?.description}
+                                />
+                            )}
+                        </Field>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="venue">Venue</Label>
-                        <Input
-                            id="venue"
-                            name="venue"
-                            required
-                            maxLength={255}
-                            defaultValue={defaults?.venue}
-                        />
-                        <InputError message={errors.venue} />
-                    </div>
+                        <Field id="venue" label="Venue" error={errors.venue}>
+                            {(control) => (
+                                <Input
+                                    {...control}
+                                    name="venue"
+                                    size="lg"
+                                    required
+                                    maxLength={255}
+                                    placeholder={
+                                        isCreate ? 'e.g. Armazém 16' : undefined
+                                    }
+                                    defaultValue={defaults?.venue}
+                                />
+                            )}
+                        </Field>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="starts_at">
-                            Starts at (your local time)
-                        </Label>
-                        <Input
-                            ref={startsAtInput}
-                            id="starts_at"
-                            name="starts_at"
-                            type="datetime-local"
-                            required
-                        />
-                        <InputError message={errors.starts_at} />
-                    </div>
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-6">
+                            <Field
+                                id="starts_at"
+                                label="Starts at"
+                                hint="In your time zone."
+                                error={errors.starts_at}
+                            >
+                                {(control) => (
+                                    <Input
+                                        {...control}
+                                        ref={startsAtInput}
+                                        name="starts_at"
+                                        type="datetime-local"
+                                        size="lg"
+                                        required
+                                        className="dark:[color-scheme:dark]"
+                                    />
+                                )}
+                            </Field>
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="capacity">Seats</Label>
-                        <Input
-                            id="capacity"
-                            name="capacity"
-                            type="number"
-                            required
-                            min={1}
-                            max={10000}
-                            defaultValue={defaults?.capacity}
-                        />
-                        <InputError message={errors.capacity} />
-                    </div>
+                            <Field
+                                id="capacity"
+                                label="Seats"
+                                hint="1 to 10,000."
+                                error={errors.capacity}
+                            >
+                                {(control) => (
+                                    <Input
+                                        {...control}
+                                        name="capacity"
+                                        type="number"
+                                        size="lg"
+                                        required
+                                        min={1}
+                                        max={10000}
+                                        placeholder={
+                                            isCreate ? '50' : undefined
+                                        }
+                                        defaultValue={defaults?.capacity}
+                                        className="dark:[color-scheme:dark]"
+                                    />
+                                )}
+                            </Field>
+                        </div>
 
-                    <Button type="submit" disabled={processing}>
-                        {submitLabel}
-                    </Button>
-                </>
-            )}
-        </Form>
+                        <div className="flex flex-wrap gap-3 pt-2">
+                            <Button
+                                type="submit"
+                                size="lg"
+                                disabled={processing}
+                            >
+                                {submitLabel}
+                            </Button>
+                            <Button
+                                asChild
+                                variant="outline"
+                                size="lg"
+                                className="border-input"
+                            >
+                                <Link href={cancelHref}>Cancel</Link>
+                            </Button>
+                        </div>
+                    </>
+                )}
+            </Form>
+            <EventCardPreview
+                title={preview.title}
+                venue={preview.venue}
+                startsAt={preview.startsAt}
+                note={previewNote}
+            />
+        </div>
     );
 }

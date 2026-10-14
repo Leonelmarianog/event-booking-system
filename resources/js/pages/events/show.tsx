@@ -4,6 +4,7 @@ import { EventBanner } from '@/components/event-banner';
 import { EventBox } from '@/components/event-box';
 import { EventHeader } from '@/components/event-header';
 import { LocalDateTime } from '@/components/local-date-time';
+import { SkipLink } from '@/components/skip-link';
 import type { EventBookingBox, EventDetails, EventPermissions } from '@/types';
 
 const shortDateTime: Intl.DateTimeFormatOptions = {
@@ -41,12 +42,7 @@ export default function ShowEvent({
     return (
         <>
             <Head title={event.title} />
-            <a
-                href="#book"
-                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-4 focus:z-50 focus:bg-primary focus:px-4 focus:py-3 focus:font-bold focus:text-primary-foreground"
-            >
-                Skip to booking
-            </a>
+            <SkipLink href="#book">Skip to booking</SkipLink>
             <EventHeader event={event} />
             <EventBanner event={event} isOrganizer={is_organizer} />
             <div className="flex flex-col gap-14 px-8 pt-14 pb-24 lg:flex-row lg:items-start">

@@ -16,7 +16,7 @@ function Input({ className, type, size = "default", ...props }: InputProps) {
         "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
         size === "lg" &&
-          "h-14 bg-field px-[18px] text-[17px] shadow-none md:text-[17px] focus-visible:border-input focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background read-only:bg-background read-only:text-muted-foreground",
+          "h-14 bg-field px-[18px] text-[17px] shadow-none md:text-[17px] focus-visible:border-input focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background read-only:bg-background read-only:text-muted-foreground aria-invalid:border-2 aria-invalid:focus-visible:border-destructive",
         className
       )}
       {...props}
