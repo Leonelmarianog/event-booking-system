@@ -37,8 +37,11 @@ export function BookingBox({
                         <CancelBookingDialog
                             reference={booking.reference}
                             eventTitle={eventTitle}
-                            triggerLabel="Cancel booking"
-                        />
+                        >
+                            <Button size="sm" variant="outline">
+                                Cancel booking
+                            </Button>
+                        </CancelBookingDialog>
                     )}
                 </div>
             )}

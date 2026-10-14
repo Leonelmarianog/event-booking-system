@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { Pencil, Users } from 'lucide-react';
+import { Ban, Pencil, Send, Trash2, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { BookingBox } from '@/components/booking-box';
 import { CancelEventDialog } from '@/components/cancel-event-dialog';
@@ -98,13 +98,28 @@ export default function ShowEvent({
                                 </Button>
                             )}
                             {can.publish && (
-                                <PublishEventDialog eventId={event.id} />
+                                <PublishEventDialog eventId={event.id}>
+                                    <Button size="sm">
+                                        <Send />
+                                        Publish
+                                    </Button>
+                                </PublishEventDialog>
                             )}
                             {can.cancel && (
-                                <CancelEventDialog eventId={event.id} />
+                                <CancelEventDialog eventId={event.id}>
+                                    <Button size="sm" variant="outline">
+                                        <Ban />
+                                        Cancel event
+                                    </Button>
+                                </CancelEventDialog>
                             )}
                             {can.delete && (
-                                <DeleteEventDialog eventId={event.id} />
+                                <DeleteEventDialog eventId={event.id}>
+                                    <Button size="sm" variant="destructive">
+                                        <Trash2 />
+                                        Delete
+                                    </Button>
+                                </DeleteEventDialog>
                             )}
                         </div>
                     )}
