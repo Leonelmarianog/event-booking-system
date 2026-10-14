@@ -526,7 +526,9 @@ export function EventBox({
             )}
             {viewer === 'manager' &&
                 !isOrganizer &&
-                (state === 'published' || state === 'sold_out') && (
+                (state === 'published' || state === 'sold_out') &&
+                (booking?.state === 'available' ||
+                    booking?.state === 'booked') && (
                     <div className="mt-6 border-t">
                         {booking?.state === 'available' && (
                             <ReserveForm
