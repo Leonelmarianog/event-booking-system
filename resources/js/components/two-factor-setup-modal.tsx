@@ -1,165 +1,147 @@
 import { Form } from '@inertiajs/react';
-import { REGEXP_ONLY_DIGITS } from 'input-otp';
-import { Check, Copy, ScanLine } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AlertError from '@/components/alert-error';
+import { CodeInput } from '@/components/code-input';
+import { CopyButton } from '@/components/copy-button';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
+import { RecoveryCodeList } from '@/components/two-factor-recovery-codes';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    InputOTP,
-    InputOTPGroup,
-    InputOTPSlot,
-} from '@/components/ui/input-otp';
 import { Spinner } from '@/components/ui/spinner';
-import { useAppearance } from '@/hooks/use-appearance';
-import { useClipboard } from '@/hooks/use-clipboard';
 import { OTP_MAX_LENGTH } from '@/hooks/use-two-factor-auth';
 import { confirm } from '@/routes/two-factor';
 
-function GridScanIcon() {
-    return (
-        <div className="mb-3 rounded-full border border-border bg-card p-0.5 shadow-sm">
-            <div className="relative overflow-hidden rounded-full border border-border bg-muted p-2.5">
-                <div className="absolute inset-0 grid grid-cols-5 opacity-50">
-                    {Array.from({ length: 5 }, (_, i) => (
-                        <div
-                            key={`col-${i + 1}`}
-                            className="border-r border-border last:border-r-0"
-                        />
-                    ))}
-                </div>
-                <div className="absolute inset-0 grid grid-rows-5 opacity-50">
-                    {Array.from({ length: 5 }, (_, i) => (
-                        <div
-                            key={`row-${i + 1}`}
-                            className="border-b border-border last:border-b-0"
-                        />
-                    ))}
-                </div>
-                <ScanLine className="relative z-20 size-6 text-foreground" />
-            </div>
-        </div>
-    );
-}
+type Step = 'scan' | 'code' | 'done';
 
-function TwoFactorSetupStep({
+const steps: Record<
+    Step,
+    { number: number; title: string; description: string }
+> = {
+    scan: {
+        number: 1,
+        title: 'Turn on two-factor',
+        description:
+            'Scan the QR code with your authenticator app, or enter the setup key.',
+    },
+    code: {
+        number: 2,
+        title: 'Enter the code',
+        description: 'Enter the 6-digit code from your authenticator app.',
+    },
+    done: {
+        number: 3,
+        title: 'Two-factor is on',
+        description:
+            'Save these recovery codes somewhere safe. Each one logs you in once if you lose your phone.',
+    },
+};
+
+function ScanStep({
     qrCodeSvg,
     manualSetupKey,
-    buttonText,
-    onNextStep,
     errors,
+    onCancel,
+    onContinue,
 }: {
     qrCodeSvg: string | null;
     manualSetupKey: string | null;
-    buttonText: string;
-    onNextStep: () => void;
     errors: string[];
+    onCancel: () => void;
+    onContinue: () => void;
 }) {
-    const { resolvedAppearance } = useAppearance();
-    const [copiedText, copy] = useClipboard();
-    const IconComponent = copiedText === manualSetupKey ? Check : Copy;
+    if (errors.length) {
+        return (
+            <>
+                <AlertError errors={errors} />
+                <DialogFooter>
+                    <Button variant="outline" size="md" onClick={onCancel}>
+                        Cancel
+                    </Button>
+                </DialogFooter>
+            </>
+        );
+    }
 
     return (
         <>
-            {errors?.length ? (
-                <AlertError errors={errors} />
-            ) : (
-                <>
-                    <div className="mx-auto flex max-w-md overflow-hidden">
-                        <div className="mx-auto aspect-square w-64 rounded-lg border border-border">
-                            <div className="z-10 flex h-full w-full items-center justify-center p-5">
-                                {qrCodeSvg ? (
-                                    <div
-                                        className="aspect-square w-full rounded-lg bg-white p-2 [&_svg]:size-full"
-                                        dangerouslySetInnerHTML={{
-                                            __html: qrCodeSvg,
-                                        }}
-                                        style={{
-                                            filter:
-                                                resolvedAppearance === 'dark'
-                                                    ? 'invert(1) brightness(1.5)'
-                                                    : undefined,
-                                        }}
-                                    />
-                                ) : (
-                                    <Spinner />
-                                )}
-                            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-6">
+                <div
+                    role="img"
+                    aria-label="QR code for your authenticator app"
+                    className="size-44 shrink-0 bg-white p-2.5 [&_svg]:size-full"
+                >
+                    {qrCodeSvg ? (
+                        <div
+                            className="size-full"
+                            dangerouslySetInnerHTML={{ __html: qrCodeSvg }}
+                        />
+                    ) : (
+                        <div className="flex size-full items-center justify-center text-[#0d0d0e]">
+                            <Spinner />
                         </div>
-                    </div>
+                    )}
+                </div>
 
-                    <div className="flex w-full space-x-5">
-                        <Button className="w-full" onClick={onNextStep}>
-                            {buttonText}
-                        </Button>
-                    </div>
+                <div className="grid min-w-0 flex-1 gap-2">
+                    <p className="text-[13px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                        Setup key
+                    </p>
+                    {manualSetupKey ? (
+                        <p className="font-mono text-lg break-all">
+                            {manualSetupKey}
+                        </p>
+                    ) : (
+                        <Spinner />
+                    )}
+                    <CopyButton
+                        text={manualSetupKey}
+                        label="Copy key"
+                        className="justify-self-start"
+                    />
+                </div>
+            </div>
 
-                    <div className="relative flex w-full items-center justify-center">
-                        <div className="absolute inset-0 top-1/2 h-px w-full bg-border" />
-                        <span className="relative bg-card px-2 py-1">
-                            or, enter the code manually
-                        </span>
-                    </div>
-
-                    <div className="flex w-full space-x-2">
-                        <div className="flex w-full items-stretch overflow-hidden rounded-xl border border-border">
-                            {!manualSetupKey ? (
-                                <div className="flex h-full w-full items-center justify-center bg-muted p-3">
-                                    <Spinner />
-                                </div>
-                            ) : (
-                                <>
-                                    <input
-                                        type="text"
-                                        readOnly
-                                        value={manualSetupKey}
-                                        className="h-full w-full bg-background p-3 text-foreground outline-none"
-                                    />
-                                    <button
-                                        onClick={() => copy(manualSetupKey)}
-                                        className="border-l border-border px-3 hover:bg-muted"
-                                    >
-                                        <IconComponent className="w-4" />
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </>
-            )}
+            <DialogFooter className="mt-5">
+                <Button variant="outline" size="md" onClick={onCancel}>
+                    Cancel
+                </Button>
+                <Button
+                    size="md"
+                    onClick={onContinue}
+                    disabled={!manualSetupKey}
+                >
+                    Continue
+                </Button>
+            </DialogFooter>
         </>
     );
 }
 
-function TwoFactorVerificationStep({
-    onClose,
+function CodeStep({
     onBack,
+    onConfirmed,
 }: {
-    onClose: () => void;
     onBack: () => void;
+    onConfirmed: () => Promise<void>;
 }) {
-    const [code, setCode] = useState<string>('');
-    const pinInputContainerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        setTimeout(() => {
-            pinInputContainerRef.current?.querySelector('input')?.focus();
-        }, 0);
-    }, []);
+    const [code, setCode] = useState('');
 
     return (
         <Form
             {...confirm.form()}
-            onSuccess={() => onClose()}
+            options={{ preserveState: true, preserveScroll: true }}
+            onSuccess={onConfirmed}
+            onError={() => setCode('')}
             resetOnError
-            resetOnSuccess
+            className="mt-3 grid gap-2"
         >
             {({
                 processing,
@@ -169,60 +151,40 @@ function TwoFactorVerificationStep({
                 errors?: { confirmTwoFactorAuthentication?: { code?: string } };
             }) => (
                 <>
-                    <div
-                        ref={pinInputContainerRef}
-                        className="relative w-full space-y-3"
-                    >
-                        <div className="flex w-full flex-col items-center space-y-3 py-2">
-                            <InputOTP
-                                id="otp"
-                                name="code"
-                                maxLength={OTP_MAX_LENGTH}
-                                onChange={setCode}
-                                disabled={processing}
-                                pattern={REGEXP_ONLY_DIGITS}
-                                autoFocus
-                            >
-                                <InputOTPGroup>
-                                    {Array.from(
-                                        { length: OTP_MAX_LENGTH },
-                                        (_, index) => (
-                                            <InputOTPSlot
-                                                key={index}
-                                                index={index}
-                                            />
-                                        ),
-                                    )}
-                                </InputOTPGroup>
-                            </InputOTP>
-                            <InputError
-                                message={
-                                    errors?.confirmTwoFactorAuthentication?.code
-                                }
-                            />
-                        </div>
+                    <FieldLabel htmlFor="setup-code">Code</FieldLabel>
+                    <CodeInput
+                        id="setup-code"
+                        name="code"
+                        required
+                        autoFocus
+                        disabled={processing}
+                        onChange={(e) => setCode(e.currentTarget.value)}
+                        className="bg-background"
+                    />
+                    <InputError
+                        message={errors?.confirmTwoFactorAuthentication?.code}
+                    />
 
-                        <div className="flex w-full space-x-5">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={onBack}
-                                disabled={processing}
-                            >
-                                Back
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="flex-1"
-                                disabled={
-                                    processing || code.length < OTP_MAX_LENGTH
-                                }
-                            >
-                                Confirm
-                            </Button>
-                        </div>
-                    </div>
+                    <DialogFooter className="mt-5">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="md"
+                            onClick={onBack}
+                            disabled={processing}
+                        >
+                            Back
+                        </Button>
+                        <Button
+                            type="submit"
+                            size="md"
+                            disabled={
+                                processing || code.length < OTP_MAX_LENGTH
+                            }
+                        >
+                            Turn on
+                        </Button>
+                    </DialogFooter>
                 </>
             )}
         </Form>
@@ -233,11 +195,12 @@ type Props = {
     isOpen: boolean;
     onClose: () => void;
     requiresConfirmation: boolean;
-    twoFactorEnabled: boolean;
     qrCodeSvg: string | null;
     manualSetupKey: string | null;
     clearSetupData: () => void;
     fetchSetupData: () => Promise<void>;
+    recoveryCodesList: string[];
+    fetchRecoveryCodes: () => Promise<void>;
     errors: string[];
 };
 
@@ -245,70 +208,41 @@ export default function TwoFactorSetupModal({
     isOpen,
     onClose,
     requiresConfirmation,
-    twoFactorEnabled,
     qrCodeSvg,
     manualSetupKey,
     clearSetupData,
     fetchSetupData,
+    recoveryCodesList,
+    fetchRecoveryCodes,
     errors,
 }: Props) {
-    const [showVerificationStep, setShowVerificationStep] =
-        useState<boolean>(false);
+    const [step, setStep] = useState<Step>('scan');
+    const current = steps[step];
 
-    const modalConfig = useMemo<{
-        title: string;
-        description: string;
-        buttonText: string;
-    }>(() => {
-        if (twoFactorEnabled) {
-            return {
-                title: 'Two-factor authentication enabled',
-                description:
-                    'Two-factor authentication is now enabled. Scan the QR code or enter the setup key in your authenticator app.',
-                buttonText: 'Close',
-            };
-        }
-
-        if (showVerificationStep) {
-            return {
-                title: 'Verify authentication code',
-                description:
-                    'Enter the 6-digit code from your authenticator app',
-                buttonText: 'Continue',
-            };
-        }
-
-        return {
-            title: 'Enable two-factor authentication',
-            description:
-                'To finish enabling two-factor authentication, scan the QR code or enter the setup key in your authenticator app',
-            buttonText: 'Continue',
-        };
-    }, [twoFactorEnabled, showVerificationStep]);
-
-    const resetModalState = useCallback(() => {
-        if (twoFactorEnabled) {
+    const handleClose = () => {
+        if (step === 'done') {
             clearSetupData();
         }
 
-        setShowVerificationStep(false);
-    }, [clearSetupData, twoFactorEnabled]);
-
-    const handleClose = useCallback(() => {
-        resetModalState();
+        setStep('scan');
         onClose();
-    }, [onClose, resetModalState]);
+    };
 
-    const handleModalNextStep = useCallback(() => {
+    const handleContinue = () => {
         if (requiresConfirmation) {
-            setShowVerificationStep(true);
+            setStep('code');
 
             return;
         }
 
         clearSetupData();
         handleClose();
-    }, [requiresConfirmation, clearSetupData, handleClose]);
+    };
+
+    const handleConfirmed = async () => {
+        await fetchRecoveryCodes();
+        setStep('done');
+    };
 
     const fetchSetupDataRef = useRef(fetchSetupData);
 
@@ -324,31 +258,57 @@ export default function TwoFactorSetupModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader className="flex items-center justify-center">
-                    <GridScanIcon />
-                    <DialogTitle>{modalConfig.title}</DialogTitle>
-                    <DialogDescription className="text-center">
-                        {modalConfig.description}
-                    </DialogDescription>
+            <DialogContent>
+                <DialogHeader className="gap-3 text-left sm:text-left">
+                    <DialogTitle>{current.title}</DialogTitle>
+                    <DialogDescription>{current.description}</DialogDescription>
+                    <p
+                        aria-hidden="true"
+                        className="text-[13px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
+                    >
+                        Step {current.number} of 3
+                    </p>
                 </DialogHeader>
 
-                <div className="flex flex-col items-center space-y-5">
-                    {showVerificationStep ? (
-                        <TwoFactorVerificationStep
-                            onClose={handleClose}
-                            onBack={() => setShowVerificationStep(false)}
-                        />
-                    ) : (
-                        <TwoFactorSetupStep
-                            qrCodeSvg={qrCodeSvg}
-                            manualSetupKey={manualSetupKey}
-                            buttonText={modalConfig.buttonText}
-                            onNextStep={handleModalNextStep}
-                            errors={errors}
-                        />
-                    )}
-                </div>
+                {step === 'scan' && (
+                    <ScanStep
+                        qrCodeSvg={qrCodeSvg}
+                        manualSetupKey={manualSetupKey}
+                        errors={errors}
+                        onCancel={handleClose}
+                        onContinue={handleContinue}
+                    />
+                )}
+
+                {step === 'code' && (
+                    <CodeStep
+                        onBack={() => setStep('scan')}
+                        onConfirmed={handleConfirmed}
+                    />
+                )}
+
+                {step === 'done' && (
+                    <>
+                        {errors.length ? (
+                            <AlertError errors={errors} />
+                        ) : (
+                            <RecoveryCodeList codes={recoveryCodesList} />
+                        )}
+                        <DialogFooter className="mt-5">
+                            <CopyButton
+                                text={
+                                    recoveryCodesList.length
+                                        ? recoveryCodesList.join('\n')
+                                        : null
+                                }
+                                label="Copy codes"
+                            />
+                            <Button size="md" onClick={handleClose}>
+                                Done
+                            </Button>
+                        </DialogFooter>
+                    </>
+                )}
             </DialogContent>
         </Dialog>
     );
