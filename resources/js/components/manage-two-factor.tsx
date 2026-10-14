@@ -1,11 +1,11 @@
 import { Form } from '@inertiajs/react';
-import { ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import Heading from '@/components/heading';
+import { SettingsSection } from '@/components/settings-section';
 import TwoFactorRecoveryCodes from '@/components/two-factor-recovery-codes';
 import TwoFactorSetupModal from '@/components/two-factor-setup-modal';
 import { Button } from '@/components/ui/button';
 import { useTwoFactorAuth } from '@/hooks/use-two-factor-auth';
+import { cn } from '@/lib/utils';
 import { disable, enable } from '@/routes/two-factor';
 
 export type Props = {
@@ -13,6 +13,21 @@ export type Props = {
     requiresConfirmation?: boolean;
     twoFactorEnabled?: boolean;
 };
+
+function TwoFactorBadge({ on }: { on: boolean }) {
+    return (
+        <span
+            className={cn(
+                'mt-2 shrink-0 border px-2.5 py-1 text-xs font-bold tracking-[0.14em] uppercase',
+                on
+                    ? 'border-foreground dark:border-lime dark:text-lime'
+                    : 'border-input text-muted-foreground',
+            )}
+        >
+            {on ? 'On' : 'Off'}
+        </span>
+    );
+}
 
 export default function ManageTwoFactor(props: Props) {
     const requiresConfirmation = props.requiresConfirmation ?? false;
@@ -29,7 +44,8 @@ export default function ManageTwoFactor(props: Props) {
         fetchRecoveryCodes,
         errors,
     } = useTwoFactorAuth();
-    const [showSetupModal, setShowSetupModal] = useState<boolean>(false);
+    const [showSetupModal, setShowSetupModal] = useState(false);
+    const [codesOpen, setCodesOpen] = useState(false);
     const prevTwoFactorEnabled = useRef(twoFactorEnabled);
 
     useEffect(() => {
@@ -44,83 +60,100 @@ export default function ManageTwoFactor(props: Props) {
         return null;
     }
 
-    return (
-        <div className="space-y-6">
-            <Heading
-                variant="small"
-                title="Two-factor authentication"
-                description="Manage your two-factor authentication settings"
-            />
-            {twoFactorEnabled ? (
-                <div className="flex flex-col items-start justify-start space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                        You will be prompted for a secure, random pin during
-                        login, which you can retrieve from the TOTP-supported
-                        application on your phone.
-                    </p>
+    const toggleCodes = () => {
+        if (!codesOpen && !recoveryCodesList.length) {
+            void fetchRecoveryCodes();
+        }
 
-                    <div className="relative inline">
-                        <Form {...disable.form()}>
+        setCodesOpen(!codesOpen);
+    };
+
+    return (
+        <SettingsSection
+            id="twofa-heading"
+            title="Two-factor authentication"
+            description="Ask for a code from an authenticator app when you log in."
+            aside={<TwoFactorBadge on={twoFactorEnabled} />}
+        >
+            {twoFactorEnabled ? (
+                <>
+                    <div className="flex flex-wrap gap-3">
+                        <Button
+                            size="md"
+                            onClick={toggleCodes}
+                            aria-expanded={codesOpen}
+                            aria-controls="recovery-codes"
+                        >
+                            {codesOpen
+                                ? 'Hide recovery codes'
+                                : 'Show recovery codes'}
+                        </Button>
+                        <Form
+                            {...disable.form()}
+                            options={{ preserveScroll: true }}
+                            onSuccess={() => setCodesOpen(false)}
+                        >
                             {({ processing }) => (
                                 <Button
-                                    variant="destructive"
                                     type="submit"
+                                    variant="outline"
+                                    size="md"
                                     disabled={processing}
                                 >
-                                    Disable 2FA
+                                    Turn off two-factor
                                 </Button>
                             )}
                         </Form>
                     </div>
 
-                    <TwoFactorRecoveryCodes
-                        recoveryCodesList={recoveryCodesList}
-                        fetchRecoveryCodes={fetchRecoveryCodes}
-                        errors={errors}
-                    />
-                </div>
+                    {codesOpen && (
+                        <TwoFactorRecoveryCodes
+                            id="recovery-codes"
+                            recoveryCodesList={recoveryCodesList}
+                            fetchRecoveryCodes={fetchRecoveryCodes}
+                            errors={errors}
+                        />
+                    )}
+                </>
+            ) : hasSetupData ? (
+                <Button
+                    size="md"
+                    aria-haspopup="dialog"
+                    onClick={() => setShowSetupModal(true)}
+                >
+                    Continue setup
+                </Button>
             ) : (
-                <div className="flex flex-col items-start justify-start space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                        When you enable two-factor authentication, you will be
-                        prompted for a secure pin during login. This pin can be
-                        retrieved from a TOTP-supported application on your
-                        phone.
-                    </p>
-
-                    <div>
-                        {hasSetupData ? (
-                            <Button onClick={() => setShowSetupModal(true)}>
-                                <ShieldCheck />
-                                Continue setup
-                            </Button>
-                        ) : (
-                            <Form
-                                {...enable.form()}
-                                onSuccess={() => setShowSetupModal(true)}
-                            >
-                                {({ processing }) => (
-                                    <Button type="submit" disabled={processing}>
-                                        Enable 2FA
-                                    </Button>
-                                )}
-                            </Form>
-                        )}
-                    </div>
-                </div>
+                <Form
+                    {...enable.form()}
+                    options={{ preserveScroll: true }}
+                    onSuccess={() => setShowSetupModal(true)}
+                >
+                    {({ processing }) => (
+                        <Button
+                            type="submit"
+                            size="md"
+                            aria-haspopup="dialog"
+                            disabled={processing}
+                        >
+                            Turn on two-factor
+                        </Button>
+                    )}
+                </Form>
             )}
 
             <TwoFactorSetupModal
                 isOpen={showSetupModal}
                 onClose={() => setShowSetupModal(false)}
                 requiresConfirmation={requiresConfirmation}
-                twoFactorEnabled={twoFactorEnabled}
                 qrCodeSvg={qrCodeSvg}
                 manualSetupKey={manualSetupKey}
                 clearSetupData={clearSetupData}
                 fetchSetupData={fetchSetupData}
+                recoveryCodesList={recoveryCodesList}
+                fetchRecoveryCodes={fetchRecoveryCodes}
                 errors={errors}
             />
-        </div>
+        </SettingsSection>
     );
 }

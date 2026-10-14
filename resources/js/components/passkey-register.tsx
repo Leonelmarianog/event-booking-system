@@ -1,9 +1,10 @@
 import { usePasskeyRegister } from '@laravel/passkeys/react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { FieldLabel } from '@/components/field-label';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 type Props = {
     onSuccess: () => void;
@@ -58,15 +59,20 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
 
     if (!isSupported) {
         return (
-            <div className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground">
                 Passkeys are not supported in this browser.
-            </div>
+            </p>
         );
     }
 
     if (!showForm) {
         return (
-            <Button variant="outline" onClick={() => setShowForm(true)}>
+            <Button
+                variant="outline"
+                size="md"
+                onClick={() => setShowForm(true)}
+            >
+                <Plus aria-hidden="true" />
                 Add passkey
             </Button>
         );
@@ -75,31 +81,39 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
     return (
         <form
             onSubmit={handleSubmit}
-            className="space-y-4 rounded-lg border border-border bg-muted/50 p-4"
+            className="grid max-w-[520px] gap-2 border border-border p-5"
         >
-            <div className="grid gap-2">
-                <Label htmlFor="passkey-name">Passkey name</Label>
-                <Input
-                    id="passkey-name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., MacBook Pro, iPhone"
-                    className="mt-1 block w-full border-foreground/20"
-                    autoFocus
-                />
-                <p className="text-xs text-muted-foreground">
-                    A name helps you identify this passkey later.
-                </p>
-            </div>
+            <FieldLabel htmlFor="passkey-name">Passkey name</FieldLabel>
+            <Input
+                id="passkey-name"
+                type="text"
+                size="lg"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                autoFocus
+                aria-describedby="passkey-name-hint"
+            />
+            <p id="passkey-name-hint" className="text-sm text-muted-foreground">
+                A name helps you find this passkey later.
+            </p>
 
             {error && <InputError message={error} />}
 
-            <div className="flex gap-2">
-                <Button type="submit" disabled={isLoading || !name.trim()}>
-                    {isLoading ? 'Registering...' : 'Register passkey'}
+            <div className="mt-3 flex flex-wrap gap-3">
+                <Button
+                    type="submit"
+                    size="md"
+                    disabled={isLoading || !name.trim()}
+                >
+                    {isLoading ? 'Adding...' : 'Add passkey'}
                 </Button>
-                <Button type="button" variant="ghost" onClick={handleCancel}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="md"
+                    onClick={handleCancel}
+                >
                     Cancel
                 </Button>
             </div>
