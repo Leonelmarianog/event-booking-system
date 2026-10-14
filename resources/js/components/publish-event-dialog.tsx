@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import { Send } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,33 +14,45 @@ import {
 import { store } from '@/routes/events/publication';
 
 /**
- * A button that asks for a confirmation and then publishes the event. The dialog
- * closes when the request ends, also when the server refuses with an error toast.
+ * Asks for a confirmation and then publishes the event. The children are the button
+ * that opens the dialog. The dialog closes when the request ends, also when the
+ * server refuses with an error toast.
  */
-export function PublishEventDialog({ eventId }: { eventId: number }) {
+export function PublishEventDialog({
+    eventId,
+    children,
+}: {
+    eventId: number;
+    children: ReactNode;
+}) {
     const [open, setOpen] = useState(false);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button size="sm">
-                    <Send />
-                    Publish
-                </Button>
-            </DialogTrigger>
+            <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent>
                 <DialogTitle>Publish this event?</DialogTitle>
                 <DialogDescription>
-                    Everyone can see a published event. You cannot make it a
-                    draft again.
+                    Everyone can see a published event and book seats. You
+                    cannot make it a draft again.
                 </DialogDescription>
                 <Form {...store.form(eventId)} onFinish={() => setOpen(false)}>
                     {({ processing }) => (
-                        <DialogFooter className="gap-2">
+                        <DialogFooter className="mt-5">
                             <DialogClose asChild>
-                                <Button variant="secondary">Cancel</Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="md"
+                                >
+                                    Keep as draft
+                                </Button>
                             </DialogClose>
-                            <Button type="submit" disabled={processing}>
+                            <Button
+                                type="submit"
+                                size="md"
+                                disabled={processing}
+                            >
                                 Publish
                             </Button>
                         </DialogFooter>

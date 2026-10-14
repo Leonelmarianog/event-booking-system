@@ -1,16 +1,9 @@
-import { Head, Link } from '@inertiajs/react';
-import { Pencil, Users } from 'lucide-react';
+import { Head } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { BookingBox } from '@/components/booking-box';
-import { CancelEventDialog } from '@/components/cancel-event-dialog';
-import { DeleteEventDialog } from '@/components/delete-event-dialog';
 import { EventBanner } from '@/components/event-banner';
+import { EventBox } from '@/components/event-box';
 import { EventHeader } from '@/components/event-header';
 import { LocalDateTime } from '@/components/local-date-time';
-import { PublishEventDialog } from '@/components/publish-event-dialog';
-import { Button } from '@/components/ui/button';
-import { edit } from '@/routes/events';
-import { index as attendees } from '@/routes/events/attendees';
 import type { EventBookingBox, EventDetails, EventPermissions } from '@/types';
 
 const shortDateTime: Intl.DateTimeFormatOptions = {
@@ -45,16 +38,15 @@ export default function ShowEvent({
     can: EventPermissions;
     is_organizer: boolean;
 }) {
-    const manages =
-        can.publish ||
-        can.update ||
-        can.cancel ||
-        can.delete ||
-        can.viewAttendees;
-
     return (
         <>
             <Head title={event.title} />
+            <a
+                href="#book"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-4 focus:z-50 focus:bg-primary focus:px-4 focus:py-3 focus:font-bold focus:text-primary-foreground"
+            >
+                Skip to booking
+            </a>
             <EventHeader event={event} />
             <EventBanner event={event} isOrganizer={is_organizer} />
             <div className="flex flex-col gap-14 px-8 pt-14 pb-24 lg:flex-row lg:items-start">
@@ -78,43 +70,13 @@ export default function ShowEvent({
                         {event.description}
                     </p>
                 </article>
-                <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:w-[400px] lg:shrink-0">
-                    {manages && (
-                        <div className="flex flex-wrap gap-2">
-                            {can.viewAttendees && (
-                                <Button asChild variant="outline" size="sm">
-                                    <Link href={attendees(event.id)}>
-                                        <Users />
-                                        Attendees
-                                    </Link>
-                                </Button>
-                            )}
-                            {can.update && (
-                                <Button asChild variant="outline" size="sm">
-                                    <Link href={edit(event.id)}>
-                                        <Pencil />
-                                        Edit
-                                    </Link>
-                                </Button>
-                            )}
-                            {can.publish && (
-                                <PublishEventDialog eventId={event.id} />
-                            )}
-                            {can.cancel && (
-                                <CancelEventDialog eventId={event.id} />
-                            )}
-                            {can.delete && (
-                                <DeleteEventDialog eventId={event.id} />
-                            )}
-                        </div>
-                    )}
-                    {booking && (
-                        <BookingBox
-                            eventId={event.id}
-                            eventTitle={event.title}
-                            booking={booking}
-                        />
-                    )}
+                <div className="lg:sticky lg:top-6 lg:w-[400px] lg:shrink-0">
+                    <EventBox
+                        event={event}
+                        booking={booking}
+                        can={can}
+                        isOrganizer={is_organizer}
+                    />
                 </div>
             </div>
         </>

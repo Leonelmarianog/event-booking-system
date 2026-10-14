@@ -1,7 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
+import { X } from 'lucide-react';
 import { BookingStatusBadge } from '@/components/booking-status-badge';
 import { CancelBookingDialog } from '@/components/cancel-booking-dialog';
 import { LocalDateTime } from '@/components/local-date-time';
+import { Button } from '@/components/ui/button';
 import { index as eventsIndex, show } from '@/routes/events';
 import type { BookingRow } from '@/types';
 
@@ -82,8 +84,16 @@ function BookingTable({
                                             <CancelBookingDialog
                                                 reference={booking.reference}
                                                 eventTitle={booking.event.title}
-                                                triggerLabel="Cancel"
-                                            />
+                                            >
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    aria-label={`Cancel booking for ${booking.event.title}`}
+                                                >
+                                                    <X />
+                                                    Cancel
+                                                </Button>
+                                            </CancelBookingDialog>
                                         )}
                                     </td>
                                 </tr>
