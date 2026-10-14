@@ -162,7 +162,7 @@ export default function EventAttendees({
                     )}
                 </div>
 
-                <PaginationNav paginator={attendees} />
+                <PaginationNav paginator={attendees} className="mt-6" />
             </div>
         </>
     );
