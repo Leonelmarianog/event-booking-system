@@ -226,7 +226,7 @@ function ReserveForm({
                         type="submit"
                         size="lg"
                         disabled={processing}
-                        className="w-full"
+                        className={boxButton}
                     >
                         Reserve {seats(selected)}
                     </Button>
@@ -411,6 +411,10 @@ function BookBox({
         </Actions>
     );
 
+    if (state === 'draft') {
+        return null;
+    }
+
     if (state === 'sold_out') {
         return (
             <>
@@ -492,7 +496,7 @@ export function EventBox({
             id="book"
             tabIndex={-1}
             aria-labelledby="event-box-heading"
-            className="border bg-field p-8 outline-none"
+            className="border bg-field p-8 outline-none focus-visible:ring-[3px] focus-visible:ring-ring"
         >
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2
@@ -520,6 +524,25 @@ export function EventBox({
                     state={state}
                 />
             )}
+            {viewer === 'manager' &&
+                !isOrganizer &&
+                (state === 'published' || state === 'sold_out') && (
+                    <div className="mt-6 border-t">
+                        {booking?.state === 'available' && (
+                            <ReserveForm
+                                eventId={event.id}
+                                maxQuantity={booking.max_quantity}
+                            />
+                        )}
+                        {booking?.state === 'booked' && (
+                            <AttendeeBox
+                                event={event}
+                                booking={booking}
+                                state={state}
+                            />
+                        )}
+                    </div>
+                )}
             {viewer === 'attendee' && booking?.state === 'booked' && (
                 <AttendeeBox event={event} booking={booking} state={state} />
             )}
