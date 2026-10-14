@@ -1,18 +1,42 @@
 import { Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
 
-function PageLink({ href, label }: { href: string | null; label: string }) {
+const pageButton = 'h-12 px-6 text-sm tracking-[0.06em]';
+
+function PageLink({
+    href,
+    label,
+    primary = false,
+}: {
+    href: string | null;
+    label: string;
+    primary?: boolean;
+}) {
     if (href === null) {
         return (
-            <Button variant="outline" size="sm" disabled>
+            <Button
+                variant="outline"
+                size="md"
+                disabled
+                className={cn(
+                    pageButton,
+                    'border-border text-muted-foreground',
+                )}
+            >
                 {label}
             </Button>
         );
     }
 
     return (
-        <Button asChild variant="outline" size="sm">
+        <Button
+            asChild
+            variant={primary ? 'default' : 'outline'}
+            size="md"
+            className={pageButton}
+        >
             <Link href={href}>{label}</Link>
         </Button>
     );
@@ -34,13 +58,13 @@ export function PaginationNav({
     return (
         <nav
             aria-label="Pages"
-            className="flex items-center justify-between gap-4"
+            className="mt-6 flex items-center justify-between gap-4"
         >
-            <PageLink href={paginator.prev_page_url} label="Previous" />
-            <span className="text-sm text-muted-foreground">
+            <PageLink href={paginator.prev_page_url} label="← Previous" />
+            <span className="text-sm font-semibold tracking-[0.1em] text-muted-foreground uppercase">
                 Page {paginator.current_page} of {paginator.last_page}
             </span>
-            <PageLink href={paginator.next_page_url} label="Next" />
+            <PageLink href={paginator.next_page_url} label="Next →" primary />
         </nav>
     );
 }
