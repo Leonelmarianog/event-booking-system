@@ -133,13 +133,17 @@ function CodeStep({
     onConfirmed: () => Promise<void>;
 }) {
     const [code, setCode] = useState('');
+    const codeInput = useRef<HTMLInputElement>(null);
 
     return (
         <Form
             {...confirm.form()}
             options={{ preserveState: true, preserveScroll: true }}
             onSuccess={onConfirmed}
-            onError={() => setCode('')}
+            onError={() => {
+                setCode('');
+                codeInput.current?.focus();
+            }}
             resetOnError
             className="mt-3 grid gap-2"
         >
@@ -154,14 +158,23 @@ function CodeStep({
                     <FieldLabel htmlFor="setup-code">Code</FieldLabel>
                     <CodeInput
                         id="setup-code"
+                        ref={codeInput}
                         name="code"
                         required
                         autoFocus
-                        disabled={processing}
+                        readOnly={processing}
+                        aria-invalid={
+                            errors?.confirmTwoFactorAuthentication?.code
+                                ? true
+                                : undefined
+                        }
+                        aria-describedby="setup-code-error"
                         onChange={(e) => setCode(e.currentTarget.value)}
                         className="bg-background"
                     />
                     <InputError
+                        id="setup-code-error"
+                        role="alert"
                         message={errors?.confirmTwoFactorAuthentication?.code}
                     />
 
@@ -239,9 +252,19 @@ export default function TwoFactorSetupModal({
         handleClose();
     };
 
+    // The dialog can close while the code is checked. Step 3 then must not show on the next open.
+    const isOpenRef = useRef(isOpen);
+
+    useEffect(() => {
+        isOpenRef.current = isOpen;
+    }, [isOpen]);
+
     const handleConfirmed = async () => {
         await fetchRecoveryCodes();
-        setStep('done');
+
+        if (isOpenRef.current) {
+            setStep('done');
+        }
     };
 
     const fetchSetupDataRef = useRef(fetchSetupData);
