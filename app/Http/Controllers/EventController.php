@@ -54,6 +54,7 @@ class EventController extends Controller
     {
         return Inertia::render('events/show', [
             ...$getEvent->handle($event, $request->user()),
+            'is_organizer' => $request->user() !== null && $event->isOrganizedBy($request->user()),
             'can' => [
                 'update' => $request->user()?->can('update', $event) ?? false,
                 'publish' => ($request->user()?->can('publish', $event) ?? false) && $event->canBePublished(),

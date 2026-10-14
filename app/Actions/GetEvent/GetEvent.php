@@ -12,7 +12,7 @@ class GetEvent
      * (BR-B1 to BR-B4).
      *
      * @return array{
-     *     event: array{id: int, title: string, description: string, venue: string, starts_at: string, capacity: int, seats_available: int, status: string, organizer_name: string},
+     *     event: array{id: int, title: string, description: string, venue: string, starts_at: string, capacity: int, seats_available: int, status: string, has_started: bool, organizer_name: string},
      *     booking: array{state: 'booked', reference: string, quantity: int, can_cancel: bool}|array{state: 'available', max_quantity: int}|array{state: 'login'}|array{state: 'sold_out'}|null,
      * }
      */
@@ -30,6 +30,7 @@ class GetEvent
                 'capacity' => $event->capacity,
                 'seats_available' => $event->seats_available,
                 'status' => $event->status->value,
+                'has_started' => $event->hasStarted(),
                 'organizer_name' => $event->organizer->name,
             ],
             'booking' => $this->bookingBox($event, $viewer),

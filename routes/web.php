@@ -66,3 +66,6 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+// Unknown URLs go through the web middleware, so the 404 page has the navbar data.
+Route::fallback(fn () => abort(404));

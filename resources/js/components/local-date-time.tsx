@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useLocalDateTime } from '@/hooks/use-local-date-time';
 
-const options: Intl.DateTimeFormatOptions = {
+const longDateTime: Intl.DateTimeFormatOptions = {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -10,23 +10,18 @@ const options: Intl.DateTimeFormatOptions = {
     timeZoneName: 'short',
 };
 
-function format(value: string, locale?: string, timeZone?: string): string {
-    return new Intl.DateTimeFormat(locale, { ...options, timeZone }).format(
-        new Date(value),
-    );
-}
-
 /**
- * Shows a date and time in the locale and time zone of the viewer. The server
- * cannot know them, so the first render uses en-US and UTC on both sides. After the
- * page loads in the browser, the component changes to the local format.
+ * Shows a date and time in the locale and time zone of the viewer (see
+ * useLocalDateTime). The default format is long, with the time zone.
  */
-export function LocalDateTime({ value }: { value: string }) {
-    const [text, setText] = useState(() => format(value, 'en-US', 'UTC'));
-
-    useEffect(() => {
-        setText(format(value));
-    }, [value]);
+export function LocalDateTime({
+    value,
+    options = longDateTime,
+}: {
+    value: string;
+    options?: Intl.DateTimeFormatOptions;
+}) {
+    const text = useLocalDateTime(value, options);
 
     return <time dateTime={value}>{text}</time>;
 }
