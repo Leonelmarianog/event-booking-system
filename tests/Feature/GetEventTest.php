@@ -34,6 +34,7 @@ test('BR-E14: a visitor can see a published event', function () {
                 'capacity' => 50,
                 'seats_available' => 0,
                 'status' => 'published',
+                'has_started' => false,
                 'organizer_name' => 'Olivia Organizer',
             ])
         );
@@ -110,6 +111,41 @@ test('an event that does not exist gives a 404', function () {
 
 test('an event ID that is not a number gives a 404', function () {
     $this->get('/events/abc')->assertNotFound();
+});
+
+test('the page says if the event has started', function () {
+    $upcoming = Event::factory()->published()->create();
+    $started = Event::factory()->published()->started()->create();
+
+    $this->get(route('events.show', $upcoming))
+        ->assertInertia(fn (Assert $page) => $page->where('event.has_started', false));
+
+    $this->get(route('events.show', $started))
+        ->assertInertia(fn (Assert $page) => $page->where('event.has_started', true));
+});
+
+test('only the organizer gets is_organizer, also on a cancelled event', function () {
+    $published = Event::factory()->published()->for($this->organizer, 'organizer')->create();
+    $cancelled = Event::factory()->cancelled()->for($this->organizer, 'organizer')->create();
+
+    foreach ([$published, $cancelled] as $event) {
+        $this->actingAs($this->organizer)
+            ->get(route('events.show', $event))
+            ->assertInertia(fn (Assert $page) => $page->where('is_organizer', true));
+
+        $this->actingAs($this->admin)
+            ->get(route('events.show', $event))
+            ->assertInertia(fn (Assert $page) => $page->where('is_organizer', false));
+    }
+
+    $this->actingAs($this->otherUser)
+        ->get(route('events.show', $published))
+        ->assertInertia(fn (Assert $page) => $page->where('is_organizer', false));
+
+    auth()->logout();
+
+    $this->get(route('events.show', $published))
+        ->assertInertia(fn (Assert $page) => $page->where('is_organizer', false));
 });
 
 test('BR-E4: the organizer sees the edit link', function () {

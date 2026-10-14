@@ -37,6 +37,11 @@ admins (see `GetEventAttendees`). `can.cancel` (`EventPolicy::cancel` and
 `Event::canBeCancelled()`) shows the "Cancel event" button to the organizer and admins,
 only on draft and published events that have not started (see `CancelEvent`).
 
+The event data has `has_started` (`Event::hasStarted()`). The page uses it to show
+an ended event. The controller also sends `is_organizer`: it is true only for the
+organizer of the event. The `can` flags cannot show this, because `can.cancel` and
+`can.viewAttendees` are also true for admins.
+
 The edit page uses the same Action with no user, and uses only the event data.
 
 ## The event is shown
@@ -81,6 +86,9 @@ sequenceDiagram
     Policy-->>Middleware: Deny as not found
     Middleware-->>Browser: 404 page
 ```
+
+The 404 page is the Inertia page `errors/not-found` in the app layout. For a URL
+that starts with `/events/`, it says "Event not found".
 
 ## The event does not exist
 
